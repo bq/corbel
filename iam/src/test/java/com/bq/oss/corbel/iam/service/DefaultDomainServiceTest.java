@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +22,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import com.bq.oss.corbel.iam.exception.DomainAlreadyExists;
 import com.bq.oss.corbel.iam.model.Domain;
 import com.bq.oss.corbel.iam.model.Scope;
+import com.bq.oss.corbel.iam.repository.ClientRepository;
 import com.bq.oss.corbel.iam.repository.DomainRepository;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 /**
@@ -42,6 +45,8 @@ import com.google.common.collect.Sets;
 
     @Mock private DomainRepository domainRepositoryMock;
     @Mock private DefaultScopeService defaultScopeServiceMock;
+    @Mock private ClientRepository clientRepositoryMock;
+    @Mock private EventsService eventsServiceMock;
 
     private DefaultDomainService domainService;
 
@@ -55,7 +60,7 @@ import com.google.common.collect.Sets;
         scopeB.setId(SCOPE_B);
         scopeC.setId(SCOPE_C);
 
-        domainService = new DefaultDomainService(domainRepositoryMock, defaultScopeServiceMock);
+        domainService = new DefaultDomainService(domainRepositoryMock, defaultScopeServiceMock, clientRepositoryMock, eventsServiceMock);
     }
 
     @Test
@@ -211,7 +216,13 @@ import com.google.common.collect.Sets;
 
     @Test
     public void testDelete() {
+        List<String> deletedClientList = Lists.newArrayList("client1", "client2");
+
         domainService.delete(TEST_DOMAIN.getId());
+        verify(clientRepositoryMock).deleteByDomain(TEST_DOMAIN.getId());
         verify(domainRepositoryMock).delete(TEST_DOMAIN.getId());
+        verify(eventsServiceMock).sendDomainDeletedEvent(TEST_DOMAIN.getId());
+
+        verifyNoMoreInteractions(clientRepositoryMock, domainRepositoryMock, eventsServiceMock);
     }
 }

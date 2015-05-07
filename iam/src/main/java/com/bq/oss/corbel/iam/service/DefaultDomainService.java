@@ -12,6 +12,7 @@ import com.bq.oss.corbel.iam.exception.DomainAlreadyExists;
 import com.bq.oss.corbel.iam.exception.InvalidAggregationException;
 import com.bq.oss.corbel.iam.model.Domain;
 import com.bq.oss.corbel.iam.model.Entity;
+import com.bq.oss.corbel.iam.repository.ClientRepository;
 import com.bq.oss.corbel.iam.repository.DomainRepository;
 import com.bq.oss.lib.queries.request.*;
 
@@ -23,10 +24,15 @@ public class DefaultDomainService implements DomainService {
 
     private final DomainRepository domainRepository;
     private final ScopeService scopeService;
+    private final ClientRepository clientRepository;
+    private final EventsService eventsService;
 
-    public DefaultDomainService(DomainRepository domainRepository, ScopeService scopeService) {
+    public DefaultDomainService(DomainRepository domainRepository, ScopeService scopeService, ClientRepository clientRepository,
+            EventsService eventsService) {
         this.domainRepository = domainRepository;
         this.scopeService = scopeService;
+        this.clientRepository = clientRepository;
+        this.eventsService = eventsService;
     }
 
     @Override
@@ -80,6 +86,7 @@ public class DefaultDomainService implements DomainService {
     @Override
     public void delete(String domain) {
         domainRepository.delete(domain);
+        eventsService.sendDomainDeletedEvent(domain);
     }
 
     @Override
