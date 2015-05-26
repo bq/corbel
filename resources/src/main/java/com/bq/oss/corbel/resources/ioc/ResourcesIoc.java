@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import com.bq.oss.corbel.resources.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -31,9 +32,6 @@ import com.bq.oss.corbel.resources.rem.plugin.PluginArtifactIdRegistry;
 import com.bq.oss.corbel.resources.rem.plugin.RelationRegistry;
 import com.bq.oss.corbel.resources.rem.service.RemService;
 import com.bq.oss.corbel.resources.repository.RelationSchemaRepository;
-import com.bq.oss.corbel.resources.service.DefaultRelationSchemaService;
-import com.bq.oss.corbel.resources.service.DefaultRemService;
-import com.bq.oss.corbel.resources.service.RelationSchemaService;
 import com.bq.oss.lib.config.ConfigurationIoC;
 import com.bq.oss.lib.mongo.config.DefaultMongoConfiguration;
 import com.bq.oss.lib.queries.mongo.repository.QueriesRepositoryFactoryBean;
@@ -74,9 +72,14 @@ import com.sun.jersey.spi.container.ContainerRequestFilter;
     }
 
     @Bean
-    public RemResource getRemResource(RemService remService, RemEntityTypeResolver remEntityTypeResolver, QueryParser queryParser,
-            AggregationParser aggregationParser, SortParser sortParser, EventBus eventBus) {
-        return new RemResource(remService, remEntityTypeResolver, getPageSizeDefault(), getMaxPageSizeDefault(), queryParser,
+    public RemResource getRemResource(ResourcesService resourcesService) {
+        return new RemResource(resourcesService);
+    }
+
+    @Bean
+    public ResourcesService getResourcesService(RemService remService, RemEntityTypeResolver remEntityTypeResolver, QueryParser queryParser,
+                                                AggregationParser aggregationParser, SortParser sortParser, EventBus eventBus) {
+        return new DefaultResourcesService(remService, remEntityTypeResolver, getPageSizeDefault(), getMaxPageSizeDefault(), queryParser,
                 aggregationParser, sortParser, eventBus);
     }
 
