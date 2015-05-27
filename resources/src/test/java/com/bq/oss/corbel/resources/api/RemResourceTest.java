@@ -34,6 +34,7 @@ import com.bq.oss.corbel.resources.rem.request.RequestParameters;
 import com.bq.oss.corbel.resources.rem.request.ResourceId;
 import com.bq.oss.corbel.resources.rem.service.RemService;
 import com.bq.oss.corbel.resources.service.DefaultRemService;
+import com.bq.oss.corbel.resources.service.DefaultResourcesService;
 import com.bq.oss.lib.queries.exception.MalformedJsonQueryException;
 import com.bq.oss.lib.queries.parser.*;
 import com.bq.oss.lib.queries.request.*;
@@ -92,6 +93,8 @@ public class RemResourceTest {
     private static javax.validation.Validator validator = new CustomValidatorBean();
     private static EventBus eventBusMock = mock(EventBus.class);
 
+    private static final RemResource remResource;
+
     static {
         ResourceTestRule.Builder ruleBuilder = ResourceTestRule.builder();
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
@@ -99,15 +102,24 @@ public class RemResourceTest {
 
         ruleBuilder.addProperty("com.sun.jersey.spi.container.ContainerRequestFilters",
                 Lists.newArrayList(new MatrixEncodingRequestFilter("^(.*/v1.0/resource/.+/.+/.+;r=)(.+)$")));
-        ruleBuilder.addResource(new RemResource(remService, remEntityTypeResolverMock, DEFAULT_LIMIT, MAX_DEFAULT_LIMIT,
-                createQueryParser(), createAggregationParser(), createSortParser(), eventBusMock));
+        DefaultResourcesService defaultResourcesService = new DefaultResourcesService(remService, remEntityTypeResolverMock, DEFAULT_LIMIT,
+                MAX_DEFAULT_LIMIT, createQueryParser(), createAggregationParser(), createSortParser(), eventBusMock);
+
+        remResource = new RemResource(defaultResourcesService);
+        ruleBuilder.addResource(remResource);
+
         ruleBuilder.addProvider(new QueryParametersProvider(DEFAULT_LIMIT, MAX_DEFAULT_LIMIT, queryParserMock, createAggregationParser(),
                 createSortParser()));
 
         ruleBuilder.addProvider(new OAuthProvider<>(authenticatorMock, null));
         ruleBuilder.addProvider(authorizationInfoProviderSpy);
         ruleBuilder.addProvider(new EmptyEntitiesAllowedJacksonMessageBodyProvider(objectMapper, validator));
+
+
         RULE = ruleBuilder.build();
+
+
+
     }
 
 
@@ -120,14 +132,15 @@ public class RemResourceTest {
         when(remEntityTypeResolverMock.getEntityType(remMock)).thenReturn((Class) JsonObject.class);
         TokenInfo token = mock(TokenInfo.class);
         when(token.getUserId()).thenReturn(TEST_USER_ID);
+        when(token.getDomainId()).thenReturn(DOMAIN);
         TokenReader readerMock = mock(TokenReader.class);
         when(readerMock.getInfo()).thenReturn(token);
         AuthorizationInfo authorizationInfoMock = mock(AuthorizationInfo.class);
         when(authorizationInfoMock.getTokenReader()).thenReturn(readerMock);
-        when(authorizationInfoMock.getDomainId()).thenReturn(DOMAIN);
         when(authenticatorMock.authenticate(TEST_TOKEN)).thenReturn(com.google.common.base.Optional.of(authorizationInfoMock));
         when(authorizationInfoMock.getUserId()).thenReturn(TEST_USER_ID);
         doReturn(authorizationInfoMock).when(authorizationInfoProviderSpy).getValue(any());
+
     }
 
     private static JacksonQueryParser createQueryParser() {
