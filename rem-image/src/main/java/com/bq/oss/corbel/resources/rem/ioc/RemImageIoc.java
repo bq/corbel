@@ -1,6 +1,10 @@
 package com.bq.oss.corbel.resources.rem.ioc;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -9,20 +13,65 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 import com.bq.oss.corbel.resources.rem.ImageGetRem;
 import com.bq.oss.corbel.resources.rem.Rem;
+import com.bq.oss.corbel.resources.rem.operation.*;
 import com.bq.oss.corbel.resources.rem.service.DefaultImageCacheService;
-import com.bq.oss.corbel.resources.rem.service.DefaultResizeImageService;
+import com.bq.oss.corbel.resources.rem.service.DefaultImageOperationsService;
 import com.bq.oss.corbel.resources.rem.service.ImageCacheService;
-import com.bq.oss.corbel.resources.rem.service.ResizeImageService;
+import com.bq.oss.corbel.resources.rem.service.ImageOperationsService;
 import com.bq.oss.lib.config.ConfigurationIoC;
 
-@Configuration // Import configuration mechanism
-@EnableAsync @Import({ConfigurationIoC.class}) public class RemImageIoc {
+@SuppressWarnings("unused") @Configuration @EnableAsync @Import({ConfigurationIoC.class}) public class RemImageIoc {
 
     @Autowired private Environment env;
 
+    public static Map<String, ImageOperation> getOperations() {
+        final AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext(RemImageIoc.class);
+
+        return applicationContext
+                .getBeansWithAnnotation(ImageOperationName.class)
+                .entrySet()
+                .stream()
+                .filter(entry -> entry.getValue() instanceof ImageOperation)
+                .collect(
+                        Collectors.toMap(
+                                entry -> applicationContext.findAnnotationOnBean(entry.getKey(), ImageOperationName.class).value(),
+                                entry -> (ImageOperation) entry.getValue()));
+    }
+
     @Bean
-    public ResizeImageService getResizeImageService() {
-        return new DefaultResizeImageService();
+    public ImageOperationsService getImageOperationsService() {
+        return new DefaultImageOperationsService(new DefaultImageOperationsService.IMOperationFactory(),
+                new DefaultImageOperationsService.ConvertCmdFactory(), getOperations());
+    }
+
+    @Bean
+    public Crop getCropOperation() {
+        return new Crop();
+    }
+
+    @Bean
+    public CropFromCenter getCropFromCenterOperation() {
+        return new CropFromCenter();
+    }
+
+    @Bean
+    public Resize getResizeOperation() {
+        return new Resize();
+    }
+
+    @Bean
+    public ResizeAndFill getResizeAndFillOperation() {
+        return new ResizeAndFill();
+    }
+
+    @Bean
+    public ResizeHeight getResizeheight() {
+        return new ResizeHeight();
+    }
+
+    @Bean
+    public ResizeWidth getResizeWidth() {
+        return new ResizeWidth();
     }
 
     @Bean
@@ -31,7 +80,8 @@ import com.bq.oss.lib.config.ConfigurationIoC;
     }
 
     @Bean(name = RemImageIocNames.REM_GET)
-    public Rem getImageGetRem() {
-        return new ImageGetRem(getResizeImageService(), getImageCacheService());
+    public Rem getImageGetRem(ImageOperationsService imageOperationsService, ImageCacheService imageCacheService) {
+        return new ImageGetRem(imageOperationsService, imageCacheService);
     }
+
 }
