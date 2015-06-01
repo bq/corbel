@@ -10,19 +10,18 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import com.bq.oss.corbel.resources.rem.ImageGetRem;
 import com.bq.oss.corbel.resources.rem.Rem;
 import com.bq.oss.corbel.resources.rem.service.DefaultImageCacheService;
-import com.bq.oss.corbel.resources.rem.service.DefaultResizeImageService;
+import com.bq.oss.corbel.resources.rem.service.DefaultImageOperationsService;
 import com.bq.oss.corbel.resources.rem.service.ImageCacheService;
-import com.bq.oss.corbel.resources.rem.service.ResizeImageService;
+import com.bq.oss.corbel.resources.rem.service.ImageOperationsService;
 import com.bq.oss.lib.config.ConfigurationIoC;
 
-@Configuration // Import configuration mechanism
-@EnableAsync @Import({ConfigurationIoC.class}) public class RemImageIoc {
+@Configuration @EnableAsync @Import({ConfigurationIoC.class}) public class RemImageIoc {
 
     @Autowired private Environment env;
 
     @Bean
-    public ResizeImageService getResizeImageService() {
-        return new DefaultResizeImageService();
+    public ImageOperationsService getImageOperationsService() {
+        return new DefaultImageOperationsService(new DefaultImageOperationsService.ChainedImageOperationsFactory());
     }
 
     @Bean
@@ -31,7 +30,8 @@ import com.bq.oss.lib.config.ConfigurationIoC;
     }
 
     @Bean(name = RemImageIocNames.REM_GET)
-    public Rem getImageGetRem() {
-        return new ImageGetRem(getResizeImageService(), getImageCacheService());
+    public Rem getImageGetRem(ImageOperationsService imageOperationsService, ImageCacheService imageCacheService) {
+        return new ImageGetRem(imageOperationsService, imageCacheService);
     }
+
 }

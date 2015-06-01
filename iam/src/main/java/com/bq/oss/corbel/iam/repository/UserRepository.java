@@ -1,5 +1,7 @@
 package com.bq.oss.corbel.iam.repository;
 
+import java.util.List;
+
 import com.bq.oss.corbel.iam.model.User;
 import com.bq.oss.lib.queries.mongo.repository.GenericFindRepository;
 
@@ -13,5 +15,7 @@ public interface UserRepository extends GenericFindRepository<User, String>, Has
     User findByUsernameAndDomain(String username, String domainId);
 
     User findByDomainAndEmail(String domain, String email);
+
+    List<User> findByDomain(String domain);
 
 }

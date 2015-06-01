@@ -30,6 +30,11 @@ public class UserRepositoryDecorator implements UserRepository {
     }
 
     @Override
+    public List<User> findByDomain(String domain) {
+        return decoratedUserRepository.findByDomain(domain);
+    }
+
+    @Override
     public User findByUsernameAndDomain(String username, String domainId) {
         return decoratedUserRepository.findByUsernameAndDomain(username, domainId);
     }

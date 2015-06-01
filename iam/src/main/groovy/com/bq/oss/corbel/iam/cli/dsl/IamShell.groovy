@@ -27,6 +27,22 @@ class IamShell {
     IdentityRepository identityRepository
     String iamUri
 
+    def getScopes(String outputFileName) {
+        new PrintWriter(outputFileName, "UTF-8").withCloseable { writer ->
+            writer.println("Bitbloq client scopes\n")
+
+            new HashSet<Client>(clientRepository.findByDomain("bitbloq")).each { client ->
+                client.scopes.each { scope -> writer.println(scope) }
+            }
+
+            writer.println("\nBitbloq user scopes\n")
+
+            new HashSet<User>(userRepository.findByDomain("bitbloq")).each { user ->
+                user.scopes.each { scope -> writer.println(scope) }
+            }
+        }
+    }
+
     public IamShell(ClientRepository clientRepository, ScopeRepository scopeRepository, UserRepository userRepository, DomainRepository domainRepository, String iamUri, IdentityRepository identityRepository) {
         this.clientRepository = clientRepository
         this.scopeRepository = scopeRepository
