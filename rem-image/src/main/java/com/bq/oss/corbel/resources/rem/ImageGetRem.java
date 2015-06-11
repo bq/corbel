@@ -1,25 +1,5 @@
 package com.bq.oss.corbel.resources.rem;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-
-import org.apache.commons.io.output.TeeOutputStream;
-import org.im4java.core.IM4JavaException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-
 import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
 import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
 import com.bq.oss.corbel.resources.rem.request.RequestParameters;
@@ -30,10 +10,29 @@ import com.bq.oss.corbel.resources.rem.service.ImageOperationsService;
 import com.bq.oss.corbel.resources.rem.service.RemService;
 import com.bq.oss.lib.ws.api.error.ErrorResponseFactory;
 import com.bq.oss.lib.ws.model.Error;
+import org.apache.commons.io.output.TeeOutputStream;
+import org.im4java.core.IM4JavaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 
 public class ImageGetRem extends BaseRem<Void> {
 
+    public static final String FORMAT_PARAMETER = "image:format";
     public static final String OPERATIONS_PARAMETER = "image:operations";
     public static final String IMAGE_WIDTH_PARAMETER = "image:width";
     public static final String IMAGE_HEIGHT_PARAMETER = "image:height";
@@ -50,7 +49,7 @@ public class ImageGetRem extends BaseRem<Void> {
 
     @Override
     public Response resource(String collection, ResourceId resourceId, RequestParameters<ResourceParameters> requestParameters,
-            Optional<Void> entity) {
+                             Optional<Void> entity) {
 
         Rem<?> restorGetRem = remService.getRem(collection, requestParameters.getAcceptedMediaTypes(), HttpMethod.GET,
                 Collections.singletonList(this));
@@ -61,8 +60,9 @@ public class ImageGetRem extends BaseRem<Void> {
         }
 
         String operationsChain = getOperationsChain(requestParameters);
+        String imageFormat = getImageFormat(requestParameters);
 
-        if (operationsChain.isEmpty()) {
+        if (operationsChain.isEmpty() && imageFormat.isEmpty()) {
             return restorGetRem.resource(collection, resourceId, requestParameters, Optional.empty());
         }
 
@@ -97,9 +97,13 @@ public class ImageGetRem extends BaseRem<Void> {
             File file = File.createTempFile(TEMP_IMAGE_NAME, "");
 
             try (FileOutputStream fileOutputStream = new FileOutputStream(file);
-                    TeeOutputStream teeOutputStream = new TeeOutputStream(output, fileOutputStream);
-                    InputStream input = (InputStream) response.getEntity()) {
-                imageOperationsService.applyConversion(operations, input, teeOutputStream);
+                 TeeOutputStream teeOutputStream = new TeeOutputStream(output, fileOutputStream);
+                 InputStream input = (InputStream) response.getEntity()) {
+                if (imageFormat.isEmpty()) {
+                    imageOperationsService.applyConversion(operations, input, teeOutputStream);
+                } else {
+                    imageOperationsService.applyConversionWitFormat(operations, input, teeOutputStream, imageFormat);
+                }
             } catch (IOException | InterruptedException | IM4JavaException | ImageOperationsException e) {
                 LOG.error("Error while resizing a image", e);
                 throw new WebApplicationException(ErrorResponseFactory.getInstance().serverError(e));
@@ -144,6 +148,11 @@ public class ImageGetRem extends BaseRem<Void> {
         }
 
         return operationsChain;
+    }
+
+    private String getImageFormat(RequestParameters<ResourceParameters> parameters) {
+        String format = parameters.getCustomParameterValue(FORMAT_PARAMETER);
+        return (format == null) ? "" : format;
     }
 
     public List<ImageOperationDescription> getParameters(String parametersString) throws ImageOperationsException {
