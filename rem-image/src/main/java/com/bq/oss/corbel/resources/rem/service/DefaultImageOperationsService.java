@@ -1,28 +1,30 @@
 package com.bq.oss.corbel.resources.rem.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-
+import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
+import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
+import com.bq.oss.corbel.resources.rem.operation.Extension;
+import com.bq.oss.corbel.resources.rem.operation.ImageOperation;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
 import org.im4java.process.Pipe;
 
-import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
-import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
-import com.bq.oss.corbel.resources.rem.operation.ImageOperation;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class DefaultImageOperationsService implements ImageOperationsService {
 
     private final IMOperationFactory imOperationFactory;
     private final ConvertCmdFactory convertCmdFactory;
     private final Map<String, ImageOperation> operations;
+    private final String DEF_IMAGE_ARG = "-";
 
     public DefaultImageOperationsService(IMOperationFactory imOperationFactory, ConvertCmdFactory convertCmdFactory,
-            Map<String, ImageOperation> operations) {
+                                         Map<String, ImageOperation> operations) {
         this.imOperationFactory = imOperationFactory;
         this.convertCmdFactory = convertCmdFactory;
         this.operations = operations;
@@ -34,8 +36,9 @@ public class DefaultImageOperationsService implements ImageOperationsService {
             InterruptedException, IOException, IM4JavaException {
 
         IMOperation imOperation = imOperationFactory.create();
-        imOperation.addImage("-");
+        imOperation.addImage(DEF_IMAGE_ARG);
 
+        String outputExtension = null;
         for (ImageOperationDescription parameter : parameters) {
 
             String operationName = parameter.getName();
@@ -45,14 +48,23 @@ public class DefaultImageOperationsService implements ImageOperationsService {
                 throw new ImageOperationsException("Unknown operation: " + operationName);
             }
 
-            imOperation.addSubOperation(currentOperation.apply(parameter.getParameters()));
-
+            if (currentOperation.isRealOperation())
+                imOperation.addSubOperation(currentOperation.apply(parameter.getParameters()));
+            else {
+                LinkedList<String> rawArgs = currentOperation.apply(parameter.getParameters()).getCmdArgs();
+                if (rawArgs.getFirst().equals(Extension.operationName)) {
+                    outputExtension = parameter.getParameters();
+                }
+            }
         }
-
-        imOperation.addImage("-");
+        imOperation.addImage(getOutputExtension(outputExtension));
 
         ConvertCmd convertCmd = convertCmdFactory.create(image, out);
         convertCmd.run(imOperation);
+    }
+
+    private String getOutputExtension(String extension) {
+        return extension != null ? (extension + ":" + DEF_IMAGE_ARG) : DEF_IMAGE_ARG;
     }
 
     public static class IMOperationFactory {

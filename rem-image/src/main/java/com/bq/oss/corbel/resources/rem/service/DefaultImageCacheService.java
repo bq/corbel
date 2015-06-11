@@ -1,20 +1,18 @@
 package com.bq.oss.corbel.resources.rem.service;
 
-import java.io.*;
-import java.util.Optional;
-
-import javax.ws.rs.core.Response;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
-
 import com.bq.oss.corbel.resources.rem.Rem;
 import com.bq.oss.corbel.resources.rem.request.RequestParameters;
 import com.bq.oss.corbel.resources.rem.request.RequestParametersImplCustomContentLength;
 import com.bq.oss.corbel.resources.rem.request.ResourceId;
 import com.bq.oss.corbel.resources.rem.request.ResourceParameters;
 import com.google.common.base.Joiner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
+
+import javax.ws.rs.core.Response;
+import java.io.*;
+import java.util.Optional;
 
 public class DefaultImageCacheService implements ImageCacheService {
 
@@ -27,7 +25,7 @@ public class DefaultImageCacheService implements ImageCacheService {
 
     @Override
     public InputStream getFromCache(Rem<?> restorRem, ResourceId resourceId, String operationsChain, String collection,
-            RequestParameters<ResourceParameters> parameters) {
+                                    RequestParameters<ResourceParameters> parameters) {
 
         resourceId = generateId(resourceId, collection, operationsChain);
         Response response = restorRem.resource(cacheCollection, resourceId, parameters, Optional.empty());
@@ -40,7 +38,7 @@ public class DefaultImageCacheService implements ImageCacheService {
     @Override
     @Async
     public void saveInCacheAsync(Rem<InputStream> restorPutRem, ResourceId resourceId, String operationsChain, Long newSize,
-            String collection, RequestParameters<ResourceParameters> parameters, File file) {
+                                 String collection, RequestParameters<ResourceParameters> parameters, File file) {
         try (InputStream inputStream = createInputStream(file)) {
             resourceId = generateId(resourceId, collection, operationsChain);
             parameters = new RequestParametersImplCustomContentLength(parameters, newSize);
