@@ -33,6 +33,16 @@ import java.util.List;
 import java.util.Optional;
 
 /**
+ * import javax.ws.rs.WebApplicationException;
+ * import javax.ws.rs.core.*;
+ * import javax.ws.rs.ext.MessageBodyReader;
+ * import javax.ws.rs.ext.Providers;
+ * import java.io.IOException;
+ * import java.io.InputStream;
+ * import java.lang.annotation.Annotation;
+ * import java.net.URI;
+ * import java.util.List;
+ * import java.util.Optional;
  * Created by Alexander De Leon on 26/05/15.
  */
 public class DefaultResourcesService implements ResourcesService {
@@ -52,7 +62,7 @@ public class DefaultResourcesService implements ResourcesService {
     private Providers providers;
 
     public DefaultResourcesService(RemService remService, RemEntityTypeResolver remEntityTypeResolver, int defaultPageSize,
-            int maxPageSize, QueryParametersBuilder queryParametersBuilder, EventBus eventBus) {
+                                   int maxPageSize, QueryParametersBuilder queryParametersBuilder, EventBus eventBus) {
         this.remService = remService;
         this.remEntityTypeResolver = remEntityTypeResolver;
         this.defaultPageSize = defaultPageSize;
@@ -127,12 +137,12 @@ public class DefaultResourcesService implements ResourcesService {
             result = ErrorResponseFactory.getInstance().badRequest(e);
         }
 
-        if(method != HttpMethod.GET && tokenInfo != null && (result.getStatus() == org.eclipse.jetty.http.HttpStatus.NO_CONTENT_204
+        if (method != HttpMethod.GET && tokenInfo != null && (result.getStatus() == org.eclipse.jetty.http.HttpStatus.NO_CONTENT_204
                 || result.getStatus() == org.eclipse.jetty.http.HttpStatus.OK_200)) {
             ResourceEvent event;
-            if(method == HttpMethod.PUT) {
+            if (method == HttpMethod.PUT) {
                 event = ResourceEvent.updateResourceEvent(type, id.getId(), tokenInfo.getDomainId());
-            }else {
+            } else {
                 event = ResourceEvent.deleteResourceEvent(type, id.getId(), tokenInfo.getDomainId());
             }
             eventBus.dispatch(event);
