@@ -3,38 +3,6 @@
  */
 package com.bq.oss.corbel.resources.api;
 
-import static org.fest.assertions.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
-import io.dropwizard.auth.oauth.OAuthFactory;
-import io.dropwizard.testing.junit.ResourceTestRule;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.util.Optional;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.springframework.http.HttpMethod;
-import org.springframework.validation.beanvalidation.CustomValidatorBean;
-
 import com.bq.oss.corbel.event.ResourceEvent;
 import com.bq.oss.corbel.eventbus.service.EventBus;
 import com.bq.oss.corbel.rem.internal.RemEntityTypeResolver;
@@ -49,21 +17,8 @@ import com.bq.oss.corbel.resources.service.DefaultRemService;
 import com.bq.oss.corbel.resources.service.DefaultResourcesService;
 import com.bq.oss.lib.queries.builder.QueryParametersBuilder;
 import com.bq.oss.lib.queries.exception.MalformedJsonQueryException;
-import com.bq.oss.lib.queries.parser.CustomJsonParser;
-import com.bq.oss.lib.queries.parser.CustomSearchParser;
-import com.bq.oss.lib.queries.parser.DefaultPaginationParser;
-import com.bq.oss.lib.queries.parser.JacksonAggregationParser;
-import com.bq.oss.lib.queries.parser.JacksonQueryParser;
-import com.bq.oss.lib.queries.parser.JacksonSortParser;
-import com.bq.oss.lib.queries.parser.PaginationParser;
-import com.bq.oss.lib.queries.parser.QueryParser;
-import com.bq.oss.lib.queries.parser.SearchParser;
-import com.bq.oss.lib.queries.parser.SortParser;
-import com.bq.oss.lib.queries.request.Aggregation;
-import com.bq.oss.lib.queries.request.Count;
-import com.bq.oss.lib.queries.request.Pagination;
-import com.bq.oss.lib.queries.request.ResourceQuery;
-import com.bq.oss.lib.queries.request.Sort;
+import com.bq.oss.lib.queries.parser.*;
+import com.bq.oss.lib.queries.request.*;
 import com.bq.oss.lib.token.TokenInfo;
 import com.bq.oss.lib.token.reader.TokenReader;
 import com.bq.oss.lib.ws.auth.AuthorizationInfo;
@@ -76,6 +31,30 @@ import com.bq.oss.lib.ws.queries.QueryParametersProvider;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonObject;
+import io.dropwizard.auth.oauth.OAuthFactory;
+import io.dropwizard.testing.junit.ResourceTestRule;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.springframework.http.HttpMethod;
+import org.springframework.validation.beanvalidation.CustomValidatorBean;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.util.Optional;
+
+import static org.fest.assertions.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Alexander De Leon
@@ -256,7 +235,6 @@ public class RemResourceTest {
                 remMock.collection(Mockito.eq(TEST_TYPE), parametersCaptor.capture(), Mockito.any(URI.class),
                         optionalJsonObjectCaptor.capture())).thenReturn(testResponse);
         assertThat(
-
         RULE.client().target(COLLECTION_URI).queryParam("api:limit", "-20").queryParam("api:page", "3").request()
                 .header(AUTHORIZATION, "Bearer " + TEST_TOKEN).head().getStatus() == testResponse.getStatus());
         assertThat(parametersCaptor.getValue().getTokenInfo().getUserId()).isSameAs(TEST_USER_ID);
