@@ -1,22 +1,13 @@
 package com.bq.oss.corbel.resources.rem;
 
-import static org.fest.assertions.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-
+import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
+import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
+import com.bq.oss.corbel.resources.rem.request.RequestParameters;
+import com.bq.oss.corbel.resources.rem.request.ResourceId;
+import com.bq.oss.corbel.resources.rem.request.ResourceParameters;
+import com.bq.oss.corbel.resources.rem.service.ImageCacheService;
+import com.bq.oss.corbel.resources.rem.service.ImageOperationsService;
+import com.bq.oss.corbel.resources.rem.service.RemService;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.im4java.core.IM4JavaException;
 import org.junit.Before;
@@ -27,27 +18,41 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 
-import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
-import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
-import com.bq.oss.corbel.resources.rem.request.RequestParameters;
-import com.bq.oss.corbel.resources.rem.request.ResourceId;
-import com.bq.oss.corbel.resources.rem.request.ResourceParameters;
-import com.bq.oss.corbel.resources.rem.service.ImageCacheService;
-import com.bq.oss.corbel.resources.rem.service.ImageOperationsService;
-import com.bq.oss.corbel.resources.rem.service.RemService;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
-@RunWith(MockitoJUnitRunner.class) public class ImageGetRemTest {
+import static org.fest.assertions.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class ImageGetRemTest {
 
     private static final String COLLECTION_TEST = "test:Test";
     private static final ResourceId RESOURCE_ID = new ResourceId("resourceId");
-    @Mock private RemService remService;
-    @Mock private RequestParameters<ResourceParameters> parameters;
-    @Mock private Rem restorRem;
-    @Mock private ImageOperationsService imageOperationsService;
-    @Mock private ImageCacheService imageCacheService;
+    @Mock
+    private RemService remService;
+    @Mock
+    private RequestParameters<ResourceParameters> parameters;
+    @Mock
+    private Rem restorRem;
+    @Mock
+    private ImageOperationsService imageOperationsService;
+    @Mock
+    private ImageCacheService imageCacheService;
 
     private ImageGetRem imageGetRem;
-    @Mock private InputStream entity;
+    @Mock
+    private InputStream entity;
 
     @Before
     public void before() throws IOException {
@@ -62,6 +67,19 @@ import com.bq.oss.corbel.resources.rem.service.RemService;
     }
 
     @Test
+    public void imageFormatTest() throws IOException, ImageOperationsException, InterruptedException, IM4JavaException {
+        when(parameters.getCustomParameterValue(ImageGetRem.FORMAT_PARAMETER)).thenReturn("png");
+        Response response = imageGetRem.resource(COLLECTION_TEST, RESOURCE_ID, parameters, Optional.empty());
+        assertThat(response.getEntity()).isInstanceOf(StreamingOutput.class);
+        assertThat(response.getStatus()).isEqualTo(200);
+        OutputStream outputMock = mock(OutputStream.class);
+        ((StreamingOutput) response.getEntity()).write(outputMock);
+
+        verify(imageOperationsService).applyConversion(anyListOf(ImageOperationDescription.class),
+                eq(entity), any(TeeOutputStream.class), any(Optional.class) );
+    }
+
+    @Test
     public void resourceWidthTest() throws IOException, InterruptedException, IM4JavaException, ImageOperationsException {
         when(parameters.getCustomParameterValue(ImageGetRem.OPERATIONS_PARAMETER)).thenReturn("resizeWidth=250");
         Response response = imageGetRem.resource(COLLECTION_TEST, RESOURCE_ID, parameters, Optional.empty());
@@ -71,7 +89,7 @@ import com.bq.oss.corbel.resources.rem.service.RemService;
         ((StreamingOutput) response.getEntity()).write(outputMock);
 
         verify(imageOperationsService).applyConversion(eq(Collections.singletonList(new ImageOperationDescription("resizeWidth", "250"))),
-                eq(entity), any(TeeOutputStream.class));
+                eq(entity), any(TeeOutputStream.class), any(Optional.class));
         Thread.sleep(200);
         verify(imageCacheService).saveInCacheAsync(any(Rem.class), eq(RESOURCE_ID), eq("resizeWidth=250"), anyLong(), eq(COLLECTION_TEST),
                 eq(parameters), any(File.class));
@@ -88,7 +106,7 @@ import com.bq.oss.corbel.resources.rem.service.RemService;
 
         verify(imageOperationsService).applyConversion(
                 eq(Collections.singletonList(new ImageOperationDescription("resize", "(250, 150)"))), eq(entity),
-                any(TeeOutputStream.class));
+                any(TeeOutputStream.class), any(Optional.class));
         Thread.sleep(200);
         verify(imageCacheService).saveInCacheAsync(any(Rem.class), eq(RESOURCE_ID), eq("resize=(250, 150)"), anyLong(),
                 eq(COLLECTION_TEST), eq(parameters), any(File.class));
@@ -97,7 +115,7 @@ import com.bq.oss.corbel.resources.rem.service.RemService;
     @Test
     public void resourceWithoutParamentersTest() throws IOException, InterruptedException, IM4JavaException, ImageOperationsException {
         when(parameters.getCustomParameterValue(ImageGetRem.OPERATIONS_PARAMETER)).thenReturn("resize=(250, 150)");
-        doThrow(IM4JavaException.class).when(imageOperationsService).applyConversion(any(), any(), any());
+        doThrow(IM4JavaException.class).when(imageOperationsService).applyConversion(any(), any(), any(), any());
         Response response = imageGetRem.resource(COLLECTION_TEST, RESOURCE_ID, parameters, Optional.empty());
         assertThat(response.getStatus()).isEqualTo(200);
 
