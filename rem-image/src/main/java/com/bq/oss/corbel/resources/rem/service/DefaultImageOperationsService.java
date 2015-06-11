@@ -1,28 +1,30 @@
 package com.bq.oss.corbel.resources.rem.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-
+import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
+import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
+import com.bq.oss.corbel.resources.rem.operation.ImageOperation;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
 import org.im4java.process.Pipe;
 
-import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
-import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
-import com.bq.oss.corbel.resources.rem.operation.ImageOperation;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 public class DefaultImageOperationsService implements ImageOperationsService {
 
     private final IMOperationFactory imOperationFactory;
     private final ConvertCmdFactory convertCmdFactory;
     private final Map<String, ImageOperation> operations;
+    private final String DEF_IMAGE_ARG = "-";
+    public static final String[] VALID_FORMATS = new String[]{"jpg", "jpeg", "tif", "tiff", "png", "gif", "bmp", "3fr", "arw", "srf", "sr2", "bay", "crw", "cr2", "cap", "tif", "iiq", "eip", "dcs", "dcr", "drf", "k25", "kdc", "dng", "erf", "fff", "mef", "mos", "mrw", "nef", "nrw", "orf", "ptx", "pef", "pxn", "R3D", "raf", "raw", "rw2", "rwl", "rwz", "x3f"};
 
     public DefaultImageOperationsService(IMOperationFactory imOperationFactory, ConvertCmdFactory convertCmdFactory,
-            Map<String, ImageOperation> operations) {
+                                         Map<String, ImageOperation> operations) {
         this.imOperationFactory = imOperationFactory;
         this.convertCmdFactory = convertCmdFactory;
         this.operations = operations;
@@ -32,10 +34,26 @@ public class DefaultImageOperationsService implements ImageOperationsService {
     public void applyConversion(List<ImageOperationDescription> parameters, InputStream image, OutputStream out)
             throws ImageOperationsException,
             InterruptedException, IOException, IM4JavaException {
+        _applyConversion(parameters, image, out, DEF_IMAGE_ARG);
+    }
 
+    @Override
+    public void applyConversionWitFormat(List<ImageOperationDescription> parameters, InputStream image, OutputStream out, String format) throws ImageOperationsException, InterruptedException, IOException, IM4JavaException {
+        checkImageFormat(format);
+        _applyConversion(parameters, image, out, format);
+    }
+
+    private void _applyConversion(List<ImageOperationDescription> parameters, InputStream image, OutputStream out, String outputExtension) throws ImageOperationsException, InterruptedException, IOException, IM4JavaException {
         IMOperation imOperation = imOperationFactory.create();
-        imOperation.addImage("-");
+        addDefaultImageToIMOperation(imOperation);
+        setOperations(imOperation, parameters);
+        addImageToIMOperation(imOperation, outputExtension);
 
+        ConvertCmd convertCmd = convertCmdFactory.create(image, out);
+        convertCmd.run(imOperation);
+    }
+
+    private void setOperations(IMOperation imOperation, List<ImageOperationDescription> parameters) throws ImageOperationsException {
         for (ImageOperationDescription parameter : parameters) {
 
             String operationName = parameter.getName();
@@ -46,13 +64,15 @@ public class DefaultImageOperationsService implements ImageOperationsService {
             }
 
             imOperation.addSubOperation(currentOperation.apply(parameter.getParameters()));
-
         }
+    }
 
-        imOperation.addImage("-");
+    private void addDefaultImageToIMOperation(IMOperation imOperation) {
+        addImageToIMOperation(imOperation, DEF_IMAGE_ARG);
+    }
 
-        ConvertCmd convertCmd = convertCmdFactory.create(image, out);
-        convertCmd.run(imOperation);
+    private void addImageToIMOperation(IMOperation imOperation, String extension) {
+        imOperation.addImage(extension);
     }
 
     public static class IMOperationFactory {
@@ -68,6 +88,11 @@ public class DefaultImageOperationsService implements ImageOperationsService {
             convertCmd.setOutputConsumer(new Pipe(null, out));
             return convertCmd;
         }
+    }
+
+    public void checkImageFormat(String format) throws ImageOperationsException {
+        if (!Arrays.asList(VALID_FORMATS).contains(format.toLowerCase()))
+            throw new ImageOperationsException("Unknown image format: " + format);
     }
 
 }
