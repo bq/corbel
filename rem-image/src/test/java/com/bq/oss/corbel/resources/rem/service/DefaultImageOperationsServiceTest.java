@@ -1,16 +1,9 @@
 package com.bq.oss.corbel.resources.rem.service;
 
-import static org.fest.assertions.api.Assertions.assertThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
+import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
+import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
+import com.bq.oss.corbel.resources.rem.operation.ImageOperation;
+import com.google.common.collect.ImmutableMap;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
@@ -21,23 +14,33 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
-import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
-import com.bq.oss.corbel.resources.rem.operation.ImageOperation;
-import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-@RunWith(MockitoJUnitRunner.class) public class DefaultImageOperationsServiceTest {
+import static org.fest.assertions.api.Assertions.assertThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
-    @Mock private static ImageOperation imageOperationMock;
-    private  Map<String, ImageOperation> operations;
-    @Mock private DefaultImageOperationsService.IMOperationFactory imOperationFactory;
-    @Mock private DefaultImageOperationsService.ConvertCmdFactory convertCmdFactory;
+@RunWith(MockitoJUnitRunner.class)
+public class DefaultImageOperationsServiceTest {
+
+    @Mock
+    private static ImageOperation ImageOperationMock;
+    private Map<String, ImageOperation> operations;
+    @Mock
+    private DefaultImageOperationsService.IMOperationFactory imOperationFactory;
+    @Mock
+    private DefaultImageOperationsService.ConvertCmdFactory convertCmdFactory;
     private DefaultImageOperationsService defaultImageOperationsService;
 
     @Before
     public void setUp() {
         operations = ImmutableMap.<String, ImageOperation>builder()
-                .put("resizeWidth", imageOperationMock).build();
+                .put("resizeWidth", ImageOperationMock).build();
         defaultImageOperationsService = new DefaultImageOperationsService(imOperationFactory, convertCmdFactory, operations);
     }
 
@@ -53,7 +56,8 @@ import com.google.common.collect.ImmutableMap;
 
         when(imOperationFactory.create()).thenReturn(imOperation);
         when(convertCmdFactory.create(any(), any())).thenReturn(convertCmd);
-        when(imageOperationMock.apply(any())).thenReturn(imOperationMock);
+        when(ImageOperationMock.apply(any())).thenReturn(imOperationMock);
+        when(ImageOperationMock.isRealOperation()).thenReturn(true);
         defaultImageOperationsService.applyConversion(parameters, image, out);
 
         verify(imOperationFactory).create();

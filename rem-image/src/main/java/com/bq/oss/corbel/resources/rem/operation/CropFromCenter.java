@@ -1,13 +1,12 @@
 package com.bq.oss.corbel.resources.rem.operation;
 
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
 import org.im4java.core.IMOperation;
 import org.im4java.core.IMOps;
 
-import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CropFromCenter implements ImageOperation {
 
@@ -38,7 +37,6 @@ public class CropFromCenter implements ImageOperation {
         IMOperation subOperation = new IMOperation();
         subOperation.gravity("center");
         subOperation.crop(xratio, yratio, -xratio / 2, -yratio / 2);
-
         return subOperation;
 
     }
@@ -48,4 +46,8 @@ public class CropFromCenter implements ImageOperation {
         return "cropFromCenter";
     }
 
+    @Override
+    public boolean isRealOperation() {
+        return true;
+    }
 }

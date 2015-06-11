@@ -1,16 +1,17 @@
 package com.bq.oss.corbel.resources.rem.operation;
 
+import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
+import org.im4java.core.IMOps;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 
-import org.im4java.core.IMOps;
-
-import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
-
 public interface ImageOperation {
 
     IMOps apply(String parameter) throws ImageOperationsException;
+
+    boolean isRealOperation();
 
     String getOperationName();
 
@@ -24,5 +25,4 @@ public interface ImageOperation {
 
         return valuesToReturn;
     }
-
 }
