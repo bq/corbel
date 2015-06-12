@@ -11,6 +11,7 @@ import javax.ws.rs.core.Response;
 import com.bq.oss.corbel.resources.rem.dao.JsonRelation;
 import com.bq.oss.corbel.resources.rem.dao.NotFoundException;
 import com.bq.oss.corbel.resources.rem.dao.RelationMoveOperation;
+import com.bq.oss.corbel.resources.rem.model.ResourceUri;
 import com.bq.oss.corbel.resources.rem.request.*;
 import com.bq.oss.corbel.resources.rem.resmi.exception.StartsWithUnderscoreException;
 import com.bq.oss.corbel.resources.rem.service.ResmiService;
@@ -77,7 +78,8 @@ public class ResmiPutRem extends AbstractResmiRem {
                         resmiService.moveElement(type, id, relation, uri, RelationMoveOperation.create(operation));
                         return noContent();
                     } else {
-                        resmiService.createRelation(type, id.getId(), relation, uri, requestEntity);
+                        ResourceUri resourceUri = new ResourceUri(type, id.getId(), relation, uri);
+                        resmiService.createRelation(resourceUri, requestEntity);
                         return created();
                     }
                 }

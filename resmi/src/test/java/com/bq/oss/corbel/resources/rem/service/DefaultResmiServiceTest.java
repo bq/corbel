@@ -116,11 +116,13 @@ import com.google.gson.JsonPrimitive;
     public void findRelationTest() throws BadConfigurationException {
         ResourceId resourceId = new ResourceId(ID);
         JsonElement fakeResult = new JsonObject();
-        when(
-                resmiDao.findRelation(eq(TYPE), eq(resourceId), eq(RELATION_TYPE), eq(Optional.of(resourceQueriesMock)),
-                        eq(paginationMock), eq(Optional.of(sortMock)), eq(Optional.of("test")))).thenReturn(fakeResult);
+        ResourceUri resourceUri = new ResourceUri(TYPE, ID, RELATION_TYPE, "test");
+
+        when(resmiDao.findRelation(eq(resourceUri), eq(Optional.of(resourceQueriesMock)),
+                        eq(paginationMock), eq(Optional.of(sortMock)))).thenReturn(fakeResult);
         when(collectionParametersMock.getSearch()).thenReturn(Optional.empty());
         when(relationParametersMock.getPredicateResource()).thenReturn(Optional.of("test"));
+
         JsonElement result = defaultResmiService.findRelation(TYPE, resourceId, RELATION_TYPE, relationParametersMock);
         assertThat(fakeResult).isEqualTo(result);
     }
@@ -209,10 +211,11 @@ import com.google.gson.JsonPrimitive;
     public void createRelationTest() throws NotFoundException, StartsWithUnderscoreException {
         String resourceId = "test";
         JsonObject jsonObject = new JsonObject();
-        defaultResmiService.createRelation(TYPE, resourceId, RELATION_TYPE, RELATION_URI, jsonObject);
+        ResourceUri resourceUri = new ResourceUri(TYPE, resourceId, RELATION_TYPE, RELATION_URI);
+        defaultResmiService.createRelation(resourceUri, jsonObject);
         assertThat(jsonObject.get(_CREATED_AT)).isNotNull();
         assertThat(jsonObject.get(_UPDATED_AT)).isNotNull();
-        verify(resmiDao).createRelation(TYPE, resourceId, RELATION_TYPE, RELATION_URI, jsonObject);
+        verify(resmiDao).createRelation(resourceUri, jsonObject);
     }
 
     @Test
@@ -221,10 +224,11 @@ import com.google.gson.JsonPrimitive;
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty(_CREATED_AT, DATE);
         jsonObject.addProperty(_UPDATED_AT, DATE);
-        defaultResmiService.createRelation(TYPE, resourceId, RELATION_TYPE, RELATION_URI, jsonObject);
+        ResourceUri resourceUri = new ResourceUri(TYPE, resourceId, RELATION_TYPE, RELATION_URI);
+        defaultResmiService.createRelation(resourceUri, jsonObject);
         assertThat(extractMillis(jsonObject.get(_CREATED_AT).getAsString())).isEqualTo(DATE);
         assertThat(extractMillis(jsonObject.get(_UPDATED_AT).getAsString())).isNotEqualTo(DATE);
-        verify(resmiDao).createRelation(TYPE, resourceId, RELATION_TYPE, RELATION_URI, jsonObject);
+        verify(resmiDao).createRelation(resourceUri, jsonObject);
     }
 
     private long extractMillis(String date) throws ParseException {
@@ -237,7 +241,8 @@ import com.google.gson.JsonPrimitive;
         String resourceId = "test";
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("_test", new JsonPrimitive("123"));
-        defaultResmiService.createRelation(TYPE, resourceId, RELATION_TYPE, RELATION_URI, jsonObject);
+        ResourceUri resourceUri = new ResourceUri(TYPE, resourceId, RELATION_TYPE, RELATION_URI);
+        defaultResmiService.createRelation(resourceUri, jsonObject);
     }
 
     @Test
@@ -251,25 +256,28 @@ import com.google.gson.JsonPrimitive;
 
     @Test
     public void deleteResourceByIdTest() throws NotFoundException {
-        defaultResmiService.deleteResourceById(TYPE, ID);
-        verify(resmiDao).deleteById(TYPE, ID);
+        ResourceUri uri = new ResourceUri(TYPE, ID);
+        defaultResmiService.deleteResource(uri);
+        verify(resmiDao).deleteResource(uri);
         verify(resmiSearch, times(0)).deleteDocument(any());
     }
 
     @Test
     public void deleteIndexedResourceByIdTest() throws NotFoundException {
+        ResourceUri uri = new ResourceUri(TYPE, ID);
         when(searchableFieldRegistry.getFieldsFromType(eq(TYPE))).thenReturn(new HashSet(Arrays.asList("t1", "t2")));
-        defaultResmiService.deleteResourceById(TYPE, ID);
-        verify(resmiDao).deleteById(TYPE, ID);
-        verify(resmiSearch).deleteDocument(eq(new ResourceUri(TYPE, ID)));
+        defaultResmiService.deleteResource(uri);
+        verify(resmiDao).deleteResource(uri);
+        verify(resmiSearch).deleteDocument(uri);
     }
 
     @Test
     public void deleteRelationTest() throws NotFoundException {
+        ResourceUri uri = new ResourceUri(TYPE, ID,RELATION_TYPE, "dst");
         ResourceId resourceId = new ResourceId(ID);
         Optional<String> dstId = Optional.of("dst");
-        defaultResmiService.deleteRelation(TYPE, resourceId, RELATION_TYPE, dstId);
-        verify(resmiDao).deleteRelation(TYPE, resourceId, RELATION_TYPE, dstId);
+        defaultResmiService.deleteRelation(uri);
+        verify(resmiDao).deleteRelation(uri);
     }
 
     @Test
@@ -288,15 +296,17 @@ import com.google.gson.JsonPrimitive;
     @Test
     public void ensureCollectionIndexTest() throws NotFoundException {
         Index index = mock(Index.class);
-        defaultResmiService.ensureCollectionIndex(TYPE, index);
-        verify(resmiDao).ensureCollectionIndex(TYPE, index);
+        ResourceUri resourceUri = new ResourceUri(TYPE);
+        defaultResmiService.ensureIndex(resourceUri, index);
+        verify(resmiDao).ensureIndex(resourceUri, index);
     }
 
     @Test
     public void ensureRelationIndexTest() throws NotFoundException {
         Index index = mock(Index.class);
-        defaultResmiService.ensureRelationIndex(TYPE, RELATION_TYPE, index);
-        verify(resmiDao).ensureRelationIndex(TYPE, RELATION_TYPE, index);
+        ResourceUri resourceUri = new ResourceUri(TYPE).setRelation(RELATION_TYPE);
+        defaultResmiService.ensureIndex(resourceUri, index);
+        verify(resmiDao).ensureIndex(resourceUri, index);
     }
 
     @Test

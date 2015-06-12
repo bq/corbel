@@ -1,5 +1,6 @@
 package com.bq.oss.corbel.resources.cli.dsl
 
+import com.bq.oss.corbel.resources.rem.model.ResourceUri
 import com.bq.oss.corbel.resources.rem.model.SearchableFields
 import com.bq.oss.corbel.resources.rem.service.ResmiService
 import com.bq.oss.lib.cli.console.Description
@@ -20,12 +21,12 @@ class ResmiShell {
 
     @Description("Creates a mongo index on the specified collection. See <> for documentation on index syntax")
     def ensureIndex(String collection, Index index) {
-        resmiService.ensureCollectionIndex(collection, index)
+        resmiService.ensureIndex(new ResourceUri(collection), index)
     }
 
     @Description("Creates a mongo index on the specified relation. See <> for documentation on index syntax")
     def ensureIndex(String collection, String relation, Index index) {
-        resmiService.ensureRelationIndex(collection, relation, index)
+        resmiService.ensureIndex(new ResourceUri(collection).setRelation(relation), index)
     }
 
     @Description("Upsert a resource in RESMI.")

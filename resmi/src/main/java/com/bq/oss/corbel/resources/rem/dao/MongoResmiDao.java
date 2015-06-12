@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.bq.oss.corbel.resources.rem.model.GenericDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort.Direction;
@@ -17,7 +18,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
 import com.bq.oss.corbel.resources.rem.model.ResourceUri;
-import com.bq.oss.corbel.resources.rem.request.ResourceId;
 import com.bq.oss.corbel.resources.rem.utils.JsonUtils;
 import com.bq.oss.lib.mongo.JsonObjectMongoWriteConverter;
 import com.bq.oss.lib.mongo.utils.GsonUtil;
@@ -73,20 +73,19 @@ public class MongoResmiDao implements ResmiDao {
     }
 
     @Override
-    public JsonElement findRelation(String type, ResourceId id, String relationType, Optional<List<ResourceQuery>> resourceQueries,
-            Pagination pagination, Optional<Sort> sort, Optional<String> dstId) {
-        if (dstId.isPresent()) {
-            Query query = new MongoResmiQueryBuilder().relationDestinationId(dstId.get()).build();
+    public JsonElement findRelation(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries,
+            Pagination pagination, Optional<Sort> sort) {
+
+        if (uri.getRelationId()!=null) {
+            Query query = new MongoResmiQueryBuilder().relationDestinationId(uri.getRelationId()).build();
             query.fields().exclude(_ID).exclude(JsonRelation._SRC_ID);
-            return renameIds(findRelation(namespaceNormalizer.normalize(type), id.getId(), namespaceNormalizer.normalize(relationType),
-                    dstId.get()));
+            return renameIds(findRelation(uri));
         } else {
-            Query query = new MongoResmiQueryBuilder().relationSubjectId(id).query(resourceQueries.orElse(null)).pagination(pagination)
+            Query query = new MongoResmiQueryBuilder().relationSubjectId(uri).query(resourceQueries.orElse(null)).pagination(pagination)
                     .sort(sort.orElse(null)).build();
             query.fields().exclude(_ID).exclude(JsonRelation._SRC_ID);
             LOG.debug("Query executed : " + query.getQueryObject().toString());
-            return renameIds(find(generateRelationName(namespaceNormalizer.normalize(type), namespaceNormalizer.normalize(relationType)),
-                    query));
+            return renameIds(find(getMongoCollectionName(uri), query));
         }
     }
 
@@ -97,6 +96,28 @@ public class MongoResmiDao implements ResmiDao {
 
     public JsonArray find(String type, Query query) {
         return JsonUtils.convertToArray(mongoOperations.find(query, JsonObject.class, namespaceNormalizer.normalize(type)));
+    }
+
+
+
+    @Override
+    public boolean findAndModify(String type, String id, JsonObject entity, List<ResourceQuery> resourceQueries) {
+        String collection = namespaceNormalizer.normalize(type);
+        JsonElement created = entity.remove(CREATED_AT);
+
+        Update update = updateFromJsonObject(entity, Optional.of(id), Optional.ofNullable(created));
+
+        Query query = new MongoResmiQueryBuilder().id(id).query(resourceQueries).build();
+
+        JsonObject saved = mongoOperations.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), JsonObject.class,
+                collection);
+
+        if (saved != null) {
+            entity.addProperty(ID, id);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -146,25 +167,7 @@ public class MongoResmiDao implements ResmiDao {
         upsert(namespaceNormalizer.normalize(type), Optional.of(id), entity);
     }
 
-    @Override
-    public boolean findAndModify(String type, String id, JsonObject entity, List<ResourceQuery> resourceQueries) {
-        String collection = namespaceNormalizer.normalize(type);
-        JsonElement created = entity.remove(CREATED_AT);
 
-        Update update = updateFromJsonObject(entity, Optional.of(id), Optional.ofNullable(created));
-
-        Query query = new MongoResmiQueryBuilder().id(id).query(resourceQueries).build();
-
-        JsonObject saved = mongoOperations.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), JsonObject.class,
-                collection);
-
-        if (saved != null) {
-            entity.addProperty(ID, id);
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     private void upsert(String collection, Optional<String> id, JsonObject entity) {
         JsonElement created = entity.remove(CREATED_AT);
@@ -207,25 +210,23 @@ public class MongoResmiDao implements ResmiDao {
     }
 
     @Override
-    public void createRelation(String type, String srcId, String relation, String uri, JsonObject entity) throws NotFoundException {
-
-        if (!exists(type, srcId)) {
+    public void createRelation(ResourceUri uri, JsonObject entity) throws NotFoundException {
+        if (!exists(uri.getType(), uri.getTypeId())) {
             throw new NotFoundException("The resource does not exist");
         }
 
-        JsonObject storedRelation = findRelation(type, srcId, relation, uri);
+        JsonObject storedRelation = findRelation(uri);
         String id = null;
 
-        JsonObject relationJson = JsonRelation.create(srcId, uri, entity);
+        JsonObject relationJson = JsonRelation.create(uri.getTypeId(), uri.getRelationId(), entity);
         if (storedRelation != null) {
             id = storedRelation.get(ID).getAsString();
             relationJson = updateRelation(storedRelation, relationJson);
         } else {
-            resmiOrder.addNextOrderInRelation(type, srcId, relation, relationJson);
+            resmiOrder.addNextOrderInRelation(uri.getType(), uri.getTypeId(), uri.getRelation(), relationJson);
         }
 
-        upsert(generateRelationName(namespaceNormalizer.normalize(type), namespaceNormalizer.normalize(relation)), Optional.ofNullable(id),
-                relationJson);
+        upsert(getMongoCollectionName(uri), Optional.ofNullable(id), relationJson);
     }
 
     @Override
@@ -234,14 +235,8 @@ public class MongoResmiDao implements ResmiDao {
     }
 
     @Override
-    public void ensureCollectionIndex(String type, Index index) {
-        mongoOperations.indexOps(namespaceNormalizer.normalize(type)).ensureIndex(index);
-    }
-
-    @Override
-    public void ensureRelationIndex(String type, String relation, Index index) {
-        mongoOperations.indexOps(generateRelationName(namespaceNormalizer.normalize(type), namespaceNormalizer.normalize(relation)))
-                .ensureIndex(index);
+    public void ensureIndex(ResourceUri uri, Index index) {
+        mongoOperations.indexOps(getMongoCollectionName(uri)).ensureIndex(index);
     }
 
     private JsonObject updateRelation(JsonObject storedRelation, JsonObject relationJson) {
@@ -250,15 +245,11 @@ public class MongoResmiDao implements ResmiDao {
         return relationJson;
     }
 
-    private JsonObject findRelation(String type, String id, String relation, String uri) {
-        String collection = generateRelationName(namespaceNormalizer.normalize(type), namespaceNormalizer.normalize(relation));
-        Criteria criteria = Criteria.where(JsonRelation._SRC_ID).is(id).and(JsonRelation._DST_ID).is(uri);
-        return mongoOperations.findOne(new Query(criteria), JsonObject.class, collection);
+    private JsonObject findRelation(ResourceUri uri) {
+        Criteria criteria = Criteria.where(JsonRelation._SRC_ID).is(uri.getTypeId()).and(JsonRelation._DST_ID).is(uri.getRelationId());
+        return mongoOperations.findOne(new Query(criteria), JsonObject.class, getMongoCollectionName(uri));
     }
 
-    private String generateRelationName(String collection, String relation) {
-        return collection + RELATION_CONCATENATOR + relation;
-    }
 
     /*
      * TODO: This should be refactor out of here (alex 31.01.14)
@@ -280,23 +271,38 @@ public class MongoResmiDao implements ResmiDao {
     }
 
     @Override
-    public void deleteById(String type, String id) {
-        mongoOperations.remove(new Query(Criteria.where(_ID).is(id)), namespaceNormalizer.normalize(type));
+    public JsonObject deleteResource(ResourceUri uri) {
+        Criteria criteria = Criteria.where(_ID).is(uri.getTypeId());
+        return findAndRemove(uri, criteria);
     }
 
     @Override
-    public void deleteRelation(String type, ResourceId id, String relation, Optional<String> dstId) {
-        String collection = namespaceNormalizer.normalize(type) + "." + namespaceNormalizer.normalize(relation);
-        Criteria criteria = new Criteria();
-        if (!id.isWildcard()) {
-            criteria = criteria.and(JsonRelation._SRC_ID).is(id.getId());
-        }
-        if (dstId.isPresent()) {
-            criteria = criteria.and(JsonRelation._DST_ID).is(dstId.get());
-        }
-        Query query = new Query(criteria);
-        mongoOperations.remove(query, collection);
+    public List<GenericDocument> deleteCollection(ResourceUri uri, Optional<List<ResourceQuery>> queries) {
+        Criteria criteria = new MongoResmiQueryBuilder().getCriteriaFromResourceQueries(queries.get());
+        return  findAllAndRemove(uri, criteria);
     }
+
+    @Override
+    public List<GenericDocument> deleteRelation(ResourceUri uri) {
+        Criteria criteria = new Criteria();
+        if (!uri.isTypeWildcard()) {
+            criteria = criteria.and(JsonRelation._SRC_ID).is(uri.getTypeId());
+        }
+        if (uri.getRelationId()!=null) {
+            criteria = criteria.and(JsonRelation._DST_ID).is(uri.getRelationId());
+        }
+
+        return findAllAndRemove(uri, criteria);
+    }
+
+    private List<GenericDocument> findAllAndRemove(ResourceUri resourceUri, Criteria criteria) {
+        return mongoOperations.findAllAndRemove(new Query(criteria), GenericDocument.class, getMongoCollectionName(resourceUri));
+    }
+
+    private JsonObject findAndRemove(ResourceUri resourceUri, Criteria criteria) {
+        return mongoOperations.findAndRemove(new Query(criteria), JsonObject.class, getMongoCollectionName(resourceUri));
+    }
+
 
     @Override
     public void moveElement(String type, String id, String relation, String uri, RelationMoveOperation relationMoveOperation) {

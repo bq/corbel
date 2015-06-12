@@ -1,5 +1,6 @@
 package com.bq.oss.corbel.resources.rem.service;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -43,14 +44,16 @@ public interface ResmiService {
     JsonObject conditionalUpdate(String type, String id, JsonObject object, List<ResourceQuery> resourceQueries)
             throws StartsWithUnderscoreException;
 
-    JsonObject createRelation(String type, String id, String relation, String uri, JsonObject requestEntity) throws NotFoundException,
+    JsonObject createRelation(ResourceUri uri, JsonObject requestEntity) throws NotFoundException,
             StartsWithUnderscoreException;
 
     void moveElement(String type, ResourceId id, String relation, String uri, RelationMoveOperation relationMoveOperation);
 
-    void deleteResourceById(String type, String id);
+    void deleteCollection(ResourceUri uri, Optional<List<ResourceQuery>> queries);
 
-    void deleteRelation(String type, ResourceId id, String relation, Optional<String> dstId);
+    void deleteResource(ResourceUri uri);
+
+    void deleteRelation(ResourceUri uri);
 
     List<SearchableFields> getSearchableFields();
 
@@ -58,9 +61,8 @@ public interface ResmiService {
 
     void ensureExpireIndex(String type);
 
-    void ensureCollectionIndex(String type, Index index);
-
-    void ensureRelationIndex(String type, String relation, Index index);
+    void ensureIndex(ResourceUri uri, Index index);
 
     void removeObjectId(JsonObject object);
+
 }

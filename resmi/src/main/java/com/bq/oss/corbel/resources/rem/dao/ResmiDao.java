@@ -3,6 +3,7 @@ package com.bq.oss.corbel.resources.rem.dao;
 import java.util.List;
 import java.util.Optional;
 
+import com.bq.oss.corbel.resources.rem.model.GenericDocument;
 import org.springframework.data.mongodb.core.index.Index;
 
 import com.bq.oss.corbel.resources.rem.model.ResourceUri;
@@ -23,8 +24,8 @@ public interface ResmiDao {
 
     JsonArray find(String type, Optional<List<ResourceQuery>> resourceQueries, Pagination pagination, Optional<Sort> sort);
 
-    JsonElement findRelation(String type, ResourceId id, String relation, Optional<List<ResourceQuery>> resourceQueries,
-            Pagination pagination, Optional<Sort> sort, Optional<String> dstId);
+    JsonElement findRelation(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries,
+            Pagination pagination, Optional<Sort> sort);
 
     void upsert(String type, String id, JsonObject entity);
 
@@ -32,11 +33,13 @@ public interface ResmiDao {
 
     void save(String type, Object entity);
 
-    void createRelation(String type, String id, String relation, String uri, JsonObject jsonObject) throws NotFoundException;
+    void createRelation(ResourceUri uri, JsonObject jsonObject) throws NotFoundException;
 
-    void deleteById(String type, String id);
+    JsonObject deleteResource(ResourceUri uri);
 
-    void deleteRelation(String type, ResourceId id, String relation, Optional<String> dstId);
+    List<GenericDocument> deleteCollection(ResourceUri uri, Optional<List<ResourceQuery>> queries);
+
+    List<GenericDocument> deleteRelation(ResourceUri uri);
 
     CountResult count(ResourceUri resourceUri, List<ResourceQuery> resourceQueries);
 
@@ -50,8 +53,6 @@ public interface ResmiDao {
 
     void ensureExpireIndex(String type);
 
-    void ensureCollectionIndex(String type, Index index);
-
-    void ensureRelationIndex(String type, String relation, Index index);
+    void ensureIndex(ResourceUri uri, Index index);
 
 }

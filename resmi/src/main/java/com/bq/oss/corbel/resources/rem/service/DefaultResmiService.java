@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 
+import com.bq.oss.corbel.resources.rem.model.GenericDocument;
 import org.springframework.data.mongodb.core.index.Index;
 
 import com.bq.oss.corbel.resources.rem.dao.NotFoundException;
@@ -105,11 +106,12 @@ public class DefaultResmiService implements ResmiService {
     @Override
     public JsonElement findRelation(String type, ResourceId id, String relation, RelationParameters apiParameters)
             throws BadConfigurationException {
+        ResourceUri resourceUri = new ResourceUri(type, id.getId(), relation);
         if (apiParameters.getSearch().isPresent()) {
-            return findInSearchService(new ResourceUri(type, id.getId(), relation), apiParameters);
+            return findInSearchService(resourceUri, apiParameters);
         } else {
-            return resmiDao.findRelation(type, id, relation, apiParameters.getQueries(), apiParameters.getPagination(),
-                    apiParameters.getSort(), apiParameters.getPredicateResource());
+            resourceUri.setRelationId(apiParameters.getPredicateResource().orElse(null));
+            return resmiDao.findRelation(resourceUri, apiParameters.getQueries(), apiParameters.getPagination(), apiParameters.getSort());
         }
     }
 
@@ -159,12 +161,11 @@ public class DefaultResmiService implements ResmiService {
     }
 
     @Override
-    public JsonObject createRelation(String type, String id, String relation, String uri, JsonObject requestEntity)
-            throws NotFoundException, StartsWithUnderscoreException {
+    public JsonObject createRelation(ResourceUri uri, JsonObject requestEntity) throws NotFoundException, StartsWithUnderscoreException {
         verifyNotUnderscore(requestEntity);
         addDates(requestEntity);
-        resmiDao.createRelation(type, id, relation, uri, requestEntity);
-        indexInSearchService(new ResourceUri(type, id, relation, uri), requestEntity);
+        resmiDao.createRelation(uri, requestEntity);
+        indexInSearchService(uri, requestEntity);
         return requestEntity;
     }
 
@@ -177,20 +178,35 @@ public class DefaultResmiService implements ResmiService {
     }
 
     @Override
-    public void deleteResourceById(String type, String id) {
-        resmiDao.deleteById(type, id);
-        deleteInSearchService(type, id);
+    public void deleteResource(ResourceUri uri) {
+        resmiDao.deleteResource(uri);
+        deleteInSearchService(uri);
     }
 
-    private void deleteInSearchService(String type, String id) {
-        if (!searchableFieldsRegistry.getFieldsFromType(type).isEmpty()) {
-            search.deleteDocument(new ResourceUri(type, id));
+    private void deleteInSearchService(ResourceUri uri) {
+        if (!searchableFieldsRegistry.getFieldsFromType(uri.getType()).isEmpty()) {
+            search.deleteDocument(uri);
         }
     }
 
     @Override
-    public void deleteRelation(String type, ResourceId id, String relation, Optional<String> dstId) {
-        resmiDao.deleteRelation(type, id, relation, dstId);
+    public void deleteCollection(ResourceUri uri, Optional<List<ResourceQuery>> queries) {
+        List<GenericDocument> deleteEntries = resmiDao.deleteCollection(uri, queries);
+        deleteInSearchService(uri, deleteEntries);
+    }
+
+    @Override
+    public void deleteRelation(ResourceUri uri) {
+        List<GenericDocument> deleteEntries = resmiDao.deleteRelation(uri);
+        deleteInSearchService(uri, deleteEntries);
+    }
+
+    private void deleteInSearchService(ResourceUri uri, List<GenericDocument> deleteEntries) {
+        if (!searchableFieldsRegistry.getFieldsFromType(uri.getType()).isEmpty()) {
+            for (GenericDocument deleteEntry : deleteEntries) {
+                search.deleteDocument(uri.setRelationId(deleteEntry.getId()));
+            }
+        }
     }
 
     @Override
@@ -199,13 +215,8 @@ public class DefaultResmiService implements ResmiService {
     }
 
     @Override
-    public void ensureCollectionIndex(String type, Index index) {
-        resmiDao.ensureCollectionIndex(type, index);
-    }
-
-    @Override
-    public void ensureRelationIndex(String type, String relation, Index index) {
-        resmiDao.ensureRelationIndex(type, relation, index);
+    public void ensureIndex(ResourceUri uri, Index index) {
+        resmiDao.ensureIndex(uri, index);
     }
 
     @Override
