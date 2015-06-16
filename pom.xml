@@ -49,6 +49,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <modules>
+        <module>eworker-api</module>
+        <module>evci</module>
         <module>event-bus</module>
         <module>events</module>
         <module>iam</module>

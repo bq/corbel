@@ -1,0 +1,235 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.bq.oss.corbel</groupId>
+        <artifactId>corbel</artifactId>
+        <version>1.20.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>evci</artifactId>
+    <name>evci</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.bq.oss.lib</groupId>
+            <artifactId>token</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.bq.oss.lib</groupId>
+            <artifactId>ws</artifactId>
+        </dependency>
+		<dependency>
+			<groupId>com.bq.oss.corbel</groupId>
+			<artifactId>eworker-api</artifactId>
+			<version>1.20.0-SNAPSHOT</version>
+		</dependency>
+        <dependency>
+            <groupId>com.bq.oss.lib</groupId>
+            <artifactId>cli</artifactId>
+        </dependency>
+		<dependency>
+			<groupId>io.dropwizard</groupId>
+			<artifactId>dropwizard-auth</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.dropwizard</groupId>
+			<artifactId>dropwizard-testing</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.bq.oss.lib</groupId>
+			<artifactId>rabbitmq</artifactId>
+		</dependency>
+		<dependency>
+            <groupId>com.bq.oss.corbel</groupId>
+			<artifactId>events</artifactId>
+		</dependency>
+	</dependencies>
+
+    <build>
+        <plugins>
+            <!-- Assembler plugin -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>appassembler-maven-plugin</artifactId>
+                <version>${appassembler.plugin.version}</version>
+                <configuration>
+                    <!-- Set the target configuration directory to be used in the bin scripts -->
+                    <configurationDirectory>etc</configurationDirectory>
+
+                    <!-- Set the name of the source directory for configuration files -->
+                    <configurationSourceDirectory>src/main/resources/</configurationSourceDirectory>
+
+                    <!-- Copy the contents from "/src/main/resources" to the target configuration
+                        directory in the assembled application -->
+                    <copyConfigurationDirectory>true</copyConfigurationDirectory>
+
+                    <!-- Include the target configuration directory in the beginning of
+                        the classpath declaration in the bin scripts -->
+                    <includeConfigurationDirectoryInClasspath>true</includeConfigurationDirectoryInClasspath>
+
+                    <!-- folder name and structure of the lib contents -->
+                    <repositoryName>lib</repositoryName>
+                    <repositoryLayout>default</repositoryLayout>
+                    <!-- with this all jars droped on the plugins directory get automatically
+                        loaded on the classpath -->
+                    <endorsedDir>plugins</endorsedDir>
+
+                    <assembleDirectory>${project.build.directory}/generated-resources/appassembler/jsw/evci
+                    </assembleDirectory>
+
+                    <programs>
+                        <program>
+                            <mainClass>com.bqreaders.silkroad.evci.EvciConsoleRunner</mainClass>
+                            <id>evci-cli</id>
+                            <jvmSettings>
+                                <extraArguments>
+                                    <extraArgument>-Dfile.encoding=UTF-8</extraArgument>
+                                </extraArguments>
+                            </jvmSettings>
+                        </program>
+                    </programs>
+
+
+                    <daemons>
+                        <!-- Damon to lauch service -->
+                        <daemon>
+                            <mainClass>com.bqreaders.silkroad.evci.EvciRunner</mainClass>
+                            <commandLineArguments>
+                                <commandLineArgument>server</commandLineArgument>
+                            </commandLineArguments>
+                            <id>evci</id>
+                            <platforms>
+                                <platform>jsw</platform>
+                            </platforms>
+                            <generatorConfigurations>
+                                <generatorConfiguration>
+                                    <generator>jsw</generator>
+                                    <!-- target plataformas -->
+                                    <includes>
+                                        <include>macosx-universal-64</include>
+                                        <include>linux-x86-64</include>
+                                    </includes>
+                                    <configuration>
+                                        <property>
+                                            <name>wrapper.startup.timeout</name>
+                                            <value>600</value>
+                                        </property>
+                                        <property>
+                                            <name>wrapper.java.additional.1</name>
+                                            <value>-Dfile.encoding=UTF-8</value>
+                                        </property>
+                                        <property>
+                                            <name>wrapper.logfile</name>
+                                            <value>logs/wrapper.log</value>
+                                        </property>
+                                        <property>
+                                            <name>wrapper.syslog.loglevel</name>
+                                            <value>INFO</value>
+                                        </property>
+                                        <!-- Chkconfig Daemon Configuration -->
+                                        <property>
+                                            <name>chkconfig.start</name>
+                                            <value>99</value>
+                                        </property>
+                                        <property>
+                                            <name>chkconfig.stop</name>
+                                            <value>05</value>
+                                        </property>
+                                        <!-- This is needed otherwise it tries to create the PID in a directory
+                                            which does not exists -->
+                                        <property>
+                                            <name>wrapper.pidfile</name>
+                                            <value>/var/run</value>
+                                        </property>
+                                    </configuration>
+                                </generatorConfiguration>
+                            </generatorConfigurations>
+                        </daemon>
+                    </daemons>
+                </configuration>
+
+                <!-- attach to package phase -->
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>generate-daemons</goal>
+                            <goal>assemble</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Make binaries executables and create the plugins directory -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.6</version>
+                <executions>
+                    <execution>
+                        <id>patch.executable</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <exec executable="chmod" dir="${project.build.directory}/generated-resources/appassembler/jsw/evci">
+                                    <arg value="-R" />
+                                    <arg value="a+x" />
+                                    <arg value="bin" />
+                                </exec>
+                            </target>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>create.plugins</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <exec executable="mkdir" dir="${project.build.directory}/generated-resources/appassembler/jsw/evci">
+                                    <arg value="plugins" />
+                                </exec>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Assemble a tar.gz file for distribution -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2.1</version>
+
+                <executions>
+                    <execution>
+                        <id>make-full-assembly</id>
+                        <!-- this is used for inheritance merges -->
+                        <phase>package</phase>
+                        <!-- append to the packaging phase. -->
+                        <goals>
+                            <goal>single</goal>
+                            <!-- goals == mojos -->
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/assembly/assembly.xml</descriptor>
+                            </descriptors>
+                            <finalName>evci-${project.version}</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
