@@ -3,6 +3,7 @@ package com.bq.oss.corbel.iam.service;
 import java.security.SignatureException;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import net.oauth.jsontoken.JsonToken;
 import net.oauth.jsontoken.JsonTokenParser;
@@ -197,10 +198,17 @@ public class DefaultAuthorizationService implements AuthorizationService {
         String issuerClientId = context.getIssuerClientId();
         Set<String> requestedScopes = context.getRequestedScopes();
         if (requestedScopes.isEmpty()) {
-            requestedScopes = scopeService.getAllowedScopes(context);
+            Set<Scope> domainScopes = scopeService.expandScopes(context.getRequestedDomain().getScopes());
+            Set<Scope> clientScopes = !context.isCrossDomain() ? scopeService.expandScopes(context.getIssuerClient().getScopes()) : null;
+            Set<Scope> userScopes = !context.isCrossDomain() && context.hasPrincipal() ? scopeService.expandScopes(context.getPrincipal()
+                    .getScopes()) : null;
+
+            requestedScopes = scopeService.getAllowedScopes(domainScopes, clientScopes, userScopes, context.isCrossDomain(),
+                    context.hasPrincipal());
         }
-        scopeService.publishAuthorizationRules(tokenGrant.getAccessToken(), tokenGrant.getExpiresAt(), requestedScopes, principalId,
-                issuerClientId);
+
+        Set<Scope> filledScopes = scopeService.fillScopes(scopeService.expandScopes(requestedScopes), principalId, issuerClientId);
+        scopeService.publishAuthorizationRules(tokenGrant.getAccessToken(), tokenGrant.getExpiresAt(), filledScopes);
     }
 
     private AuthorizationRequestContext getContext(String assertion) throws SignatureException {
