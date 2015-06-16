@@ -3,6 +3,7 @@ package com.bq.oss.corbel.iam.ioc;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
+import com.bq.oss.corbel.iam.repository.ScopeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -30,7 +31,8 @@ import com.google.gson.Gson;
  */
 @Configuration @Import({MongoHealthCheckIoc.class}) @EnableMongoRepositories(value = {"com.bq.oss.corbel.iam.repository",
         "com.bq.oss.lib.token.repository"}, repositoryFactoryBeanClass = QueriesRepositoryFactoryBean.class) @EnableCaching public class IamMongoIoc
-        extends DefaultMongoConfiguration {
+        extends
+            DefaultMongoConfiguration {
 
     @Autowired private Environment env;
 
@@ -62,10 +64,18 @@ import com.google.gson.Gson;
     @Bean
     public CacheManager cacheManager(Environment env) {
         // configure and return an implementation of Spring's CacheManager SPI
+        boolean allowNullValues = true;
         SimpleCacheManager cacheManager = new SimpleCacheManager();
         ConcurrentMapCache expandScopesCache = new ConcurrentMapCache(DefaultScopeService.EXPAND_SCOPES_CACHE, CacheBuilder.newBuilder()
-                .expireAfterWrite(env.getProperty("iam.cache.scopes.expiry", Long.class), TimeUnit.MINUTES).build().asMap(), false);
-        cacheManager.setCaches(Arrays.asList(expandScopesCache));
+                .expireAfterWrite(env.getProperty("iam.cache.scopes.expiry", Long.class), TimeUnit.MINUTES).build().asMap(),
+                allowNullValues);
+
+        ConcurrentMapCache scopeCache = new ConcurrentMapCache(ScopeRepository.SCOPE_CACHE, CacheBuilder.newBuilder()
+                .expireAfterWrite(env.getProperty("iam.cache.scopes.expiry", Long.class), TimeUnit.MINUTES).build().asMap(),
+                allowNullValues);
+
+
+        cacheManager.setCaches(Arrays.asList(expandScopesCache, scopeCache));
         return cacheManager;
     }
 }

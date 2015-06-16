@@ -3,7 +3,6 @@ package com.bq.oss.corbel.iam.service;
 import java.util.Collection;
 import java.util.Set;
 
-import com.bq.oss.corbel.iam.auth.AuthorizationRequestContext;
 import com.bq.oss.corbel.iam.exception.ScopeNameException;
 import com.bq.oss.corbel.iam.model.Scope;
 
@@ -21,19 +20,22 @@ public interface ScopeService {
 
     Set<Scope> getScopes(String... scopes);
 
+    Set<Scope> fillScopes(Set<Scope> filledScopes, String userId, String clientId);
+
     Scope fillScope(Scope scope, String userId, String clientId);
 
-    void addAuthorizationRules(String token, Set<String> scopes, String principalId, String issuerClientId);
+    void addAuthorizationRules(String token, Set<Scope> filledScopes);
 
     Set<Scope> expandScopes(Collection<String> scopes);
 
-    Set<String> expandScopesIds(Set<String> requestedScopes);
+    void publishAuthorizationRules(String token, long tokenExpirationTime, Set<Scope> filledScopes);
 
-    void publishAuthorizationRules(String token, long tokenExpirationTime, Set<String> scopes, String principalId, String issuerClientId);
-
-    Set<String> getAllowedScopes(AuthorizationRequestContext authorizationRequestContext);
+    Set<Scope> getAllowedScopes(Set<Scope> domainScopes, Set<Scope> clientScopes, Set<Scope> userScopess, boolean isCrossDomain,
+            boolean hasPrincipal);
 
     void create(Scope scope) throws ScopeNameException;
 
     void delete(String scope);
+
+
 }

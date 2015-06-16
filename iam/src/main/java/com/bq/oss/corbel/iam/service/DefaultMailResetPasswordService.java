@@ -3,8 +3,10 @@ package com.bq.oss.corbel.iam.service;
 import java.time.Clock;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.bq.oss.corbel.iam.model.Client;
+import com.bq.oss.corbel.iam.model.Scope;
 import com.bq.oss.corbel.iam.repository.ClientRepository;
 import com.bq.oss.lib.token.TokenInfo;
 import com.bq.oss.lib.token.factory.TokenFactory;
@@ -68,6 +70,9 @@ public class DefaultMailResetPasswordService implements MailResetPasswordService
         long expireAt = clock.instant().plus(defaultTokenDurationInSeconds, ChronoUnit.SECONDS).toEpochMilli();
         Set<String> scopes = new HashSet<>();
         scopes.add(resetPasswordTokenScope);
-        scopeService.publishAuthorizationRules(token, expireAt, scopes, userId, clientId);
+
+        Set<Scope> filledScopes = scopeService.expandScopes(scopes);
+        filledScopes = scopeService.fillScopes(filledScopes, userId, clientId);
+        scopeService.publishAuthorizationRules(token, expireAt, filledScopes);
     }
 }
