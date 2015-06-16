@@ -49,6 +49,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <modules>
+        <module>eworker-api</module>
+        <module>evci</module>
         <module>event-bus</module>
         <module>events</module>
         <module>iam</module>
@@ -107,6 +109,11 @@
             <dependency>
                 <groupId>com.bq.oss.corbel</groupId>
                 <artifactId>rem-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bq.oss.corbel</groupId>
+                <artifactId>eworker-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
