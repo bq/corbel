@@ -19,15 +19,17 @@ import com.bq.oss.lib.ws.api.error.ErrorResponseFactory;
 public class ImagePutRem extends BaseRem<InputStream> {
 
     private static final Logger LOG = LoggerFactory.getLogger(ImagePutRem.class);
-
-    private final RemService remService;
     private final String cacheCollection;
     private final ImageRemUtil imageRemUtil;
+    private RemService remService;
 
-    public ImagePutRem(RemService remService, String cacheCollection, ImageRemUtil imageRemUtil) {
-        this.remService = remService;
+    public ImagePutRem(String cacheCollection, ImageRemUtil imageRemUtil) {
         this.cacheCollection = cacheCollection;
         this.imageRemUtil = imageRemUtil;
+    }
+
+    public void setRemService(RemService remService) {
+        this.remService = remService;
     }
 
     @Override
