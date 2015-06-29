@@ -27,10 +27,10 @@ public class DefaultImageCacheService implements ImageCacheService {
     }
 
     @Override
-    public InputStream getFromCache(Rem<?> restorRem, ResourceId resourceId, String operationsChain, String collection,
+    public InputStream getFromCache(Rem<?> restorRem, ResourceId resourceId, String operationsChain, Optional<String> imageFormat, String collection,
                                     RequestParameters<ResourceParameters> parameters) {
 
-        resourceId = generateId(resourceId, collection, operationsChain);
+        resourceId = generateId(resourceId, collection, operationsChain, imageFormat);
         Response response = restorRem.resource(cacheCollection, resourceId, parameters, Optional.empty());
         if (response.getStatus() == 200 && response.getEntity() != null) {
             return (InputStream) response.getEntity();
@@ -40,10 +40,10 @@ public class DefaultImageCacheService implements ImageCacheService {
 
     @Override
     @Async
-    public void saveInCacheAsync(Rem<InputStream> restorPutRem, ResourceId resourceId, String operationsChain, Long newSize,
+    public void saveInCacheAsync(Rem<InputStream> restorPutRem, ResourceId resourceId, String operationsChain, Optional<String> imageFormat, Long newSize,
                                  String collection, RequestParameters<ResourceParameters> parameters, File file) {
         try (InputStream inputStream = createInputStream(file)) {
-            resourceId = generateId(resourceId, collection, operationsChain);
+            resourceId = generateId(resourceId, collection, operationsChain, imageFormat);
             parameters = new RequestParametersImplCustomContentLength(parameters, newSize);
             restorPutRem.resource(cacheCollection, resourceId, parameters, Optional.of(inputStream));
             file.delete();
@@ -56,7 +56,7 @@ public class DefaultImageCacheService implements ImageCacheService {
         return new FileInputStream(file);
     }
 
-    private ResourceId generateId(ResourceId resourceId, String collection, String operationsChain) {
-        return new ResourceId(Joiner.on(".").join(resourceId.getId(), collection, operationsChain));
+    private ResourceId generateId(ResourceId resourceId, String collection, String operationsChain, Optional<String> imageFormat) {
+        return new ResourceId(Joiner.on(".").join(resourceId.getId(), collection, operationsChain, imageFormat));
     }
 }

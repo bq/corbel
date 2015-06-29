@@ -7,13 +7,14 @@ import com.bq.oss.corbel.resources.rem.request.ResourceParameters;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Optional;
 
 public interface ImageCacheService {
 
-    InputStream getFromCache(Rem<?> restorRem, ResourceId resourceId, String operationsChain, String type,
+    InputStream getFromCache(Rem<?> restorRem, ResourceId resourceId, String operationsChain, Optional<String> imageFormat, String type,
                              RequestParameters<ResourceParameters> parameters);
 
-    void saveInCacheAsync(Rem<InputStream> restorPutRem, ResourceId resourceId, String operationsChain, Long newSize, String collection,
+    void saveInCacheAsync(Rem<InputStream> restorPutRem, ResourceId resourceId, String operationsChain, Optional<String> imageFormat, Long newSize, String collection,
                           RequestParameters<ResourceParameters> parameters, File file);
 
 }

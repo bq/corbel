@@ -93,7 +93,7 @@ public class ImageGetRemTest {
         verify(imageOperationsService).applyConversion(eq(Collections.singletonList(new ImageOperationDescription("resizeWidth", "250"))),
                 eq(entity), any(TeeOutputStream.class), any(Optional.class));
         Thread.sleep(200);
-        verify(imageCacheService).saveInCacheAsync(any(Rem.class), eq(RESOURCE_ID), eq("resizeWidth=250"), anyLong(), eq(COLLECTION_TEST),
+        verify(imageCacheService).saveInCacheAsync(any(Rem.class), eq(RESOURCE_ID), eq("resizeWidth=250"), any(), anyLong(), eq(COLLECTION_TEST),
                 eq(parameters), any(File.class));
     }
 
@@ -110,7 +110,7 @@ public class ImageGetRemTest {
                 eq(Collections.singletonList(new ImageOperationDescription("resize", "(250, 150)"))), eq(entity),
                 any(TeeOutputStream.class), any(Optional.class));
         Thread.sleep(200);
-        verify(imageCacheService).saveInCacheAsync(any(Rem.class), eq(RESOURCE_ID), eq("resize=(250, 150)"), anyLong(),
+        verify(imageCacheService).saveInCacheAsync(any(Rem.class), eq(RESOURCE_ID), eq("resize=(250, 150)"), any(), anyLong(),
                 eq(COLLECTION_TEST), eq(parameters), any(File.class));
     }
 
@@ -121,21 +121,23 @@ public class ImageGetRemTest {
         Response response = imageGetRem.resource(COLLECTION_TEST, RESOURCE_ID, parameters, Optional.empty());
         assertThat(response.getStatus()).isEqualTo(200);
 
-        verify(imageCacheService).getFromCache(any(), eq(RESOURCE_ID), eq("resize=(250, 150)"), eq(COLLECTION_TEST), eq(parameters));
+        verify(imageCacheService).getFromCache(any(), eq(RESOURCE_ID), eq("resize=(250, 150)"), any(), eq(COLLECTION_TEST), eq(parameters));
         verifyNoMoreInteractions(imageCacheService);
     }
 
     @Test
     public void resourceCacheTest() {
         InputStream mockStreamResponse = mock(InputStream.class);
+        Optional<String> optionalImageFormat = Optional.ofNullable("png");
         when(parameters.getCustomParameterValue(ImageGetRem.OPERATIONS_PARAMETER)).thenReturn("resize=(250, 150)");
-        when(imageCacheService.getFromCache(restorRem, RESOURCE_ID, "resize=(250, 150)", COLLECTION_TEST, parameters)).thenReturn(
+        when(parameters.getCustomParameterValue(ImageGetRem.FORMAT_PARAMETER)).thenReturn("png");
+        when(imageCacheService.getFromCache(restorRem, RESOURCE_ID, "resize=(250, 150)", optionalImageFormat, COLLECTION_TEST, parameters)).thenReturn(
                 mockStreamResponse);
 
         Response response = imageGetRem.resource(COLLECTION_TEST, RESOURCE_ID, parameters, Optional.empty());
         assertThat(response.getEntity()).isEqualTo(mockStreamResponse);
 
-        verify(imageCacheService).getFromCache(restorRem, RESOURCE_ID, "resize=(250, 150)", COLLECTION_TEST, parameters);
+        verify(imageCacheService).getFromCache(restorRem, RESOURCE_ID, "resize=(250, 150)", optionalImageFormat, COLLECTION_TEST, parameters);
         verifyNoMoreInteractions(imageCacheService);
     }
 

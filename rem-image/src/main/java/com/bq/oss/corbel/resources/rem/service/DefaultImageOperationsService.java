@@ -82,11 +82,11 @@ public class DefaultImageOperationsService implements ImageOperationsService {
 
     public String getOutputFormatParameter(Optional<String> format) throws ImageOperationsException {
         checkImageFormat(format);
-        return format.map(formatIn -> formatIn+":-").orElse(DEF_IMAGE_ARG);
+        return format.map(formatIn -> formatIn + ":-").orElse(DEF_IMAGE_ARG);
     }
 
     public void checkImageFormat(Optional<String> format) throws ImageOperationsException {
-        if ( format.isPresent() && !Arrays.asList(VALID_FORMATS).contains(format.get().toLowerCase()))
+        if (format.isPresent() && !Arrays.asList(VALID_FORMATS).contains(format.get().toLowerCase()))
             throw new ImageOperationsException("Unknown image format: " + format);
     }
 

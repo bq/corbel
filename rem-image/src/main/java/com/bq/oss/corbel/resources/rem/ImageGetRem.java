@@ -66,7 +66,7 @@ public class ImageGetRem extends BaseRem<Void> {
 
         MediaType mediaType = requestParameters.getAcceptedMediaTypes().get(0);
 
-        InputStream inputStream = imageCacheService.getFromCache(restorGetRem, resourceId, operationsChain, collection, requestParameters);
+        InputStream inputStream = imageCacheService.getFromCache(restorGetRem, resourceId, operationsChain, imageFormat, collection, requestParameters);
 
         if (inputStream != null) {
             return Response.ok(inputStream).type(javax.ws.rs.core.MediaType.valueOf(mediaType.toString())).build();
@@ -103,7 +103,7 @@ public class ImageGetRem extends BaseRem<Void> {
                 throw new WebApplicationException(ErrorResponseFactory.getInstance().serverError(e));
             }
 
-            imageCacheService.saveInCacheAsync(restorPutRem, resourceId, operationsChain, file.length(), collection, requestParameters,
+            imageCacheService.saveInCacheAsync(restorPutRem, resourceId, operationsChain, imageFormat, file.length(), collection, requestParameters,
                     file);
         };
 
