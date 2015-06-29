@@ -30,4 +30,6 @@ public interface RequestParameters<E> {
 
     Long getContentLength();
 
+    RequestParameters<E> getEmptyInstance();
+
 }

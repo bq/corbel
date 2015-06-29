@@ -20,6 +20,7 @@ public class RequestParametersImpl<E> implements RequestParameters<E> {
     private final MultivaluedMap<String, String> params;
     private final Long contentLength;
     private final MultivaluedMap<String, String> headers;
+    private RequestParametersImpl<E> emptyInstance;
 
     public RequestParametersImpl(E apiParameters, TokenInfo tokenInfo, List<MediaType> acceptedMediaTypes, Long contentLength,
             MultivaluedMap<String, String> params, MultivaluedMap<String, String> headers) {
@@ -69,6 +70,14 @@ public class RequestParametersImpl<E> implements RequestParameters<E> {
     @Override
     public Long getContentLength() {
         return contentLength;
+    }
+
+    @Override
+    public RequestParameters<E> getEmptyInstance() {
+        if (emptyInstance == null) {
+            emptyInstance = new RequestParametersImpl<E>(null, null, null, null, null, null);
+        }
+        return emptyInstance;
     }
 
 }

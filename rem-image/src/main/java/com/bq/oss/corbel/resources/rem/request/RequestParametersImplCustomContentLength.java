@@ -58,4 +58,9 @@ public class RequestParametersImplCustomContentLength<E> implements RequestParam
     public Long getContentLength() {
         return this.contentLength;
     }
+
+    @Override
+    public RequestParameters<E> getEmptyInstance() {
+        return requestParameters.getEmptyInstance();
+    }
 }
