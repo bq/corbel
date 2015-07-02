@@ -11,7 +11,7 @@ import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
 
 public class Crop implements ImageOperation {
 
-    private static final Pattern pattern = Pattern.compile("\\((\\d+) *, *(\\d+) *, *(\\d+) *, *(\\d+)\\)");
+    private final Pattern pattern = Pattern.compile("\\((\\d+) *, *(\\d+) *, *(\\d+) *, *(\\d+)\\)");
 
     @Override
     public IMOps apply(String parameter) throws ImageOperationsException {
