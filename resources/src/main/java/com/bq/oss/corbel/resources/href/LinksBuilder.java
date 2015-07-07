@@ -1,15 +1,14 @@
 package com.bq.oss.corbel.resources.href;
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.ws.rs.core.UriBuilder;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.glassfish.jersey.uri.internal.JerseyUriBuilder;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Alexander De Leon
@@ -60,7 +59,7 @@ public class LinksBuilder {
         private final URI resourceUri;
 
         public ResourceLinksBuilder(URI typeUri, String id) {
-            this.resourceUri = UriBuilder.fromUri(typeUri).path("/{id}").build(id);
+            this.resourceUri = JerseyUriBuilder.fromUri(typeUri).path("/{id}").build( new String[]{id}, false);
         }
 
         public LinksBuilder buildSelfLink() {
@@ -69,7 +68,7 @@ public class LinksBuilder {
         }
 
         public LinksBuilder buildRelationLink(String relationName) {
-            links.add(new Link(relationName, UriBuilder.fromUri(resourceUri).path("/{relation}").build(relationName).toASCIIString()));
+            links.add(new Link(relationName, JerseyUriBuilder.fromUri(resourceUri).path("/{relation}").build(relationName).toASCIIString()));
             return LinksBuilder.this;
         }
 
