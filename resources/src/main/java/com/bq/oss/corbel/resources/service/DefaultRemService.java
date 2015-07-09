@@ -1,7 +1,9 @@
 package com.bq.oss.corbel.resources.service;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.ws.rs.WebApplicationException;
@@ -16,7 +18,6 @@ import com.bq.oss.corbel.resources.rem.model.RemDescription;
 import com.bq.oss.corbel.resources.rem.request.*;
 import com.bq.oss.corbel.resources.rem.service.RemService;
 import com.bq.oss.lib.ws.api.error.ErrorResponseFactory;
-import com.google.common.base.Joiner;
 
 /**
  * @author Alberto J. Rubio
@@ -24,6 +25,7 @@ import com.google.common.base.Joiner;
  */
 public class DefaultRemService implements RemService {
 
+    private final Map<String, List<Rem>> remsExcludedForUri = new HashMap<>();
     private final RemRegistry registry;
 
     public DefaultRemService(RemRegistry registry) {
@@ -31,18 +33,37 @@ public class DefaultRemService implements RemService {
     }
 
     @Override
+    public Rem getRem(String name) {
+        return registry.getRem(name);
+    }
+
+    @Override
     public Rem getRem(String type, List<MediaType> acceptedMediaTypes, HttpMethod method) {
-        return getRem(type, acceptedMediaTypes, method, null);
+        return getRemFromRegistry(type, acceptedMediaTypes, method, null);
     }
 
     @Override
     public Rem getRem(String type, List<MediaType> acceptedMediaTypes, HttpMethod method, List<Rem> remsExcluded) {
-        String uri = uri(type);
-        Rem rem = registry.getRem(uri, acceptedMediaTypes, method, remsExcluded);
+        remsExcluded.addAll(remsExcludedForUri.get(type));
+        return getRemFromRegistry(type, acceptedMediaTypes, method, remsExcluded);
+    }
+
+    private Rem getRemFromRegistry(String type, List<MediaType> acceptedMediaTypes, HttpMethod method, List<Rem> remsExcluded) {
+        Rem rem = registry.getRem(type, acceptedMediaTypes, method, remsExcluded);
         if (rem == null) {
             throw new WebApplicationException(ErrorResponseFactory.getInstance().notFound());
         }
         return rem;
+    }
+
+    @Override
+    public void registerExcludedRems(String uri, List<Rem> excludedRems) {
+        if(remsExcludedForUri.containsKey(uri)) {
+            remsExcludedForUri.get(uri).addAll(excludedRems);
+        }
+        else {
+            remsExcludedForUri.put(uri, excludedRems);
+        }
     }
 
     @Override
@@ -64,17 +85,9 @@ public class DefaultRemService implements RemService {
         return rem.relation(type, id, rel, parameters, entity);
     }
 
-    private String uri(String... parts) {
-        return Joiner.on("/").join(parts);
-    }
-
     @Override
     public List<RemDescription> getRegisteredRemDescriptions() {
         return registry.getRegistryDescription();
     }
 
-    @Override
-    public Rem getRem(String name) {
-        return registry.getRem(name);
-    }
 }
