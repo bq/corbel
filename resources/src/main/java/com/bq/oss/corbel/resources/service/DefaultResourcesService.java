@@ -92,7 +92,7 @@ public class DefaultResourcesService implements ResourcesService {
         if (method == HttpMethod.POST && tokenInfo != null && result.getMetadata().containsKey("Location")
                 && (result.getStatus() == HttpStatus.CREATED_201 || result.getStatus() == org.eclipse.jetty.http.HttpStatus.OK_200)) {
             eventBus.dispatch(ResourceEvent.createResourceEvent(type, result.getMetadata().getFirst("Location").toString(),
-                    tokenInfo.getDomainId()));
+                    tokenInfo.getDomainId(), tokenInfo.getUserId()));
         }
 
         return result;
