@@ -1,6 +1,7 @@
 package com.bq.oss.corbel.event;
 
 import com.bq.oss.corbel.eventbus.EventWithSpecificDomain;
+import com.bq.oss.lib.token.TokenInfo;
 
 /**
  * @author Alberto J. Rubio
@@ -14,26 +15,48 @@ public class ResourceEvent extends EventWithSpecificDomain {
     private String type;
     private String resourceId;
     private Action action;
+    private String userId;
 
-    private ResourceEvent() {}
+    private ResourceEvent() {
+        /**
+         * Jackson2JsonMessageConverter requires this empty constructor
+         */
+    }
 
-    private ResourceEvent(String type, String resourceId, String domain, Action action) {
+    private ResourceEvent(String type, String resourceId, Action action, TokenInfo tokenInfo) {
+        super(tokenInfo.getDomainId());
+        this.type = type;
+        this.resourceId = resourceId;
+        this.action = action;
+        this.userId = tokenInfo.getUserId();
+    }
+
+    private ResourceEvent(String type, String resourceId, String domain, Action action, String userId) {
         super(domain);
         this.type = type;
         this.resourceId = resourceId;
         this.action = action;
+        this.userId = userId;
     }
 
-    public static ResourceEvent createResourceEvent(String type, String resourceId, String domain) {
-        return new ResourceEvent(type, resourceId, domain, Action.CREATE);
+    public static ResourceEvent createResourceEvent(String type, String resourceId, TokenInfo tokenInfo) {
+        return new ResourceEvent(type, resourceId, Action.CREATE, tokenInfo);
     }
 
-    public static ResourceEvent updateResourceEvent(String type, String resourceId, String domain) {
-        return new ResourceEvent(type, resourceId, domain, Action.UPDATE);
+    public static ResourceEvent updateResourceEvent(String type, String resourceId, TokenInfo tokenInfo) {
+        return new ResourceEvent(type, resourceId, Action.UPDATE, tokenInfo);
     }
 
-    public static ResourceEvent deleteResourceEvent(String type, String resourceId, String domain) {
-        return new ResourceEvent(type, resourceId, domain, Action.DELETE);
+    public static ResourceEvent deleteResourceEvent(String type, String resourceId, TokenInfo tokenInfo) {
+        return new ResourceEvent(type, resourceId, Action.DELETE, tokenInfo);
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getType() {
