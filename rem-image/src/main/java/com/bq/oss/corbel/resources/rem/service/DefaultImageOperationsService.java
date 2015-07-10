@@ -1,19 +1,18 @@
 package com.bq.oss.corbel.resources.rem.service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-
+import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
+import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
+import com.bq.oss.corbel.resources.rem.operation.ImageOperation;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
 import org.im4java.process.Pipe;
 
-import com.bq.oss.corbel.resources.rem.exception.ImageOperationsException;
-import com.bq.oss.corbel.resources.rem.model.ImageOperationDescription;
-import com.bq.oss.corbel.resources.rem.operation.ImageOperation;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
 
 public class DefaultImageOperationsService implements ImageOperationsService {
 
@@ -22,7 +21,7 @@ public class DefaultImageOperationsService implements ImageOperationsService {
     private final Map<String, ImageOperation> operations;
 
     public DefaultImageOperationsService(IMOperationFactory imOperationFactory, ConvertCmdFactory convertCmdFactory,
-            Map<String, ImageOperation> operations) {
+                                         Map<String, ImageOperation> operations) {
         this.imOperationFactory = imOperationFactory;
         this.convertCmdFactory = convertCmdFactory;
         this.operations = operations;
