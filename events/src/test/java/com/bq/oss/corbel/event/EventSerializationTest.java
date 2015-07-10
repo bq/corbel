@@ -1,21 +1,22 @@
 package com.bq.oss.corbel.event;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-
+import com.bq.oss.corbel.eventbus.Event;
+import com.bq.oss.lib.token.TokenInfo;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 import org.fest.util.Sets;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.bq.oss.corbel.eventbus.Event;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 
+import java.util.Collections;
+import java.util.Date;
+
 import static org.fest.assertions.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 
 /**
@@ -24,6 +25,7 @@ import static org.fest.assertions.api.Assertions.assertThat;
 public class EventSerializationTest {
 
     private Jackson2JsonMessageConverter jackson2JsonMessageConverter;
+    private static TokenInfo tokenInfo = mock(TokenInfo.class);
 
     private Object marshallingAndUnmarsalling(Object object) {
         Message message = jackson2JsonMessageConverter.toMessage(object, null);
@@ -42,6 +44,8 @@ public class EventSerializationTest {
         jackson2JsonMessageConverter.setJsonObjectMapper(mapper);
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         mapper.registerModule(new JSR310Module());
+        when(tokenInfo.getDomainId()).thenReturn("DOMAIN_ID");
+        when(tokenInfo.getUserId()).thenReturn("USER_ID");
     }
 
     @Test
@@ -69,17 +73,17 @@ public class EventSerializationTest {
 
     @Test
     public void testResourceCreatedEvent() {
-        assertThanCanBeSendAndRetriveInEventBus(ResourceEvent.createResourceEvent("TYPE", "RESOURCE_ID", "DOMAIN"));
+        assertThanCanBeSendAndRetriveInEventBus(ResourceEvent.createResourceEvent("TYPE", "RESOURCE_ID", tokenInfo));
     }
 
     @Test
     public void testResourceModifiedEvent() {
-        assertThanCanBeSendAndRetriveInEventBus(ResourceEvent.updateResourceEvent("TYPE", "RESOURCE_ID", "DOMAIN"));
+        assertThanCanBeSendAndRetriveInEventBus(ResourceEvent.updateResourceEvent("TYPE", "RESOURCE_ID", tokenInfo));
     }
 
     @Test
     public void testResourceDeletedEvent() {
-        assertThanCanBeSendAndRetriveInEventBus(ResourceEvent.deleteResourceEvent("TYPE", "RESOURCE_ID", "DOMAIN"));
+        assertThanCanBeSendAndRetriveInEventBus(ResourceEvent.deleteResourceEvent("TYPE", "RESOURCE_ID", tokenInfo));
     }
 
     @Test
@@ -91,5 +95,4 @@ public class EventSerializationTest {
     public void testUserDeletedEvent() {
         assertThanCanBeSendAndRetriveInEventBus(new UserDeletedEvent("USER_ID", "DOMAIN"));
     }
-
 }
