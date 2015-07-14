@@ -3,15 +3,7 @@ package com.bq.oss.corbel.iam.api;
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import io.dropwizard.auth.Authenticator;
-import io.dropwizard.auth.oauth.OAuthFactory;
-import io.dropwizard.testing.junit.ResourceTestRule;
+import static org.mockito.Mockito.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -19,12 +11,7 @@ import java.security.SignatureException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -41,11 +28,12 @@ import com.bq.oss.corbel.iam.service.UpgradeTokenService;
 import com.bq.oss.corbel.iam.utils.TokenCookieFactory;
 import com.bq.oss.lib.token.TokenInfo;
 import com.bq.oss.lib.token.reader.TokenReader;
-import com.bq.oss.lib.ws.auth.AuthorizationInfo;
-import com.bq.oss.lib.ws.auth.AuthorizationInfoProvider;
-import com.bq.oss.lib.ws.auth.AuthorizationRequestFilter;
-import com.bq.oss.lib.ws.auth.BearerTokenAuthenticator;
+import com.bq.oss.lib.ws.auth.*;
 import com.google.common.base.Optional;
+
+import io.dropwizard.auth.Authenticator;
+import io.dropwizard.auth.oauth.OAuthFactory;
+import io.dropwizard.testing.junit.ResourceTestRule;
 
 /**
  * @author Alexander De Leon
@@ -79,7 +67,9 @@ public class TokenResourceTest {
 
     private static final Authenticator<String, AuthorizationInfo> authenticator = mock(Authenticator.class);
     private static OAuthFactory oAuthFactory = new OAuthFactory<>(authenticator, "realm", AuthorizationInfo.class);
-    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, null, ""));
+    private static CookieOAuthFactory<AuthorizationInfo> cookieOAuthProvider = new CookieOAuthFactory<AuthorizationInfo>(authenticator,
+            "realm", AuthorizationInfo.class);
+    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, cookieOAuthProvider, ""));
 
     @ClassRule public static ResourceTestRule RULE = ResourceTestRule.builder()
             .addResource(new TokenResource(authorizationServiceMock, upgradeTokenServiceMock, tokenCookieFactoryMock)).addProvider(filter)
@@ -111,7 +101,8 @@ public class TokenResourceTest {
         formData.add(ASSERTION, TEST_ASSERTION);
         formData.add(GRANT_TYPE, GrantType.JWT_BEARER);
 
-        Response response = RULE.client().target(OAUTH_TOKEN_ENDPOINT).request().post(Entity.form(formData), Response.class);
+        Response response = RULE.client().target(OAUTH_TOKEN_ENDPOINT).request().header(AUTHORIZATION, "Bearer " + TEST_TOKEN)
+                .post(Entity.form(formData), Response.class);
 
         checkResponseContainsToken(response, TEST_TOKEN, REFRESH_TOKEN);
     }
@@ -155,7 +146,8 @@ public class TokenResourceTest {
     public void testPostMissingAssertion() throws SignatureException, UnauthorizedException {
         MultivaluedMap<String, String> formData = new MultivaluedHashMap();
         formData.add(GRANT_TYPE, GrantType.JWT_BEARER);
-        Response response = RULE.client().target(OAUTH_TOKEN_ENDPOINT).request().post(Entity.form(formData), Response.class);
+        Response response = RULE.client().target(OAUTH_TOKEN_ENDPOINT).request().header(AUTHORIZATION, "Bearer " + TEST_TOKEN)
+                .post(Entity.form(formData), Response.class);
         checkErrorResponse(response, 400, INVALID_ASSERTION_ERROR_MESSAGE);
     }
 
@@ -273,6 +265,7 @@ public class TokenResourceTest {
         formData.add(GRANT_TYPE, GrantType.JWT_BEARER);
 
         Response response = RULE.client().target(OAUTH_TOKEN_ENDPOINT).request().header(REQUEST_COOKIE, true)
+                .header(AUTHORIZATION, "Bearer " + TEST_TOKEN)
                 .post(Entity.form(formData), Response.class);
 
         checkResponseContainsTokenWithCookie(response, TEST_TOKEN, REFRESH_TOKEN);
