@@ -19,7 +19,9 @@ public enum Message {
             "The requested domain is not allowed for the client root domain"), UNKNOWN_BASIC_USER_CREDENTIALS(
             "Unknown basic user credentials."), MISSING_BASIC_PARAM("Missing basic parameters."), CLIENT_EXISTS("Client duplicated"), DOMAIN_EXISTS(
             "Domain duplicated"), DOMAIN_NOT_EXISTS("Domain {0} not exists"), SCOPE_ID_NOT_ALLOWED("Scope id not allowed: \"{0}\""), INVALID_DOMAIN_ID(
-            "Domain id can't contain : character.");
+                                                                                                                                                                            "Domain id can't contain : character."), GROUP_NOT_EXISTS(
+                                                                                                                                                                                    "Group {0} not exists"), GROUP_ALREADY_EXISTS(
+                                                                                                                                                                                            "Already existing group {0}");
 
     private final String pattern;
 
