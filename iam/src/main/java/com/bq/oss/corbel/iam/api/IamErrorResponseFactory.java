@@ -1,10 +1,10 @@
 package com.bq.oss.corbel.iam.api;
 
+import javax.ws.rs.core.Response;
+
 import com.bq.oss.corbel.iam.utils.Message;
 import com.bq.oss.lib.ws.api.error.ErrorResponseFactory;
 import com.bq.oss.lib.ws.model.Error;
-
-import javax.ws.rs.core.Response;
 
 /**
  * @author Alexander De Leon
@@ -91,4 +91,21 @@ public final class IamErrorResponseFactory extends ErrorResponseFactory {
     public Response domainNotExists(String domainId) {
         return badRequest(new Error("domain_not_exists", Message.DOMAIN_NOT_EXISTS.getMessage(domainId)));
     }
+
+    public Response groupNotExists(String groupId) {
+        return notfound(new Error("group_not_exists", Message.GROUP_NOT_EXISTS.getMessage(groupId)));
+    }
+
+    public Response groupAlreadyExists(String nameAndDomain) {
+        return conflict(new Error("group_not_exists", Message.GROUP_ALREADY_EXISTS.getMessage(nameAndDomain)));
+    }
+
+    public Response unauthorizedGroupDeletion(String id) {
+        return unauthorized(new Error("unauthorized_group_deletion", Message.GROUP_DELETION_UNAUTHORIZED.getMessage(id)));
+    }
+
+    public Response unauthorizedGroupUpdate(String id) {
+        return unauthorized(new Error("unauthorized_group_Update", Message.GROUP_UPDATE_UNAUTHORIZED.getMessage(id)));
+    }
+
 }
