@@ -6,8 +6,10 @@ import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 
+import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
+import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.count.CountResponse;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -63,23 +65,37 @@ public class ElasticSearchResmiSearch implements ResmiSearch {
     }
 
     @Override
+    public void setupMapping(ResourceUri resourceUri, JsonObject mapping) {
+        elasticsearchClient.admin().indices().close(new CloseIndexRequest(INDEX)).actionGet();
+        PutMappingRequest mappingRequest = new PutMappingRequest(INDEX).type(getElasticSearchType(resourceUri)).source(mapping.toString())
+                .ignoreConflicts(true);
+        elasticsearchClient.admin().indices().putMapping(mappingRequest).actionGet();
+        elasticsearchClient.admin().indices().open(new OpenIndexRequest(INDEX)).actionGet();
+    }
+
+    @Override
+    public void addTemplate(String name, JsonObject template) {
+
+    }
+
+    @Override
     public void addResource(SearchResource fields) {
         String type = getElasticSearchType(fields.getResourceUri());
         try {
-            boolean mappingTypeNotCreated = false;
+            boolean mappingTypeCreated = false;
             ImmutableOpenMap<String, ImmutableOpenMap<String, MappingMetaData>> mappings = elasticsearchClient.admin().indices()
                     .prepareGetMappings(INDEX).execute().actionGet().mappings();
             if (!mappings.get(INDEX).containsKey(type)) {
                 PutMappingRequest mappingRequest = new PutMappingRequest(INDEX).type(type);
                 mappingRequest.source(new Scanner(getClass().getResourceAsStream(mappingSettingsPath), "UTF-8").useDelimiter("\\A").next());
                 elasticsearchClient.admin().indices().putMapping(mappingRequest).actionGet();
-                mappingTypeNotCreated = true;
+                mappingTypeCreated = true;
             }
             PutMappingRequest mappingRequest = new PutMappingRequest(INDEX).type(type);
             mappingRequest.ignoreConflicts(true);
             XContentBuilder properties = XContentFactory.jsonBuilder().startObject().startObject("properties");
             for (String field : fields.getFields()) {
-                if (mappingTypeNotCreated || !checkFieldCurrentlyMapped(mappings, type, field)) {
+                if (mappingTypeCreated || !checkFieldCurrentlyMapped(mappings, type, field)) {
                     properties.startObject(field);
                     properties.field("type", SearchResource.DEFAULT_FIELD_TYPE);
                     properties.field("index", "not_analyzed");

@@ -20,4 +20,8 @@ public interface ResmiSearch {
     void deleteDocument(ResourceUri uri);
 
     AggregationResult count(ResourceUri uri, String search, String[] fields);
+
+    void setupMapping(ResourceUri resourceUri, JsonObject mapping);
+
+    void addTemplate(String name, JsonObject template);
 }

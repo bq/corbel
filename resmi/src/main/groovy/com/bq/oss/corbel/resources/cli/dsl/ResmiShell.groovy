@@ -1,18 +1,21 @@
 package com.bq.oss.corbel.resources.cli.dsl
 
+import org.springframework.data.mongodb.core.index.Index
+
 import com.bq.oss.corbel.resources.rem.model.ResourceUri
 import com.bq.oss.corbel.resources.rem.model.SearchResource
+import com.bq.oss.corbel.resources.rem.search.ResmiSearch
 import com.bq.oss.corbel.resources.rem.service.ResmiService
 import io.corbel.lib.cli.console.Description
 import io.corbel.lib.cli.console.Shell
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
-import org.springframework.data.mongodb.core.index.Index
 
 @Shell("resmi")
 class ResmiShell {
 
     ResmiService resmiService
+    ResmiSearch resmiSearch
 
     @Description("Creates a mongo expiration index named \"_expireAt\" on the specified collection .")
     def ensureExpireIndex(String collection) {
@@ -52,6 +55,13 @@ class ResmiShell {
         assert relation: "relation is required"
         assert fields: "fields is required"
         resmiService.addSearchableFields(new SearchResource(type, relation, fields.collect().toSet()))
+    }
+
+    @Description("Full text search fields in a type.")
+    def defineIndex(String type, String relation, JsonObject mapping) {
+        assert type: "type is required"
+        assert mapping: "mapping is required"
+        resmiSearch.setupMapping(new ResourceUri(type, null, relation), mapping)
     }
 
     def index = IndexBuilder.index

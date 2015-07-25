@@ -1,12 +1,13 @@
 package com.bq.oss.corbel.resources.rem.search;
 
-import com.bq.oss.corbel.resources.rem.model.SearchResource;
+import io.corbel.lib.queries.request.AggregationResult;
+import io.corbel.lib.queries.request.CountResult;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.bq.oss.corbel.resources.rem.model.ResourceUri;
-import io.corbel.lib.queries.request.AggregationResult;
-import io.corbel.lib.queries.request.CountResult;
+import com.bq.oss.corbel.resources.rem.model.SearchResource;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
@@ -23,7 +24,10 @@ public class DummyResmiSearch implements ResmiSearch {
         LOG.warn(DISABLE_RESMI_SEARCH_MESSAGE);
     }
 
-    public void addResource(SearchResource fields) { LOG.debug(DISABLE_RESMI_SEARCH_MESSAGE); }
+    @Override
+    public void addResource(SearchResource fields) {
+        LOG.debug(DISABLE_RESMI_SEARCH_MESSAGE);
+    }
 
     @Override
     public JsonArray search(ResourceUri resourceUri, String search, String[] fields, int page, int size) {
@@ -45,5 +49,17 @@ public class DummyResmiSearch implements ResmiSearch {
     public AggregationResult count(ResourceUri resourceUri, String search, String[] fields) {
         LOG.debug(DISABLE_RESMI_SEARCH_MESSAGE);
         return new CountResult();
+    }
+
+    @Override
+    public void setupMapping(ResourceUri resourceUri, JsonObject mapping) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void addTemplate(String name, JsonObject template) {
+        // TODO Auto-generated method stub
+
     }
 }
