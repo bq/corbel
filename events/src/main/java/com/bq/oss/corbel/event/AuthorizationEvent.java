@@ -12,7 +12,7 @@ public class AuthorizationEvent extends EventWithSpecificDomain {
     private final IssuerType issuerType;
     private final String id;
 
-    private AuthorizationEvent(String domainId, IssuerType issuerType, String id) {
+    public AuthorizationEvent(String domainId, IssuerType issuerType, String id) {
         super(domainId);
         this.issuerType = issuerType;
         this.id = id;
