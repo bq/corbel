@@ -1,5 +1,7 @@
 package com.bq.oss.corbel.resources.rem.plugin;
 
+import io.corbel.lib.config.ConfigurationHelper;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +15,8 @@ import com.bq.oss.corbel.resources.rem.Rem;
 import com.bq.oss.corbel.resources.rem.RemRegistry;
 import com.bq.oss.corbel.resources.rem.resmi.ioc.ResmiIoc;
 import com.bq.oss.corbel.resources.rem.resmi.ioc.ResmiRemNames;
-import com.bq.oss.corbel.resources.rem.search.ResmiSearch;
+import com.bq.oss.corbel.resources.rem.search.ElasticSearchService;
 import com.bq.oss.corbel.resources.rem.service.ResmiService;
-import io.corbel.lib.config.ConfigurationHelper;
 
 @Component public class ResmiRemPlugin extends RemPlugin {
 
@@ -36,7 +37,7 @@ import io.corbel.lib.config.ConfigurationHelper;
     protected void console() {
         init();
         shell.setResmiService(context.getBean(ResmiService.class));
-        shell.setResmiSearch(context.getBean(ResmiSearch.class));
+        shell.setElasticSearchService(context.getBean(ElasticSearchService.class));
     }
 
     @Override
