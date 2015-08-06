@@ -98,15 +98,14 @@ public class DefaultResmiService implements ResmiService {
             throws BadConfigurationException {
         Search searchObject = apiParameters.getSearch().get();
         if (searchObject.getText().isPresent()) {
-            return search.count(resourceUri, searchObject.getText().get());
+            return search.count(resourceUri, searchObject.getText().get(), apiParameters.getQueries());
         } else {
             return search.count(resourceUri, searchObject.getTemplate().get(), searchObject.getParams().get());
         }
     }
 
     @Override
-    public JsonArray findCollection(ResourceUri uri, Optional<? extends CollectionParameters> apiParameters)
-            throws BadConfigurationException {
+    public JsonArray findCollection(ResourceUri uri, Optional<CollectionParameters> apiParameters) throws BadConfigurationException {
         if (apiParameters.flatMap(params -> params.getSearch()).isPresent()) {
             return findInSearchService(uri, apiParameters.get());
         } else {
