@@ -2,19 +2,20 @@ package io.corbel.resources.rem.service;
 
 import io.corbel.lib.queries.request.AggregationResult;
 import io.corbel.lib.queries.request.ResourceQuery;
-
-import java.util.List;
-import java.util.Optional;
-
-import org.springframework.data.mongodb.core.index.Index;
-
 import io.corbel.resources.rem.dao.NotFoundException;
 import io.corbel.resources.rem.dao.RelationMoveOperation;
 import io.corbel.resources.rem.model.ResourceUri;
 import io.corbel.resources.rem.model.SearchResource;
 import io.corbel.resources.rem.request.CollectionParameters;
 import io.corbel.resources.rem.request.RelationParameters;
+import io.corbel.resources.rem.resmi.exception.MongoAggregationException;
 import io.corbel.resources.rem.resmi.exception.StartsWithUnderscoreException;
+
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.mongodb.core.index.Index;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -61,5 +62,11 @@ public interface ResmiService {
     void ensureIndex(ResourceUri uri, Index index);
 
     void removeObjectId(JsonObject object);
+
+    JsonArray findCollectionDistinct(ResourceUri uri, Optional<? extends CollectionParameters> apiParameters, List<String> fields,
+            boolean first) throws BadConfigurationException, MongoAggregationException;
+
+    JsonArray findRelationDistinct(ResourceUri uri, Optional<RelationParameters> apiParameters, List<String> fields, boolean first)
+            throws BadConfigurationException, MongoAggregationException;
 
 }

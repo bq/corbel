@@ -8,6 +8,18 @@ import io.corbel.lib.queries.request.QueryOperator;
 import io.corbel.lib.queries.request.ResourceQuery;
 import io.corbel.lib.queries.request.Search;
 import io.corbel.lib.queries.request.Sum;
+import io.corbel.resources.rem.dao.NotFoundException;
+import io.corbel.resources.rem.dao.RelationMoveOperation;
+import io.corbel.resources.rem.dao.ResmiDao;
+import io.corbel.resources.rem.model.GenericDocument;
+import io.corbel.resources.rem.model.ResourceUri;
+import io.corbel.resources.rem.model.SearchResource;
+import io.corbel.resources.rem.request.CollectionParameters;
+import io.corbel.resources.rem.request.CollectionParametersImpl;
+import io.corbel.resources.rem.request.RelationParameters;
+import io.corbel.resources.rem.resmi.exception.MongoAggregationException;
+import io.corbel.resources.rem.resmi.exception.StartsWithUnderscoreException;
+import io.corbel.resources.rem.search.ResmiSearch;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -22,17 +34,6 @@ import java.util.UUID;
 
 import org.springframework.data.mongodb.core.index.Index;
 
-import io.corbel.resources.rem.dao.NotFoundException;
-import io.corbel.resources.rem.dao.RelationMoveOperation;
-import io.corbel.resources.rem.dao.ResmiDao;
-import io.corbel.resources.rem.model.GenericDocument;
-import io.corbel.resources.rem.model.ResourceUri;
-import io.corbel.resources.rem.model.SearchResource;
-import io.corbel.resources.rem.request.CollectionParameters;
-import io.corbel.resources.rem.request.CollectionParametersImpl;
-import io.corbel.resources.rem.request.RelationParameters;
-import io.corbel.resources.rem.resmi.exception.StartsWithUnderscoreException;
-import io.corbel.resources.rem.search.ResmiSearch;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -114,6 +115,13 @@ public class DefaultResmiService implements ResmiService {
         }
     }
 
+    @Override
+    public JsonArray findCollectionDistinct(ResourceUri uri, Optional<? extends CollectionParameters> apiParameters, List<String> fields,
+            boolean first) throws BadConfigurationException, MongoAggregationException {
+        return resmiDao.findCollectionWithGroup(uri, apiParameters.flatMap(params -> params.getQueries()),
+                apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()), fields, first);
+    }
+
     private JsonArray findInSearchService(ResourceUri resourceUri, CollectionParameters apiParameters) throws BadConfigurationException {
         Search searchObject = apiParameters.getSearch().get();
         JsonArray searchResult;
@@ -156,6 +164,13 @@ public class DefaultResmiService implements ResmiService {
             return resmiDao.findRelation(uri, apiParameters.flatMap(params -> params.getQueries()),
                     apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()));
         }
+    }
+
+    @Override
+    public JsonArray findRelationDistinct(ResourceUri uri, Optional<RelationParameters> apiParameters, List<String> fields, boolean first)
+            throws BadConfigurationException, MongoAggregationException {
+        return resmiDao.findRelationWithGroup(uri, apiParameters.flatMap(params -> params.getQueries()),
+                apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()), fields, first);
     }
 
     @Override
