@@ -1,7 +1,10 @@
 package io.corbel.resources.rem.resmi;
 
 import java.net.URI;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.Response;
 
@@ -29,7 +32,12 @@ public class ResmiGetRem extends AbstractResmiRem {
         try {
             if (parameters.getOptionalApiParameters().flatMap(params -> params.getAggregation()).isPresent()) {
                 return buildResponse(resmiService.aggregate(resourceUri, parameters.getOptionalApiParameters().get()));
-            } else {
+            }
+            else if(parameters.getCustomParameterValue("api:distinct") != null) {
+                List<String> fields = getDistinctFields(parameters.getCustomParameterValue("api:distinct"));
+                return buildResponse(resmiService.findCollectionDistinct(resourceUri, parameters.getOptionalApiParameters(), fields, true));
+            }
+            else {
                 return buildResponse(resmiService.findCollection(resourceUri, parameters.getOptionalApiParameters()));
             }
 
@@ -53,12 +61,22 @@ public class ResmiGetRem extends AbstractResmiRem {
         try {
             if (parameters.getOptionalApiParameters().flatMap(params -> params.getAggregation()).isPresent()) {
                 return buildResponse(resmiService.aggregate(resourceUri, parameters.getOptionalApiParameters().get()));
-            } else {
+            }
+            else if(parameters.getCustomParameterValue("api:distinct") != null) {
+                List<String> fields = getDistinctFields(parameters.getCustomParameterValue("api:distinct"));
+                return buildResponse(resmiService.findRelationDistinct(resourceUri, parameters.getOptionalApiParameters(), fields, true));
+            }
+            else {
                 return buildResponse(resmiService.findRelation(resourceUri, parameters.getOptionalApiParameters()));
             }
         } catch (Exception e) {
             return ErrorResponseFactory.getInstance().badRequest();
         }
+    }
+
+    private List<String> getDistinctFields(String serializedParameter) {
+        List<String> fields = Arrays.asList(serializedParameter.split(","));
+        return fields.stream().map(val -> val.trim()).collect(Collectors.toList());
     }
 
 }
