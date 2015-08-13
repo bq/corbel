@@ -23,6 +23,7 @@ import io.corbel.resources.rem.service.DefaultResmiService;
 import io.corbel.resources.rem.service.InMemorySearchableFieldsRegistry;
 import io.corbel.resources.rem.service.ResmiService;
 import io.corbel.resources.rem.service.SearchableFieldsRegistry;
+import io.corbel.resources.rem.service.WithSearchResmiService;
 import io.corbel.resources.rem.utils.ResmiJsonObjectMongoWriteConverter;
 
 import java.time.Clock;
@@ -114,7 +115,11 @@ import com.google.gson.Gson;
 
     @Bean
     public ResmiService getResmiService() throws Exception {
-        return new DefaultResmiService(getMongoResmiDao(), getResmiSearch(), getSearchableFieldsRegistry(), getClock());
+        if (elasticSearchEnabled) {
+            return new WithSearchResmiService(getMongoResmiDao(), getResmiSearch(), getSearchableFieldsRegistry(), getClock());
+        } else {
+            return new DefaultResmiService(getMongoResmiDao(), getClock());
+        }
     }
 
     @Bean
@@ -129,11 +134,7 @@ import com.google.gson.Gson;
 
     @Bean
     public ResmiSearch getResmiSearch() {
-        if (elasticSearchEnabled) {
-            return new ElasticSearchResmiSearch(getElasticeSerachService(), getNamespaceNormilizer());
-        } else {
-            return null;
-        }
+        return new ElasticSearchResmiSearch(getElasticeSerachService(), getNamespaceNormilizer());
     }
 
     @Bean
