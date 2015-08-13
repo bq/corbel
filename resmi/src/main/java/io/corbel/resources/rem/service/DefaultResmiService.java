@@ -1,30 +1,21 @@
 package io.corbel.resources.rem.service;
 
-import io.corbel.lib.queries.builder.ResourceQueryBuilder;
 import io.corbel.lib.queries.request.Aggregation;
 import io.corbel.lib.queries.request.AggregationResult;
 import io.corbel.lib.queries.request.Average;
-import io.corbel.lib.queries.request.QueryOperator;
 import io.corbel.lib.queries.request.ResourceQuery;
-import io.corbel.lib.queries.request.Search;
 import io.corbel.lib.queries.request.Sum;
 import io.corbel.resources.rem.dao.NotFoundException;
 import io.corbel.resources.rem.dao.RelationMoveOperation;
 import io.corbel.resources.rem.dao.ResmiDao;
-import io.corbel.resources.rem.model.GenericDocument;
 import io.corbel.resources.rem.model.ResourceUri;
-import io.corbel.resources.rem.model.SearchResource;
 import io.corbel.resources.rem.request.CollectionParameters;
-import io.corbel.resources.rem.request.CollectionParametersImpl;
 import io.corbel.resources.rem.request.RelationParameters;
 import io.corbel.resources.rem.resmi.exception.MongoAggregationException;
 import io.corbel.resources.rem.resmi.exception.StartsWithUnderscoreException;
-import io.corbel.resources.rem.search.ResmiSearch;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -45,34 +36,24 @@ import com.google.gson.JsonPrimitive;
  */
 public class DefaultResmiService implements ResmiService {
 
-    private static final String _DST_ID = "_dst_id";
-    private static final String _SRC_ID = "_src_id";
-    private static final String _ORDER = "_order";
-    private static final String _EXPIRE_AT = "_expireAt";
-    private static final String _CREATED_AT = "_createdAt";
-    private static final String _UPDATED_AT = "_updatedAt";
-    private static final String _ACL = "_acl";
-    private final static Set<String> ignorableReservedAttributeNames = Sets.newHashSet(_ID, _EXPIRE_AT, _ORDER, _SRC_ID, _DST_ID,
+    protected static final String _DST_ID = "_dst_id";
+    protected static final String _SRC_ID = "_src_id";
+    protected static final String _ORDER = "_order";
+    protected static final String _EXPIRE_AT = "_expireAt";
+    protected static final String _CREATED_AT = "_createdAt";
+    protected static final String _UPDATED_AT = "_updatedAt";
+    protected static final String _ACL = "_acl";
+    protected final static Set<String> ignorableReservedAttributeNames = Sets.newHashSet(_ID, _EXPIRE_AT, _ORDER, _SRC_ID, _DST_ID,
             _CREATED_AT, _UPDATED_AT, _ACL);
 
     public final static String SEARCHABLE_FIELDS = "searchable";
 
-    private final ResmiDao resmiDao;
-    private final ResmiSearch search;
-    private final SearchableFieldsRegistry searchableFieldsRegistry;
-    private final Clock clock;
+    protected final ResmiDao resmiDao;
+    protected final Clock clock;
 
-    public DefaultResmiService(ResmiDao resmiDao, ResmiSearch search, SearchableFieldsRegistry searchableFieldsRegistry, Clock clock) {
+    public DefaultResmiService(ResmiDao resmiDao, Clock clock) {
         this.resmiDao = resmiDao;
-        this.search = search;
-        this.searchableFieldsRegistry = searchableFieldsRegistry;
         this.clock = clock;
-
-        initSearchableFieldsRegistry();
-    }
-
-    private void initSearchableFieldsRegistry() {
-        getSearchableFields().stream().forEach(searchableFieldsRegistry::addFields);
     }
 
     @Override
@@ -80,11 +61,7 @@ public class DefaultResmiService implements ResmiService {
         Aggregation operation = apiParameters.getAggregation().get();
         switch (operation.getOperator()) {
             case $COUNT:
-                if (!apiParameters.getSearch().isPresent()) {
-                    return resmiDao.count(resourceUri, operation.operate(apiParameters.getQueries().orElse(null)));
-                } else {
-                    return countWithSearchService(resourceUri, apiParameters);
-                }
+                return resmiDao.count(resourceUri, operation.operate(apiParameters.getQueries().orElse(null)));
             case $AVG:
                 return resmiDao.average(resourceUri, operation.operate(apiParameters.getQueries().orElse(null)),
                         ((Average) operation).getField());
@@ -95,60 +72,17 @@ public class DefaultResmiService implements ResmiService {
         }
     }
 
-    private AggregationResult countWithSearchService(ResourceUri resourceUri, CollectionParameters apiParameters)
-            throws BadConfigurationException {
-        Search searchObject = apiParameters.getSearch().get();
-        if (searchObject.getText().isPresent()) {
-            return search.count(resourceUri, searchObject.getText().get(), apiParameters.getQueries());
-        } else {
-            return search.count(resourceUri, searchObject.getTemplate().get(), searchObject.getParams().get());
-        }
-    }
-
     @Override
     public JsonArray findCollection(ResourceUri uri, Optional<CollectionParameters> apiParameters) throws BadConfigurationException {
-        if (apiParameters.flatMap(params -> params.getSearch()).isPresent()) {
-            return findInSearchService(uri, apiParameters.get());
-        } else {
-            return resmiDao.findCollection(uri, apiParameters.flatMap(params -> params.getQueries()),
-                    apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()));
-        }
+        return resmiDao.findCollection(uri, apiParameters.flatMap(params -> params.getQueries()),
+                apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()));
     }
 
     @Override
-    public JsonArray findCollectionDistinct(ResourceUri uri, Optional<? extends CollectionParameters> apiParameters, List<String> fields,
+    public JsonArray findCollectionDistinct(ResourceUri uri, Optional<CollectionParameters> apiParameters, List<String> fields,
             boolean first) throws BadConfigurationException, MongoAggregationException {
         return resmiDao.findCollectionWithGroup(uri, apiParameters.flatMap(params -> params.getQueries()),
                 apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()), fields, first);
-    }
-
-    private JsonArray findInSearchService(ResourceUri resourceUri, CollectionParameters apiParameters) throws BadConfigurationException {
-        Search searchObject = apiParameters.getSearch().get();
-        JsonArray searchResult;
-        if (searchObject.getText().isPresent()) {
-            searchResult = search.search(resourceUri, searchObject.getText().get(), apiParameters.getQueries(),
-                    apiParameters.getPagination(), apiParameters.getSort());
-        } else {
-            searchResult = search.search(resourceUri, searchObject.getTemplate().get(), searchObject.getParams().get(), apiParameters
-                    .getPagination().getPage(), apiParameters.getPagination().getPageSize());
-        }
-
-        if (searchObject.isBinded()) {
-            CollectionParameters parameters = buildParametersForBinding(apiParameters, searchResult);
-            return findCollection(resourceUri, Optional.of(parameters));
-        } else {
-            return searchResult;
-        }
-    }
-
-    private CollectionParameters buildParametersForBinding(CollectionParameters apiParameters, JsonArray searchResult) {
-        List<String> ids = new ArrayList<>();
-        for (JsonElement element : searchResult) {
-            ids.add(((JsonObject) element).get(ID).getAsString());
-        }
-        ResourceQueryBuilder builder = new ResourceQueryBuilder().add(ID, ids, QueryOperator.$IN);
-        return new CollectionParametersImpl(apiParameters.getPagination(), apiParameters.getSort(), Optional.of(Arrays.asList(builder
-                .build())), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     @Override
@@ -158,12 +92,8 @@ public class DefaultResmiService implements ResmiService {
 
     @Override
     public JsonElement findRelation(ResourceUri uri, Optional<RelationParameters> apiParameters) throws BadConfigurationException {
-        if (apiParameters.flatMap(params -> params.getSearch()).isPresent()) {
-            return findInSearchService(uri, apiParameters.get());
-        } else {
-            return resmiDao.findRelation(uri, apiParameters.flatMap(params -> params.getQueries()),
-                    apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()));
-        }
+        return resmiDao.findRelation(uri, apiParameters.flatMap(params -> params.getQueries()),
+                apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()));
     }
 
     @Override
@@ -180,7 +110,6 @@ public class DefaultResmiService implements ResmiService {
         optionalUserId.ifPresent(userId -> setId(userId, object));
         addDates(object);
         resmiDao.saveResource(uri, object);
-        indexInSearchService(uri.setTypeId(object.get(ID).getAsString()), object);
         return object;
     }
 
@@ -189,7 +118,6 @@ public class DefaultResmiService implements ResmiService {
         verifyNotUnderscore(jsonObject);
         addDates(jsonObject);
         resmiDao.updateResource(uri, jsonObject);
-        indexInSearchService(uri, jsonObject);
         return jsonObject;
     }
 
@@ -200,24 +128,9 @@ public class DefaultResmiService implements ResmiService {
         addDates(jsonObject);
         boolean found = resmiDao.conditionalUpdateResource(uri, jsonObject, resourceQueries);
         if (found) {
-            indexInSearchService(uri, jsonObject);
             return jsonObject;
         }
         return null;
-    }
-
-    private void indexInSearchService(ResourceUri resourceUri, JsonObject jsonObject) {
-        Set<String> fields = searchableFieldsRegistry.getFieldsFromResourceUri(resourceUri);
-        if (!fields.isEmpty()) {
-            jsonObject = pickJSonFields(jsonObject, fields);
-        }
-        search.indexDocument(resourceUri, jsonObject);
-    }
-
-    private JsonObject pickJSonFields(JsonObject jsonObject, Set<String> fields) {
-        JsonObject searchableJsonObject = new JsonObject();
-        fields.stream().filter(jsonObject::has).forEach(field -> searchableJsonObject.add(field, jsonObject.get(field)));
-        return searchableJsonObject;
     }
 
     @Override
@@ -225,7 +138,6 @@ public class DefaultResmiService implements ResmiService {
         verifyNotUnderscore(requestEntity);
         addDates(requestEntity);
         resmiDao.createRelation(uri, requestEntity);
-        indexInSearchService(uri, requestEntity);
         return requestEntity;
     }
 
@@ -240,33 +152,16 @@ public class DefaultResmiService implements ResmiService {
     @Override
     public void deleteResource(ResourceUri uri) {
         resmiDao.deleteResource(uri);
-        deleteInSearchService(uri);
-    }
-
-    private void deleteInSearchService(ResourceUri uri) {
-        if (!searchableFieldsRegistry.getFieldsFromType(uri.getType()).isEmpty()) {
-            search.deleteDocument(uri);
-        }
     }
 
     @Override
     public void deleteCollection(ResourceUri uri, Optional<List<ResourceQuery>> queries) {
-        List<GenericDocument> deleteEntries = resmiDao.deleteCollection(uri, queries);
-        deleteInSearchService(uri, deleteEntries);
+        resmiDao.deleteCollection(uri, queries);
     }
 
     @Override
     public void deleteRelation(ResourceUri uri) {
-        List<GenericDocument> deleteEntries = resmiDao.deleteRelation(uri);
-        deleteInSearchService(uri, deleteEntries);
-    }
-
-    private void deleteInSearchService(ResourceUri uri, List<GenericDocument> deleteEntries) {
-        if (!searchableFieldsRegistry.getFieldsFromType(uri.getType()).isEmpty()) {
-            for (GenericDocument deleteEntry : deleteEntries) {
-                search.deleteDocument(uri.setRelationId(deleteEntry.getId()));
-            }
-        }
+        resmiDao.deleteRelation(uri);
     }
 
     @Override
@@ -286,31 +181,20 @@ public class DefaultResmiService implements ResmiService {
         }
     }
 
-    @Override
-    public List<SearchResource> getSearchableFields() {
-        return resmiDao.findAll(SEARCHABLE_FIELDS, SearchResource.class);
-    }
-
-    @Override
-    public void addSearchableFields(SearchResource searchResource) {
-        resmiDao.saveResource(new ResourceUri(SEARCHABLE_FIELDS), searchResource);
-        searchableFieldsRegistry.addFields(searchResource);
-    }
-
-    private void setId(String userId, JsonObject jsonObject) {
+    protected void setId(String userId, JsonObject jsonObject) {
         String id = userId != null ? generateIdWithUserId(userId) : generateId();
         jsonObject.add(ResmiService.ID, new JsonPrimitive(id));
     }
 
-    private String generateIdWithUserId(String userId) {
+    protected String generateIdWithUserId(String userId) {
         return userId + ":" + generateId();
     }
 
-    private String generateId() {
+    protected String generateId() {
         return UUID.randomUUID().toString();
     }
 
-    private void addDates(JsonObject entity) {
+    protected void addDates(JsonObject entity) {
         if (entity == null) {
             return;
         }
@@ -329,11 +213,11 @@ public class DefaultResmiService implements ResmiService {
         entity.addProperty(_UPDATED_AT, formatedDate);
     }
 
-    private String formatDate(Date date) {
+    protected String formatDate(Date date) {
         return "ISODate(" + String.format("%tFT%<tT.%<tLZ", date) + ")";
     }
 
-    private JsonObject verifyNotUnderscore(JsonObject entity) throws StartsWithUnderscoreException {
+    protected JsonObject verifyNotUnderscore(JsonObject entity) throws StartsWithUnderscoreException {
         if (entity != null) {
             for (Map.Entry<String, JsonElement> entry : entity.entrySet()) {
                 String key = entry.getKey();
@@ -345,5 +229,4 @@ public class DefaultResmiService implements ResmiService {
         }
         return entity;
     }
-
 }

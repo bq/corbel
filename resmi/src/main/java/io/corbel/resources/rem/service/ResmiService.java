@@ -5,7 +5,6 @@ import io.corbel.lib.queries.request.ResourceQuery;
 import io.corbel.resources.rem.dao.NotFoundException;
 import io.corbel.resources.rem.dao.RelationMoveOperation;
 import io.corbel.resources.rem.model.ResourceUri;
-import io.corbel.resources.rem.model.SearchResource;
 import io.corbel.resources.rem.request.CollectionParameters;
 import io.corbel.resources.rem.request.RelationParameters;
 import io.corbel.resources.rem.resmi.exception.MongoAggregationException;
@@ -53,18 +52,14 @@ public interface ResmiService {
 
     void deleteRelation(ResourceUri uri);
 
-    List<SearchResource> getSearchableFields();
-
-    void addSearchableFields(SearchResource searchResource);
-
     void ensureExpireIndex(ResourceUri uri);
 
     void ensureIndex(ResourceUri uri, Index index);
 
     void removeObjectId(JsonObject object);
 
-    JsonArray findCollectionDistinct(ResourceUri uri, Optional<? extends CollectionParameters> apiParameters, List<String> fields,
-            boolean first) throws BadConfigurationException, MongoAggregationException;
+    JsonArray findCollectionDistinct(ResourceUri uri, Optional<CollectionParameters> apiParameters, List<String> fields, boolean first)
+            throws BadConfigurationException, MongoAggregationException;
 
     JsonArray findRelationDistinct(ResourceUri uri, Optional<RelationParameters> apiParameters, List<String> fields, boolean first)
             throws BadConfigurationException, MongoAggregationException;
