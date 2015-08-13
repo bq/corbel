@@ -118,9 +118,13 @@ public class MongoResmiDao implements ResmiDao {
     public JsonArray findRelationWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
             Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException {
 
+        List<ResourceQuery> queries = resourceQueries.orElse(new ArrayList<>());
+
+        ResourceQueryBuilder resourceQueryBuilder = new ResourceQueryBuilder();
+        queries.add(resourceQueryBuilder.add(JsonRelation._SRC_ID, uri.getTypeId()).build());
+
         if (uri.getRelationId() != null) {
-            List<ResourceQuery> queries = resourceQueries.orElse(new ArrayList<>());
-            queries.add(new ResourceQueryBuilder().add(JsonRelation._DST_ID, uri.getRelationId()).build());
+            queries.add(resourceQueryBuilder.add(JsonRelation._DST_ID, uri.getRelationId()).build());
             resourceQueries = Optional.of(queries);
         }
 
