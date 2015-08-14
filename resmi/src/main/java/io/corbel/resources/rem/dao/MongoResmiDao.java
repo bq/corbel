@@ -17,20 +17,15 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 
-import io.corbel.resources.rem.model.GenericDocument;
-import io.corbel.resources.rem.model.ResourceUri;
-import io.corbel.resources.rem.utils.JsonUtils;
-import io.corbel.lib.mongo.JsonObjectMongoWriteConverter;
-import io.corbel.lib.mongo.utils.GsonUtil;
-import io.corbel.lib.queries.request.AverageResult;
-import io.corbel.lib.queries.request.CountResult;
-import io.corbel.lib.queries.request.Pagination;
-import io.corbel.lib.queries.request.ResourceQuery;
-import io.corbel.lib.queries.request.Sort;
-import io.corbel.lib.queries.request.SumResult;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+
+import io.corbel.lib.mongo.JsonObjectMongoWriteConverter;
+import io.corbel.lib.queries.request.*;
+import io.corbel.resources.rem.model.GenericDocument;
+import io.corbel.resources.rem.model.ResourceUri;
+import io.corbel.resources.rem.utils.JsonUtils;
 
 /**
  * @author Alberto J. Rubio
@@ -45,7 +40,6 @@ public class MongoResmiDao implements ResmiDao {
     private static final Logger LOG = LoggerFactory.getLogger(MongoResmiDao.class);
     private static final String EMPTY_STRING = "";
     private static final String EXPIRE_AT = "_expireAt";
-    private static final String CREATED_AT = "_createdAt";
 
     private final MongoOperations mongoOperations;
     private final JsonObjectMongoWriteConverter jsonObjectMongoWriteConverter;
@@ -73,8 +67,8 @@ public class MongoResmiDao implements ResmiDao {
     @Override
     public JsonArray findCollection(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
             Optional<Sort> sort) {
-        Query query = new MongoResmiQueryBuilder().query(resourceQueries.orElse(null)).pagination(pagination.orElse(null)).sort(sort.orElse(null))
-                .build();
+        Query query = new MongoResmiQueryBuilder().query(resourceQueries.orElse(null)).pagination(pagination.orElse(null))
+                .sort(sort.orElse(null)).build();
         LOG.debug("findCollection Query executed : " + query.getQueryObject().toString());
         return JsonUtils.convertToArray(mongoOperations.find(query, JsonObject.class, getMongoCollectionName(uri)));
     }
@@ -120,10 +114,8 @@ public class MongoResmiDao implements ResmiDao {
 
     private JsonObject findAndModify(String collection, Optional<String> id, JsonObject entity, boolean upsert,
             Optional<List<ResourceQuery>> resourceQueries) {
-        JsonElement created = entity.remove(CREATED_AT);
 
-        Update update = updateFromJsonObject(entity, id, Optional.ofNullable(created));
-
+        Update update = updateFromJsonObject(entity, id);
 
         Query query = Query.query(Criteria.where(_ID).exists(false));
         if (id.isPresent()) {
@@ -134,15 +126,8 @@ public class MongoResmiDao implements ResmiDao {
             query = builder.build();
         }
 
-        JsonObject saved = mongoOperations.findAndModify(query, update, FindAndModifyOptions.options().upsert(upsert).returnNew(true),
-                JsonObject.class, collection);
-
-        entity.addProperty(ID, id.isPresent() ? id.get() : saved.get(ID).getAsString());
-
-        if (created != null) {
-            entity.add(CREATED_AT, created);
-        }
-        return saved;
+        return mongoOperations.findAndModify(query, update, FindAndModifyOptions.options().upsert(upsert).returnNew(true), JsonObject.class,
+                collection);
     }
 
     @Override
@@ -151,9 +136,8 @@ public class MongoResmiDao implements ResmiDao {
     }
 
 
-
     @SuppressWarnings("unchecked")
-    private Update updateFromJsonObject(JsonObject entity, Optional<String> id, Optional<JsonElement> created) {
+    private Update updateFromJsonObject(JsonObject entity, Optional<String> id) {
         Update update = new Update();
 
         if (id.isPresent()) {
@@ -161,10 +145,6 @@ public class MongoResmiDao implements ResmiDao {
             if (entity.entrySet().isEmpty()) {
                 update.set(_ID, id);
             }
-        }
-
-        if (created.isPresent() && created.get().isJsonPrimitive()) {
-            update.setOnInsert(CREATED_AT, GsonUtil.getPrimitive(created.get().getAsJsonPrimitive()));
         }
 
         jsonObjectMongoWriteConverter.convert(entity).toMap().forEach((key, value) -> update.set((String) key, value));
@@ -215,8 +195,6 @@ public class MongoResmiDao implements ResmiDao {
         relationJson.add("_order", storedRelation.get("_order"));
         return relationJson;
     }
-
-
 
     /*
      * TODO: This should be refactor out of here (alex 31.01.14)
@@ -294,8 +272,7 @@ public class MongoResmiDao implements ResmiDao {
         aggregations.add(Aggregation.match(new MongoResmiQueryBuilder().getCriteriaFromResourceQueries(resourceQueries)));
         aggregations.add(Aggregation.group().avg(field).as("average"));
 
-        return mongoOperations
-                .aggregate(Aggregation.newAggregation(aggregations), getMongoCollectionName(resourceUri), AverageResult.class)
+        return mongoOperations.aggregate(Aggregation.newAggregation(aggregations), getMongoCollectionName(resourceUri), AverageResult.class)
                 .getUniqueMappedResult();
     }
 
@@ -310,11 +287,9 @@ public class MongoResmiDao implements ResmiDao {
     }
 
     private String getMongoCollectionName(ResourceUri resourceUri) {
-        return Optional
-                .ofNullable(namespaceNormalizer.normalize(resourceUri.getType()))
-                .map(type -> type
-                        + Optional.ofNullable(resourceUri.getRelation())
-                                .map(relation -> RELATION_CONCATENATOR + namespaceNormalizer.normalize(relation)).orElse(EMPTY_STRING))
+        return Optional.ofNullable(namespaceNormalizer.normalize(resourceUri.getType()))
+                .map(type -> type + Optional.ofNullable(resourceUri.getRelation())
+                        .map(relation -> RELATION_CONCATENATOR + namespaceNormalizer.normalize(relation)).orElse(EMPTY_STRING))
                 .orElse(EMPTY_STRING);
     }
 }
