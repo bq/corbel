@@ -150,7 +150,7 @@ public class DefaultResmiService implements ResmiService {
             throws StartsWithUnderscoreException {
         verifyNotUnderscore(object);
         optionalUserId.ifPresent(userId -> setId(userId, object));
-        addDates(object);
+        addDates(object, true);
         resmiDao.saveResource(uri, object);
         indexInSearchService(uri.setTypeId(object.get(ID).getAsString()), object);
         return object;
@@ -199,7 +199,7 @@ public class DefaultResmiService implements ResmiService {
     public JsonObject createRelation(ResourceUri uri, JsonObject requestEntity) throws NotFoundException, StartsWithUnderscoreException {
 
         verifyNotUnderscore(requestEntity);
-        addDates(requestEntity);
+        addDates(requestEntity, true);
         resmiDao.createRelation(uri, requestEntity);
         indexInSearchService(uri, requestEntity);
         return requestEntity;
@@ -287,6 +287,10 @@ public class DefaultResmiService implements ResmiService {
     }
 
     private void addDates(JsonObject entity) {
+        addDates(entity, false);
+    }
+
+    private void addDates(JsonObject entity, boolean creating) {
         if (entity == null) {
             return;
         }
@@ -294,11 +298,15 @@ public class DefaultResmiService implements ResmiService {
         Date date = Date.from(clock.instant());
         String formatedDate = formatDate(date);
 
-        JsonElement createdAt = entity.get(_CREATED_AT);
-        if (createdAt == null) {
+        if (creating) {
+            entity.remove(_CREATED_AT);
             entity.addProperty(_CREATED_AT, formatedDate);
         } else {
-            entity.addProperty(_CREATED_AT, formatDate(Date.from(Instant.ofEpochMilli(createdAt.getAsLong()))));
+            Optional<String> optionalCreatedAt = Optional.ofNullable(entity.get(_CREATED_AT))
+                    .map(createdAt -> formatDate(Date.from(Instant.ofEpochMilli(createdAt.getAsLong()))));
+
+            entity.remove(_CREATED_AT);
+            entity.addProperty(_CREATED_AT, optionalCreatedAt.isPresent() ? optionalCreatedAt.get() : formatedDate);
         }
 
         entity.remove(_UPDATED_AT);
@@ -310,15 +318,18 @@ public class DefaultResmiService implements ResmiService {
     }
 
     private JsonObject verifyNotUnderscore(JsonObject entity) throws StartsWithUnderscoreException {
-        if (entity != null) {
-            for (Map.Entry<String, JsonElement> entry : entity.entrySet()) {
-                String key = entry.getKey();
+        if (entity == null) {
+            return null;
+        }
 
-                if (key.startsWith("_") && !ignorableReservedAttributeNames.contains(key)) {
-                    throw new StartsWithUnderscoreException(entry.getKey());
-                }
+        for (Map.Entry<String, JsonElement> entry : entity.entrySet()) {
+            String key = entry.getKey();
+
+            if (key.startsWith("_") && !ignorableReservedAttributeNames.contains(key)) {
+                throw new StartsWithUnderscoreException(entry.getKey());
             }
         }
+
         return entity;
     }
 
