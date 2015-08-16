@@ -4,15 +4,20 @@ import io.corbel.lib.queries.mongo.builder.MongoQueryBuilder;
 import io.corbel.lib.queries.request.Pagination;
 import io.corbel.lib.queries.request.ResourceQuery;
 import io.corbel.lib.queries.request.Sort;
+import io.corbel.resources.rem.dao.JsonRelation;
+import io.corbel.resources.rem.dao.MongoResmiQueryBuilder;
+import io.corbel.resources.rem.model.ResourceUri;
 import io.corbel.resources.rem.resmi.exception.MongoAggregationException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
 import org.springframework.data.mongodb.core.aggregation.GroupOperation;
+import org.springframework.data.mongodb.core.query.Criteria;
 
 /**
  * @author Rubén Carrasco
@@ -24,13 +29,19 @@ public class MongoAggregationBuilder {
     private final List<AggregationOperation> operations;
 
     public MongoAggregationBuilder() {
-        operations = new ArrayList<AggregationOperation>();
+        operations = new ArrayList<>();
     }
 
-    public MongoAggregationBuilder match(List<ResourceQuery> resourceQueries) {
-        if (resourceQueries != null && !resourceQueries.isEmpty()) {
-            operations.add(Aggregation.match(new MongoQueryBuilder().getCriteriaFromResourceQueries(resourceQueries)));
+    public MongoAggregationBuilder match(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries) {
+        MongoQueryBuilder matchBuilder = new MongoQueryBuilder();
+        Criteria criteria = new Criteria();
+        if(resourceQueries.isPresent()){
+            criteria = matchBuilder.getCriteriaFromResourceQueries(resourceQueries.get());
         }
+        if(uri.isRelation()){
+            criteria = criteria.and(JsonRelation._SRC_ID).is(uri.getTypeId());
+        }
+        operations.add(Aggregation.match(criteria));
         return this;
     }
 

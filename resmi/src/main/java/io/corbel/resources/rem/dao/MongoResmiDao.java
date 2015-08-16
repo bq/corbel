@@ -109,7 +109,7 @@ public class MongoResmiDao implements ResmiDao {
     @Override
     public JsonArray findCollectionWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries,
             Optional<Pagination> pagination, Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException {
-        Aggregation aggregation = buildAggregation(resourceQueries, pagination, sort, groups, first);
+        Aggregation aggregation = buildAggregation(uri, resourceQueries, pagination, sort, groups, first);
         List<JsonObject> result = mongoOperations.aggregate(aggregation, getMongoCollectionName(uri), JsonObject.class).getMappedResults();
         return JsonUtils.convertToArray(first ? extcractDocs(result) : result);
     }
@@ -117,18 +117,7 @@ public class MongoResmiDao implements ResmiDao {
     @Override
     public JsonArray findRelationWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
             Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException {
-
-        List<ResourceQuery> queries = resourceQueries.orElse(new ArrayList<>());
-
-        ResourceQueryBuilder resourceQueryBuilder = new ResourceQueryBuilder();
-        queries.add(resourceQueryBuilder.add(JsonRelation._SRC_ID, uri.getTypeId()).build());
-
-        if (uri.getRelationId() != null) {
-            queries.add(resourceQueryBuilder.add(JsonRelation._DST_ID, uri.getRelationId()).build());
-            resourceQueries = Optional.of(queries);
-        }
-
-        Aggregation aggregation = buildAggregation(resourceQueries, pagination, sort, groups, first);
+        Aggregation aggregation = buildAggregation(uri, resourceQueries, pagination, sort, groups, first);
         List<JsonObject> result = mongoOperations.aggregate(aggregation, getMongoCollectionName(uri), JsonObject.class).getMappedResults();
         return renameIds(JsonUtils.convertToArray(first ? extcractDocs(result) : result));
     }
@@ -137,14 +126,12 @@ public class MongoResmiDao implements ResmiDao {
         return results.stream().map(result -> result.get(MongoAggregationBuilder.REFERENCE).getAsJsonObject()).collect(Collectors.toList());
     }
 
-    private Aggregation buildAggregation(Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
+    private Aggregation buildAggregation(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
             Optional<Sort> sort, List<String> fields, boolean first) throws MongoAggregationException {
 
         MongoAggregationBuilder builder = new MongoAggregationBuilder();
+        builder.match(uri, resourceQueries);
 
-        if (resourceQueries.isPresent()) {
-            builder.match(resourceQueries.get());
-        }
 
         if (sort.isPresent()) {
             builder.sort(sort.get());

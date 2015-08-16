@@ -15,12 +15,16 @@ import io.corbel.resources.rem.service.ResmiService;
 import io.corbel.lib.ws.api.error.ErrorResponseFactory;
 import io.corbel.lib.ws.model.Error;
 import com.google.gson.JsonObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Rubén Carrasco
  * 
  */
 public class ResmiGetRem extends AbstractResmiRem {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ResmiGetRem.class);
 
     public ResmiGetRem(ResmiService resmiService) {
         super(resmiService);
@@ -70,6 +74,8 @@ public class ResmiGetRem extends AbstractResmiRem {
                 return buildResponse(resmiService.findRelation(resourceUri, parameters.getOptionalApiParameters()));
             }
         } catch (Exception e) {
+            LOG.error("Failed to get relation data", e);
+            //TODO: This should not be a Bad Request... probably a 500 since most like it is a bug
             return ErrorResponseFactory.getInstance().badRequest();
         }
     }

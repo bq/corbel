@@ -5,10 +5,12 @@ import io.corbel.lib.queries.builder.ResourceQueryBuilder;
 import io.corbel.lib.queries.request.Pagination;
 import io.corbel.lib.queries.request.ResourceQuery;
 import io.corbel.lib.queries.request.Sort;
+import io.corbel.resources.rem.model.ResourceUri;
 import io.corbel.resources.rem.resmi.exception.MongoAggregationException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -35,8 +37,8 @@ public class MongoAggregationBuilderTest {
     public void testMatch() throws MongoAggregationException {
         List<ResourceQuery> resourceQueries = new ArrayList<>();
         resourceQueries.add(new ResourceQueryBuilder().add(FIELD_1, VALUE).build());
-        Aggregation agg = builder.match(resourceQueries).build();
-        assertEquals("{ \"aggregate\" : \"__collection__\" , \"pipeline\" : [ { \"$match\" : { \"field_1\" : \"value\"}}]}", agg.toString());
+        Aggregation agg = builder.match(new ResourceUri("testType", "testRes", "testRel"), Optional.of(resourceQueries)).build();
+        assertEquals("{ \"aggregate\" : \"__collection__\" , \"pipeline\" : [ { \"$match\" : { \"field_1\" : \"value\" , \"_src_id\" : \"testRes\"}}]}", agg.toString());
     }
 
     @Test
@@ -69,9 +71,9 @@ public class MongoAggregationBuilderTest {
         Sort sort = new Sort(ASC, FIELD_1);
         List<ResourceQuery> resourceQueries = new ArrayList<>();
         resourceQueries.add(new ResourceQueryBuilder().add(FIELD_1, VALUE).build());
-        Aggregation agg = builder.match(resourceQueries).sort(sort).group(fields).pagination(pagination).build();
+        Aggregation agg = builder.match(new ResourceUri("testType", "testRes", "testRel"), Optional.of(resourceQueries)).sort(sort).group(fields).pagination(pagination).build();
         assertEquals(
-                "{ \"aggregate\" : \"__collection__\" , \"pipeline\" : [ { \"$match\" : { \"field_1\" : \"value\"}} , { \"$sort\" : { \"field_1\" : 1}} , { \"$group\" : { \"_id\" : \"$field_1\"}} , { \"$skip\" : 0} , { \"$limit\" : 50}]}",
+                "{ \"aggregate\" : \"__collection__\" , \"pipeline\" : [ { \"$match\" : { \"field_1\" : \"value\" , \"_src_id\" : \"testRes\"}} , { \"$sort\" : { \"field_1\" : 1}} , { \"$group\" : { \"_id\" : \"$field_1\"}} , { \"$skip\" : 0} , { \"$limit\" : 50}]}",
                 agg.toString());
     }
 
