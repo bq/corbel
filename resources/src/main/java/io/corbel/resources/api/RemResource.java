@@ -42,7 +42,7 @@ import io.corbel.lib.ws.auth.AuthorizationInfo;
  * @author Alexander De Leon
  * 
  */
-@Resource @Path(ApiVersion.CURRENT + "/resource") public class RemResource {
+@Resource @Path(ApiVersion.CURRENT + "{domain}/resource") public class RemResource {
     private static final Logger LOG = LoggerFactory.getLogger(RemResource.class);
     private final ResourcesService resourcesService;
 
