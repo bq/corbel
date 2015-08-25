@@ -58,10 +58,10 @@ public interface ResmiService {
 
     void removeObjectId(JsonObject object);
 
-    JsonArray findCollectionDistinct(ResourceUri uri, Optional<CollectionParameters> apiParameters, List<String> fields, boolean first)
+    JsonArray findCollectionDistinct(ResourceUri uri, Optional<CollectionParameters> apiParameters, List<String> fields)
             throws BadConfigurationException, MongoAggregationException;
 
-    JsonArray findRelationDistinct(ResourceUri uri, Optional<RelationParameters> apiParameters, List<String> fields, boolean first)
+    JsonArray findRelationDistinct(ResourceUri uri, Optional<RelationParameters> apiParameters, List<String> fields)
             throws BadConfigurationException, MongoAggregationException;
 
 }

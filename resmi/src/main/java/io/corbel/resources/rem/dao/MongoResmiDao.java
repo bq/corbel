@@ -2,7 +2,7 @@ package io.corbel.resources.rem.dao;
 
 import io.corbel.lib.mongo.JsonObjectMongoWriteConverter;
 import io.corbel.lib.mongo.utils.GsonUtil;
-import io.corbel.lib.queries.builder.ResourceQueryBuilder;
+import io.corbel.lib.queries.mongo.builder.CriteriaBuilder;
 import io.corbel.lib.queries.request.AverageResult;
 import io.corbel.lib.queries.request.CountResult;
 import io.corbel.lib.queries.request.Pagination;
@@ -291,7 +291,7 @@ public class MongoResmiDao implements ResmiDao {
     @Override
     public List<GenericDocument> deleteCollection(ResourceUri uri, Optional<List<ResourceQuery>> queries) {
         List<ResourceQuery> resourceQueries = queries.orElse(Collections.<ResourceQuery>emptyList());
-        Criteria criteria = new MongoResmiQueryBuilder().getCriteriaFromResourceQueries(resourceQueries);
+        Criteria criteria = CriteriaBuilder.buildFromResourceQueries(resourceQueries);
         return findAllAndRemove(uri, criteria);
     }
 
@@ -336,7 +336,7 @@ public class MongoResmiDao implements ResmiDao {
     @Override
     public AverageResult average(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
         List<AggregationOperation> aggregations = new ArrayList<>();
-        aggregations.add(Aggregation.match(new MongoResmiQueryBuilder().getCriteriaFromResourceQueries(resourceQueries)));
+        aggregations.add(Aggregation.match(CriteriaBuilder.buildFromResourceQueries(resourceQueries)));
         aggregations.add(Aggregation.group().avg(field).as("average"));
 
         return mongoOperations
@@ -347,7 +347,7 @@ public class MongoResmiDao implements ResmiDao {
     @Override
     public SumResult sum(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
         List<AggregationOperation> aggregations = new ArrayList<>();
-        aggregations.add(Aggregation.match(new MongoResmiQueryBuilder().getCriteriaFromResourceQueries(resourceQueries)));
+        aggregations.add(Aggregation.match(CriteriaBuilder.buildFromResourceQueries(resourceQueries)));
         aggregations.add(Aggregation.group().sum(field).as("sum"));
 
         return mongoOperations.aggregate(Aggregation.newAggregation(aggregations), getMongoCollectionName(resourceUri), SumResult.class)

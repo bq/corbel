@@ -14,6 +14,7 @@ import io.corbel.resources.rem.model.SearchResource;
 import io.corbel.resources.rem.request.CollectionParameters;
 import io.corbel.resources.rem.request.CollectionParametersImpl;
 import io.corbel.resources.rem.request.RelationParameters;
+import io.corbel.resources.rem.resmi.exception.MongoAggregationException;
 import io.corbel.resources.rem.resmi.exception.StartsWithUnderscoreException;
 import io.corbel.resources.rem.search.ResmiSearch;
 
@@ -81,6 +82,18 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
             return findInSearchService(uri, apiParameters.get());
         } else {
             return super.findCollection(uri, apiParameters);
+        }
+    }
+
+    @Override
+    public JsonArray findCollectionDistinct(ResourceUri uri, Optional<CollectionParameters> apiParameters, List<String> fields)
+            throws BadConfigurationException, MongoAggregationException {
+        if (apiParameters.flatMap(params -> params.getSearch()).isPresent() && apiParameters.get().getSearch().get().getText().isPresent()) {
+            throw new RuntimeException("Unsupported Operation: Cannont perform a distinct with full text search");
+            // return search.distinct(uri, apiParameters.get().getSearch().get().getText().get(), apiParameters.get().getQueries(),
+            // apiParameters.get().getPagination(), apiParameters.get().getSort(), fields);
+        } else {
+            return super.findCollectionDistinct(uri, apiParameters, fields);
         }
     }
 

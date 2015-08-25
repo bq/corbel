@@ -16,6 +16,7 @@ import io.corbel.resources.rem.dao.ResmiDao;
 import io.corbel.resources.rem.model.ResourceUri;
 import io.corbel.resources.rem.request.CollectionParameters;
 import io.corbel.resources.rem.request.RelationParameters;
+import io.corbel.resources.rem.resmi.exception.MongoAggregationException;
 import io.corbel.resources.rem.search.ResmiSearch;
 
 import java.text.SimpleDateFormat;
@@ -61,11 +62,11 @@ import com.google.gson.JsonArray;
     @Mock Pagination paginationMock;
     @Mock Sort sortMock;
     @Mock RelationParameters relationParametersMock;
-    private DefaultResmiService defaultResmiService;
+    private WithSearchResmiService withSearchResmiService;
 
     @Before
     public void setup() {
-        defaultResmiService = new WithSearchResmiService(resmiDao, resmiSearch, searchableFieldRegistry, Clock.systemUTC());
+        withSearchResmiService = new WithSearchResmiService(resmiDao, resmiSearch, searchableFieldRegistry, Clock.systemUTC());
         when(relationParametersMock.getAggregation()).thenReturn(Optional.empty());
         when(relationParametersMock.getQueries()).thenReturn(Optional.ofNullable(resourceQueriesMock));
         when(relationParametersMock.getQueries()).thenReturn(Optional.ofNullable(resourceQueriesMock));
@@ -91,14 +92,34 @@ import com.google.gson.JsonArray;
                 resmiSearch.search(eq(RESOURCE_URI), eq(search.get()), eq(Optional.of(resourceQueriesMock)), eq(paginationMock),
                         eq(Optional.of(sortMock)))).thenReturn(fakeResult);
 
-        JsonArray result = defaultResmiService.findCollection(resourceUri, Optional.of(collectionParametersMock));
+        JsonArray result = withSearchResmiService.findCollection(resourceUri, Optional.of(collectionParametersMock));
+        assertThat(fakeResult).isEqualTo(result);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void distinctWithSearchTest() throws BadConfigurationException, MongoAggregationException {
+        ResourceUri resourceUri = new ResourceUri(TYPE);
+
+        JsonArray fakeResult = new JsonArray();
+        Optional<String> search = Optional.of("my+search");
+        List<String> fields = Arrays.asList("field1", "field2");
+        when(paginationMock.getPage()).thenReturn(PAGE);
+        when(paginationMock.getPageSize()).thenReturn(SIZE);
+        when(resourceSearchMock.getText()).thenReturn(search);
+        when(resourceSearchMock.getParams()).thenReturn(Optional.empty());
+        when(searchableFieldRegistry.getFieldsFromResourceUri(eq(RESOURCE_URI))).thenReturn(new HashSet(Arrays.asList("t1", "t2")));
+        when(
+                resmiSearch.distinct(eq(RESOURCE_URI), eq(search.get()), eq(Optional.of(resourceQueriesMock)), eq(paginationMock),
+                        eq(Optional.of(sortMock)), eq(fields))).thenReturn(fakeResult);
+
+        JsonArray result = withSearchResmiService.findCollectionDistinct(resourceUri, Optional.of(collectionParametersMock), fields);
         assertThat(fakeResult).isEqualTo(result);
     }
 
     @Test
     public void deleteResourceByIdTest() throws NotFoundException {
         ResourceUri uri = new ResourceUri(TYPE, ID);
-        defaultResmiService.deleteResource(uri);
+        withSearchResmiService.deleteResource(uri);
         verify(resmiDao).deleteResource(uri);
         verify(resmiSearch, times(0)).deleteDocument(any());
     }
@@ -107,7 +128,7 @@ import com.google.gson.JsonArray;
     public void deleteIndexedResourceByIdTest() throws NotFoundException {
         ResourceUri uri = new ResourceUri(TYPE, ID);
         when(searchableFieldRegistry.getFieldsFromType(eq(TYPE))).thenReturn(new HashSet(Arrays.asList("t1", "t2")));
-        defaultResmiService.deleteResource(uri);
+        withSearchResmiService.deleteResource(uri);
         verify(resmiDao).deleteResource(uri);
         verify(resmiSearch).deleteDocument(uri);
     }

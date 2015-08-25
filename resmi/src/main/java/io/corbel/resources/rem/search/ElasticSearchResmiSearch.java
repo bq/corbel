@@ -50,6 +50,14 @@ public class ElasticSearchResmiSearch implements ResmiSearch {
     }
 
     @Override
+    public JsonArray distinct(ResourceUri uri, String search, Optional<List<ResourceQuery>> queries, Pagination pagination,
+            Optional<Sort> sort, List<String> fields) {
+        return elasticeSerachService.distinct(INDEX, getElasticSearchType(uri), search, queries.orElse(Collections.emptyList()),
+                pagination, sort, fields);
+    }
+
+
+    @Override
     public AggregationResult count(ResourceUri uri, String search, Optional<List<ResourceQuery>> queries) {
         return new CountResult(elasticeSerachService.count(INDEX, getElasticSearchType(uri), search,
                 queries.orElse(Collections.emptyList())));
@@ -59,7 +67,7 @@ public class ElasticSearchResmiSearch implements ResmiSearch {
     public void indexDocument(ResourceUri uri, JsonObject fields) {
         JsonPrimitive resourceId = uri.isResource() ? new JsonPrimitive(uri.getTypeId()) : new JsonPrimitive(uri.getRelationId());
         fields.add("id", resourceId);
-        elasticeSerachService.indexDocument(INDEX, getElasticSearchType(uri), getElasticSearchId(uri), fields.toString());
+        elasticeSerachService.indexDocument(INDEX, getElasticSearchType(uri), getElasticSearchId(uri), fields);
     }
 
     @Override

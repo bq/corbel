@@ -4,12 +4,12 @@ import io.corbel.lib.queries.request.AggregationResult;
 import io.corbel.lib.queries.request.Pagination;
 import io.corbel.lib.queries.request.ResourceQuery;
 import io.corbel.lib.queries.request.Sort;
+import io.corbel.resources.rem.model.ResourceUri;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import io.corbel.resources.rem.model.ResourceUri;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
@@ -20,6 +20,9 @@ public interface ResmiSearch {
 
     JsonArray search(ResourceUri uri, String search, Optional<List<ResourceQuery>> resourceQueries, Pagination pagination,
             Optional<Sort> sort);
+
+    JsonArray distinct(ResourceUri uri, String search, Optional<List<ResourceQuery>> resourceQueries, Pagination pagination,
+            Optional<Sort> sort, List<String> fields);
 
     AggregationResult count(ResourceUri uri, String search, Optional<List<ResourceQuery>> resourceQueries);
 

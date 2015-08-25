@@ -79,10 +79,10 @@ public class DefaultResmiService implements ResmiService {
     }
 
     @Override
-    public JsonArray findCollectionDistinct(ResourceUri uri, Optional<CollectionParameters> apiParameters, List<String> fields,
-            boolean first) throws BadConfigurationException, MongoAggregationException {
+    public JsonArray findCollectionDistinct(ResourceUri uri, Optional<CollectionParameters> apiParameters, List<String> fields)
+            throws BadConfigurationException, MongoAggregationException {
         return resmiDao.findCollectionWithGroup(uri, apiParameters.flatMap(params -> params.getQueries()),
-                apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()), fields, first);
+                apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()), fields, true);
     }
 
     @Override
@@ -97,10 +97,10 @@ public class DefaultResmiService implements ResmiService {
     }
 
     @Override
-    public JsonArray findRelationDistinct(ResourceUri uri, Optional<RelationParameters> apiParameters, List<String> fields, boolean first)
+    public JsonArray findRelationDistinct(ResourceUri uri, Optional<RelationParameters> apiParameters, List<String> fields)
             throws BadConfigurationException, MongoAggregationException {
         return resmiDao.findRelationWithGroup(uri, apiParameters.flatMap(params -> params.getQueries()),
-                apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()), fields, first);
+                apiParameters.map(params -> params.getPagination()), apiParameters.flatMap(params -> params.getSort()), fields, true);
     }
 
     @Override

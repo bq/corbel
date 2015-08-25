@@ -1,11 +1,10 @@
 package io.corbel.resources.rem.dao.builder;
 
-import io.corbel.lib.queries.mongo.builder.MongoQueryBuilder;
+import io.corbel.lib.queries.mongo.builder.CriteriaBuilder;
 import io.corbel.lib.queries.request.Pagination;
 import io.corbel.lib.queries.request.ResourceQuery;
 import io.corbel.lib.queries.request.Sort;
 import io.corbel.resources.rem.dao.JsonRelation;
-import io.corbel.resources.rem.dao.MongoResmiQueryBuilder;
 import io.corbel.resources.rem.model.ResourceUri;
 import io.corbel.resources.rem.resmi.exception.MongoAggregationException;
 
@@ -33,12 +32,11 @@ public class MongoAggregationBuilder {
     }
 
     public MongoAggregationBuilder match(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries) {
-        MongoQueryBuilder matchBuilder = new MongoQueryBuilder();
         Criteria criteria = new Criteria();
-        if(resourceQueries.isPresent()){
-            criteria = matchBuilder.getCriteriaFromResourceQueries(resourceQueries.get());
+        if (resourceQueries.isPresent()) {
+            criteria = CriteriaBuilder.buildFromResourceQueries(resourceQueries.get());
         }
-        if(uri.isRelation()){
+        if (uri.isRelation()) {
             criteria = criteria.and(JsonRelation._SRC_ID).is(uri.getTypeId());
         }
         operations.add(Aggregation.match(criteria));
