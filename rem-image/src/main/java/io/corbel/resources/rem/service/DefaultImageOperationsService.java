@@ -56,6 +56,7 @@ public class DefaultImageOperationsService implements ImageOperationsService {
     }
 
     private void addDefaultImageToIMOperation(IMOperation imOperation) {
+        imOperation.addRawArgs("-limit", "memory", "1GiB"); //Avoids a massive memory consumption.
         addImageToIMOperation(imOperation, DEF_IMAGE_ARG);
     }
 

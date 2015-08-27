@@ -8,14 +8,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Resize implements ImageOperation {
+public class Resize extends BaseResize {
 
     private final Pattern pattern = Pattern.compile("^\\((\\d+) *, *(\\d+)\\)$");
 
     @Override
     public IMOps apply(String parameter) throws ImageOperationsException {
 
-        int width, height;
+        int paramWidth, paramHeight;
 
         try {
             Matcher matcher = pattern.matcher(parameter);
@@ -26,19 +26,17 @@ public class Resize implements ImageOperation {
 
             List<String> values = getValues(parameter, matcher);
 
-            width = Integer.parseInt(values.get(0));
-            height = Integer.parseInt(values.get(1));
-
-
+            paramWidth = getSafeResizeParameter(values.get(0));
+            paramHeight = getSafeResizeParameter(values.get(1));
         } catch (NumberFormatException e) {
             throw new ImageOperationsException("Bad dimension parameter in resize: " + parameter, e);
         }
 
-        if (width <= 0 || height <= 0) {
+        if (paramWidth <= 0 || paramHeight <= 0) {
             throw new ImageOperationsException("Parameters for resize must be greater than 0: " + parameter);
         }
 
-        return new IMOperation().resize(width, height, '!');
+        return new IMOperation().resize(paramWidth, paramHeight, '!');
     }
 
     @Override

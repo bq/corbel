@@ -11,6 +11,8 @@ import static org.fest.assertions.api.Assertions.assertThat;
 
 public class ImageOperationsTest {
 
+    private final int MAX_IMAGE_SIZE = BaseResize.MAX_SIZE_VALUE;
+
     @Test
     public void cropTest() throws ImageOperationsException {
         List<String> inputParameters = Collections.singletonList("(10, 20, 30, 40)");
@@ -33,6 +35,30 @@ public class ImageOperationsTest {
         List<String> expectedOutputs = Collections.singletonList("[-resize, 10x20!]");
 
         operationTest(inputParameters, expectedOutputs, new Resize());
+    }
+
+    @Test
+    public void resizeTestExceedingImageValues() throws ImageOperationsException {
+        List<String> inputParameters = Collections.singletonList("(" + (MAX_IMAGE_SIZE + 1) + ", " + (MAX_IMAGE_SIZE + 1) + ")");
+        List<String> expectedOutputs = Collections.singletonList("[-resize, " + MAX_IMAGE_SIZE + "x" + MAX_IMAGE_SIZE + "!]");
+
+        operationTest(inputParameters, expectedOutputs, new Resize());
+    }
+
+    @Test
+    public void resizeWidthTestExceedingImageValues() throws ImageOperationsException {
+        List<String> inputParameters = Collections.singletonList(String.valueOf(MAX_IMAGE_SIZE + 1));
+        List<String> expectedOutputs = Collections.singletonList("[-resize, " + MAX_IMAGE_SIZE + "]");
+
+        operationTest(inputParameters, expectedOutputs, new ResizeWidth());
+    }
+
+    @Test
+    public void resizeHeightTestExceedingImageValues() throws ImageOperationsException {
+        List<String> inputParameters = Collections.singletonList(String.valueOf(MAX_IMAGE_SIZE + 1));
+        List<String> expectedOutputs = Collections.singletonList("[-resize, x" + MAX_IMAGE_SIZE + "]");
+
+        operationTest(inputParameters, expectedOutputs, new ResizeHeight());
     }
 
     @Test

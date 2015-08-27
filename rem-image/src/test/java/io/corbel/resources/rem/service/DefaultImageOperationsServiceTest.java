@@ -1,10 +1,10 @@
 package io.corbel.resources.rem.service;
 
+import com.google.common.collect.ImmutableMap;
 import io.corbel.resources.rem.exception.ImageOperationsException;
 import io.corbel.resources.rem.format.ImageFormat;
 import io.corbel.resources.rem.model.ImageOperationDescription;
 import io.corbel.resources.rem.operation.ImageOperation;
-import com.google.common.collect.ImmutableMap;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
@@ -51,7 +51,7 @@ public class DefaultImageOperationsServiceTest {
     private Optional<ImageFormat> imageFormatNull = Optional.empty();
 
     @Before
-    public void setUp() throws ImageOperationsException {
+    public void setUp() throws ImageOperationsException, IOException {
         operations = ImmutableMap.<String, ImageOperation>builder().put("resizeWidth", imageOperationMock).build();
         defaultImageOperationsService = new DefaultImageOperationsService(imOperationFactory, convertCmdFactory, operations);
         imOperation = mock(IMOperation.class);
@@ -59,6 +59,7 @@ public class DefaultImageOperationsServiceTest {
         when(imOperationFactory.create()).thenReturn(imOperation);
         when(convertCmdFactory.create(any(), any())).thenReturn(convertCmd);
         when(ImageOperationMock.apply(any())).thenReturn(imOperationMock);
+        when(image.read(any(), anyInt(), anyInt())).thenReturn(0);
     }
 
     @Test
@@ -72,7 +73,7 @@ public class DefaultImageOperationsServiceTest {
 
         ArgumentCaptor<IMOperation> capturedIMOperation = ArgumentCaptor.forClass(IMOperation.class);
         verify(imOperation).addSubOperation(capturedIMOperation.capture());
-
+        verify(imOperation).addRawArgs(any(), any(), any());
         verify(convertCmdFactory).create(any(), any());
         verify(convertCmd).run(imOperation);
 
@@ -90,7 +91,7 @@ public class DefaultImageOperationsServiceTest {
 
         ArgumentCaptor<IMOperation> capturedIMOperation = ArgumentCaptor.forClass(IMOperation.class);
         verify(imOperation, times(0)).addSubOperation(capturedIMOperation.capture());
-
+        verify(imOperation).addRawArgs(any(), any(), any());
         verify(convertCmdFactory).create(any(), any());
         verify(convertCmd).run(imOperation);
     }
@@ -104,6 +105,7 @@ public class DefaultImageOperationsServiceTest {
         } catch (ImageOperationsException e) {
             verify(imOperationFactory).create();
             verify(imOperation, times(1)).addImage(eq("-"));
+            verify(imOperation).addRawArgs(any(), any(), any());
             throw e;
         }
     }
@@ -118,12 +120,13 @@ public class DefaultImageOperationsServiceTest {
             verify(imOperationFactory).create();
             verify(imOperation, times(1)).addImage(eq("-"));
             verify(imOperation, times(0)).addImage("PNG:-");
+            verify(imOperation).addRawArgs(any(), any(), any());
             throw e;
         }
     }
 
     @After
     public void afterTesting() {
-        verifyNoMoreInteractions(imOperationFactory, convertCmdFactory, imOperation, convertCmd, image, out);
+        verifyNoMoreInteractions(imOperationFactory, convertCmdFactory, imOperation, image, convertCmd, out);
     }
 }
