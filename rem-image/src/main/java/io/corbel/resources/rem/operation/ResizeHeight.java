@@ -4,14 +4,16 @@ import io.corbel.resources.rem.exception.ImageOperationsException;
 import org.im4java.core.IMOperation;
 import org.im4java.core.IMOps;
 
-public class ResizeHeight implements ImageOperation {
+import java.awt.image.BufferedImage;
+
+public class ResizeHeight extends BaseResize {
 
     @Override
-    public IMOps apply(String parameter) throws ImageOperationsException {
+    public IMOps apply(String parameter, BufferedImage bufferedImage) throws ImageOperationsException {
         int height;
 
         try {
-            height = Integer.parseInt(parameter);
+            height = getBoundedHeightValue(parameter, bufferedImage);
         } catch (NumberFormatException e) {
             throw new ImageOperationsException("Bad image height: " + parameter, e);
         }

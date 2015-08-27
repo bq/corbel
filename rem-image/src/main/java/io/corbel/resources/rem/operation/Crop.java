@@ -4,6 +4,7 @@ import io.corbel.resources.rem.exception.ImageOperationsException;
 import org.im4java.core.IMOperation;
 import org.im4java.core.IMOps;
 
+import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,7 +14,7 @@ public class Crop implements ImageOperation {
     private final Pattern pattern = Pattern.compile("\\((\\d+) *, *(\\d+) *, *(\\d+) *, *(\\d+)\\)");
 
     @Override
-    public IMOps apply(String parameter) throws ImageOperationsException {
+    public IMOps apply(String parameter, BufferedImage bufferedImage) throws ImageOperationsException {
 
         int xorig, yorig, xdest, ydest;
 

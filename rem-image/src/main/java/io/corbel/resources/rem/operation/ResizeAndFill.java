@@ -4,16 +4,17 @@ import io.corbel.resources.rem.exception.ImageOperationsException;
 import org.im4java.core.IMOperation;
 import org.im4java.core.IMOps;
 
+import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ResizeAndFill implements ImageOperation {
+public class ResizeAndFill extends BaseResize {
 
     private final Pattern pattern = Pattern.compile("^\\((\\d+) *, *(\\w+)\\)$");
 
     @Override
-    public IMOps apply(String parameter) throws ImageOperationsException {
+    public IMOps apply(String parameter, BufferedImage bufferedImage) throws ImageOperationsException {
 
         int width;
         String color;
@@ -27,7 +28,7 @@ public class ResizeAndFill implements ImageOperation {
 
             List<String> values = getValues(parameter, matcher);
 
-            width = Integer.parseInt(values.get(0));
+            width = getBoundedWidthValue(values.get(0), bufferedImage);
             color = values.get(1);
         } catch (NumberFormatException e) {
             throw new ImageOperationsException("Bad width parameter: " + parameter, e);
@@ -39,7 +40,7 @@ public class ResizeAndFill implements ImageOperation {
 
         IMOperation subOperation = new IMOperation();
         subOperation.resize(width, width);
-        subOperation.background("#"+color);
+        subOperation.background("#" + color);
         subOperation.gravity("center");
         subOperation.extent(width, width);
 

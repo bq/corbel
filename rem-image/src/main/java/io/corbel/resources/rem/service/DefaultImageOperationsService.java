@@ -9,6 +9,9 @@ import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
 import org.im4java.process.Pipe;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -33,15 +36,16 @@ public class DefaultImageOperationsService implements ImageOperationsService {
     @Override
     public void applyConversion(List<ImageOperationDescription> parameters, InputStream image, OutputStream out, Optional<ImageFormat> format) throws ImageOperationsException, InterruptedException, IOException, IM4JavaException {
         IMOperation imOperation = imOperationFactory.create();
+        BufferedImage bufferedImage = ImageIO.read(new BufferedInputStream(image));
         addDefaultImageToIMOperation(imOperation);
-        addOperations(imOperation, parameters);
+        addOperations(imOperation, parameters, bufferedImage);
         addImageToIMOperation(imOperation, getOutputFormatParameter(format));
 
         ConvertCmd convertCmd = convertCmdFactory.create(image, out);
         convertCmd.run(imOperation);
     }
 
-    private void addOperations(IMOperation imOperation, List<ImageOperationDescription> parameters) throws ImageOperationsException {
+    private void addOperations(IMOperation imOperation, List<ImageOperationDescription> parameters, BufferedImage bufferedImage) throws ImageOperationsException {
         for (ImageOperationDescription parameter : parameters) {
 
             String operationName = parameter.getName();
@@ -51,7 +55,7 @@ public class DefaultImageOperationsService implements ImageOperationsService {
                 throw new ImageOperationsException("Unknown operation: " + operationName);
             }
 
-            imOperation.addSubOperation(currentOperation.apply(parameter.getParameters()));
+            imOperation.addSubOperation(currentOperation.apply(parameter.getParameters(), bufferedImage));
         }
     }
 

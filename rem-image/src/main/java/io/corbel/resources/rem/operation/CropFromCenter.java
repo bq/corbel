@@ -4,6 +4,7 @@ import io.corbel.resources.rem.exception.ImageOperationsException;
 import org.im4java.core.IMOperation;
 import org.im4java.core.IMOps;
 
+import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,7 +14,7 @@ public class CropFromCenter implements ImageOperation {
     private final Pattern pattern = Pattern.compile("\\((\\d+) *, *(\\d+)\\)");
 
     @Override
-    public IMOps apply(String parameter) throws ImageOperationsException {
+    public IMOps apply(String parameter, BufferedImage bufferedImage) throws ImageOperationsException {
 
         int xratio, yratio;
 
@@ -39,7 +40,7 @@ public class CropFromCenter implements ImageOperation {
         }
 
         IMOperation subOperation = new IMOperation();
-        subOperation.gravity("center").crop(xratio, yratio, 0,0);
+        subOperation.gravity("center").crop(xratio, yratio, 0, 0);
         return subOperation;
 
     }

@@ -1,10 +1,10 @@
 package io.corbel.resources.rem.service;
 
+import com.google.common.collect.ImmutableMap;
 import io.corbel.resources.rem.exception.ImageOperationsException;
 import io.corbel.resources.rem.format.ImageFormat;
 import io.corbel.resources.rem.model.ImageOperationDescription;
 import io.corbel.resources.rem.operation.ImageOperation;
-import com.google.common.collect.ImmutableMap;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,6 +41,8 @@ public class DefaultImageOperationsServiceTest {
     private static ImageOperation ImageOperationMock;
     @Mock
     private static InputStream image = mock(InputStream.class);
+    @Mock
+    private static BufferedImage bufferedImage = mock(BufferedImage.class);
     private static OutputStream out = mock(OutputStream.class);
     ;
     private static IMOperation imOperation;
@@ -51,14 +54,15 @@ public class DefaultImageOperationsServiceTest {
     private Optional<ImageFormat> imageFormatNull = Optional.empty();
 
     @Before
-    public void setUp() throws ImageOperationsException {
+    public void setUp() throws ImageOperationsException, IOException {
         operations = ImmutableMap.<String, ImageOperation>builder().put("resizeWidth", imageOperationMock).build();
         defaultImageOperationsService = new DefaultImageOperationsService(imOperationFactory, convertCmdFactory, operations);
         imOperation = mock(IMOperation.class);
 
         when(imOperationFactory.create()).thenReturn(imOperation);
         when(convertCmdFactory.create(any(), any())).thenReturn(convertCmd);
-        when(ImageOperationMock.apply(any())).thenReturn(imOperationMock);
+        when(ImageOperationMock.apply(any(), any())).thenReturn(imOperationMock);
+        when(image.read(any(), anyInt(), anyInt())).thenReturn(0);
     }
 
     @Test
@@ -73,6 +77,7 @@ public class DefaultImageOperationsServiceTest {
         ArgumentCaptor<IMOperation> capturedIMOperation = ArgumentCaptor.forClass(IMOperation.class);
         verify(imOperation).addSubOperation(capturedIMOperation.capture());
 
+        verify(image).read(any(), anyInt(), anyInt());
         verify(convertCmdFactory).create(any(), any());
         verify(convertCmd).run(imOperation);
 
@@ -91,6 +96,7 @@ public class DefaultImageOperationsServiceTest {
         ArgumentCaptor<IMOperation> capturedIMOperation = ArgumentCaptor.forClass(IMOperation.class);
         verify(imOperation, times(0)).addSubOperation(capturedIMOperation.capture());
 
+        verify(image).read(any(), anyInt(), anyInt());
         verify(convertCmdFactory).create(any(), any());
         verify(convertCmd).run(imOperation);
     }
@@ -102,6 +108,7 @@ public class DefaultImageOperationsServiceTest {
         try {
             defaultImageOperationsService.applyConversion(parameters, image, out, imageFormatNull);
         } catch (ImageOperationsException e) {
+            verify(image).read(any(), anyInt(), anyInt());
             verify(imOperationFactory).create();
             verify(imOperation, times(1)).addImage(eq("-"));
             throw e;
@@ -115,6 +122,7 @@ public class DefaultImageOperationsServiceTest {
         try {
             defaultImageOperationsService.applyConversion(parameters, image, out, imageFormat);
         } catch (ImageOperationsException e) {
+            verify(image).read(any(), anyInt(), anyInt());
             verify(imOperationFactory).create();
             verify(imOperation, times(1)).addImage(eq("-"));
             verify(imOperation, times(0)).addImage("PNG:-");
@@ -124,6 +132,7 @@ public class DefaultImageOperationsServiceTest {
 
     @After
     public void afterTesting() {
-        verifyNoMoreInteractions(imOperationFactory, convertCmdFactory, imOperation, convertCmd, image, out);
+        verifyNoMoreInteractions(imOperationFactory, convertCmdFactory, imOperation, convertCmd, out);
+        verifyNoMoreInteractions(image);
     }
 }

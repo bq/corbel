@@ -4,14 +4,16 @@ import io.corbel.resources.rem.exception.ImageOperationsException;
 import org.im4java.core.IMOperation;
 import org.im4java.core.IMOps;
 
-public class ResizeWidth implements ImageOperation {
+import java.awt.image.BufferedImage;
+
+public class ResizeWidth extends BaseResize {
 
     @Override
-    public IMOps apply(String parameter) throws ImageOperationsException {
+    public IMOps apply(String parameter, BufferedImage bufferedImage) throws ImageOperationsException {
         int width;
 
         try {
-            width = Integer.parseInt(parameter);
+            width = getBoundedWidthValue(parameter, bufferedImage);
         } catch (NumberFormatException e) {
             throw new ImageOperationsException("Bad image width: " + parameter, e);
         }

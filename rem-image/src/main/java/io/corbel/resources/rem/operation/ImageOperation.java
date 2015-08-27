@@ -3,13 +3,16 @@ package io.corbel.resources.rem.operation;
 import io.corbel.resources.rem.exception.ImageOperationsException;
 import org.im4java.core.IMOps;
 
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 
 public interface ImageOperation {
 
-    IMOps apply(String parameter) throws ImageOperationsException;
+    int MAX_SIZE_VALUE = 16384; //1024*16
+
+    IMOps apply(String parameter, BufferedImage bufferedImage) throws ImageOperationsException;
 
     String getOperationName();
 
