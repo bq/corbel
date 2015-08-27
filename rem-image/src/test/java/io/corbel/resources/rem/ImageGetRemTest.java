@@ -81,7 +81,7 @@ public class ImageGetRemTest {
         ((StreamingOutput) response.getEntity()).write(outputMock);
 
         verify(imageOperationsService).applyConversion(anyListOf(ImageOperationDescription.class),
-                eq(entity), any(TeeOutputStream.class), any(Optional.class));
+                eq(entity), any(TeeOutputStream.class), any(Optional.class), any());
     }
 
     @Test
@@ -94,7 +94,7 @@ public class ImageGetRemTest {
         ((StreamingOutput) response.getEntity()).write(outputMock);
 
         verify(imageOperationsService).applyConversion(eq(Collections.singletonList(new ImageOperationDescription("resizeWidth", "250"))),
-                eq(entity), any(TeeOutputStream.class), any(Optional.class));
+                eq(entity), any(TeeOutputStream.class), any(Optional.class), any());
         Thread.sleep(200);
         verify(imageCacheService).saveInCacheAsync(any(Rem.class), eq(RESOURCE_ID), eq("resizeWidth=250"), any(), anyLong(), eq(COLLECTION_TEST),
                 eq(parameters), any(File.class));
@@ -111,7 +111,7 @@ public class ImageGetRemTest {
 
         verify(imageOperationsService).applyConversion(
                 eq(Collections.singletonList(new ImageOperationDescription("resize", "(250, 150)"))), eq(entity),
-                any(TeeOutputStream.class), any(Optional.class));
+                any(TeeOutputStream.class), any(Optional.class), any());
         Thread.sleep(200);
         verify(imageCacheService).saveInCacheAsync(any(Rem.class), eq(RESOURCE_ID), eq("resize=(250, 150)"), any(), anyLong(),
                 eq(COLLECTION_TEST), eq(parameters), any(File.class));
@@ -120,7 +120,7 @@ public class ImageGetRemTest {
     @Test
     public void resourceWithoutParamentersTest() throws IOException, InterruptedException, IM4JavaException, ImageOperationsException {
         when(parameters.getCustomParameterValue(ImageGetRem.OPERATIONS_PARAMETER)).thenReturn("resize=(250, 150)");
-        doThrow(IM4JavaException.class).when(imageOperationsService).applyConversion(any(), any(), any(), any());
+        doThrow(IM4JavaException.class).when(imageOperationsService).applyConversion(any(), any(), any(), any(), any());
         Response response = imageGetRem.resource(COLLECTION_TEST, RESOURCE_ID, parameters, Optional.empty());
         assertThat(response.getStatus()).isEqualTo(200);
 
