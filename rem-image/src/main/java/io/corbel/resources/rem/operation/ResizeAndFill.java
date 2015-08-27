@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ResizeAndFill implements ImageOperation {
+public class ResizeAndFill extends BaseResize {
 
     private final Pattern pattern = Pattern.compile("^\\((\\d+) *, *(\\w+)\\)$");
 
@@ -27,7 +27,7 @@ public class ResizeAndFill implements ImageOperation {
 
             List<String> values = getValues(parameter, matcher);
 
-            width = Integer.parseInt(values.get(0));
+            width = getSafeResizeParameter(values.get(0));
             color = values.get(1);
         } catch (NumberFormatException e) {
             throw new ImageOperationsException("Bad width parameter: " + parameter, e);
@@ -39,7 +39,7 @@ public class ResizeAndFill implements ImageOperation {
 
         IMOperation subOperation = new IMOperation();
         subOperation.resize(width, width);
-        subOperation.background("#"+color);
+        subOperation.background("#" + color);
         subOperation.gravity("center");
         subOperation.extent(width, width);
 
