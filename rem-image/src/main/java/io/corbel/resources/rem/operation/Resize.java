@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Resize implements ImageOperation {
+public class Resize extends BaseResize {
 
     private final Pattern pattern = Pattern.compile("^\\((\\d+) *, *(\\d+)\\)$");
 
@@ -26,10 +26,8 @@ public class Resize implements ImageOperation {
 
             List<String> values = getValues(parameter, matcher);
 
-            width = Integer.parseInt(values.get(0));
-            height = Integer.parseInt(values.get(1));
-
-
+            width = getSafeResizeParameter(values.get(0));
+            height = getSafeResizeParameter(values.get(1));
         } catch (NumberFormatException e) {
             throw new ImageOperationsException("Bad dimension parameter in resize: " + parameter, e);
         }

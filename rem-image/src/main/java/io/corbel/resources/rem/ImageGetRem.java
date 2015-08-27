@@ -1,25 +1,7 @@
 package io.corbel.resources.rem;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-
-import org.apache.commons.io.output.TeeOutputStream;
-import org.im4java.core.IM4JavaException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-
+import io.corbel.lib.ws.api.error.ErrorResponseFactory;
+import io.corbel.lib.ws.model.Error;
 import io.corbel.resources.rem.exception.ImageOperationsException;
 import io.corbel.resources.rem.format.ImageFormat;
 import io.corbel.resources.rem.model.ImageOperationDescription;
@@ -30,8 +12,24 @@ import io.corbel.resources.rem.request.ResourceParameters;
 import io.corbel.resources.rem.service.ImageCacheService;
 import io.corbel.resources.rem.service.ImageOperationsService;
 import io.corbel.resources.rem.service.RemService;
-import io.corbel.lib.ws.api.error.ErrorResponseFactory;
-import io.corbel.lib.ws.model.Error;
+import org.apache.commons.io.output.TeeOutputStream;
+import org.im4java.core.IM4JavaException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 
 public class ImageGetRem extends BaseRem<Void> {
