@@ -1,10 +1,9 @@
 package io.corbel.iam.service;
 
-import static org.fest.assertions.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
-
-import java.util.*;
-
+import io.corbel.iam.exception.GroupAlreadyExistsException;
+import io.corbel.iam.model.Group;
+import io.corbel.iam.repository.GroupRepository;
+import io.corbel.lib.queries.request.ResourceQuery;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,10 +13,10 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.dao.DataIntegrityViolationException;
 
-import io.corbel.iam.exception.GroupAlreadyExistsException;
-import io.corbel.iam.model.Group;
-import io.corbel.iam.repository.GroupRepository;
-import io.corbel.lib.queries.request.ResourceQuery;
+import java.util.*;
+
+import static org.fest.assertions.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class) public class DefaultGroupServiceTest {
 
@@ -113,6 +112,7 @@ import io.corbel.lib.queries.request.ResourceQuery;
 
         ArgumentCaptor<Group> capturedGroup = ArgumentCaptor.forClass(Group.class);
 
+        verify(groupRepository).exists(NAME, DOMAIN);
         verify(groupRepository).save(capturedGroup.capture());
 
         Group savedGroup = capturedGroup.getValue();
@@ -138,6 +138,7 @@ import io.corbel.lib.queries.request.ResourceQuery;
 
             ArgumentCaptor<Group> capturedGroup = ArgumentCaptor.forClass(Group.class);
 
+            verify(groupRepository).exists(NAME,DOMAIN);
             verify(groupRepository).save(capturedGroup.capture());
 
             Group savedGroup = capturedGroup.getValue();
