@@ -36,6 +36,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.env.Environment;
 import org.springframework.data.mongodb.core.convert.CustomConversions;
 
@@ -47,7 +48,7 @@ import com.google.gson.Gson;
 @Configuration// Import configuration mechanism
 @Import({ConfigurationIoC.class, DefaultElasticSearchConfiguration.class}) public class ResmiIoc extends DefaultMongoConfiguration {
 
-    @Value("${resmi.elasticsearch.enabled:true}") private boolean elasticSearchEnabled;
+    @Value("${resmi.elasticsearch.enabled:false}") private boolean elasticSearchEnabled;
 
     @Autowired private Environment env;
 
@@ -116,7 +117,7 @@ import com.google.gson.Gson;
     @Bean
     public ResmiService getResmiService() throws Exception {
         if (elasticSearchEnabled) {
-            return new WithSearchResmiService(getMongoResmiDao(), getResmiSearch(), getSearchableFieldsRegistry(), getClock());
+           return new WithSearchResmiService(getMongoResmiDao(), getResmiSearch(), getSearchableFieldsRegistry(), getClock());
         } else {
             return new DefaultResmiService(getMongoResmiDao(), getClock());
         }
@@ -133,11 +134,13 @@ import com.google.gson.Gson;
     }
 
     @Bean
-    public ResmiSearch getResmiSearch() {
+    @Lazy
+     public ResmiSearch getResmiSearch() {
         return new ElasticSearchResmiSearch(getElasticeSerachService(), getNamespaceNormilizer());
     }
 
     @Bean
+    @Lazy
     public ElasticSearchService getElasticeSerachService() {
         return new ElasticSearchService(applicationContext.getBean(Client.class), getGson());
     }
