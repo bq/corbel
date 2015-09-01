@@ -3,13 +3,15 @@ package io.corbel.iam.auth.rule;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.Sets;
+
 import io.corbel.iam.auth.AuthorizationRequestContext;
 import io.corbel.iam.auth.AuthorizationRule;
 import io.corbel.iam.exception.UnauthorizedException;
 import io.corbel.iam.model.Scope;
+import io.corbel.iam.service.GroupService;
 import io.corbel.iam.service.ScopeService;
 import io.corbel.iam.utils.Message;
-import com.google.common.collect.Sets;
 
 /**
  * @author Alberto J. Rubio
@@ -17,9 +19,11 @@ import com.google.common.collect.Sets;
 public class ScopesAuthorizationRule implements AuthorizationRule {
 
     private final ScopeService scopeService;
+    private final GroupService groupService;
 
-    public ScopesAuthorizationRule(ScopeService scopeService) {
+    public ScopesAuthorizationRule(ScopeService scopeService, GroupService groupService) {
         this.scopeService = scopeService;
+        this.groupService = groupService;
     }
 
     @Override
@@ -33,11 +37,11 @@ public class ScopesAuthorizationRule implements AuthorizationRule {
             clientScopes = scopeService.expandScopes(context.getIssuerClient().getScopes());
             if(context.hasPrincipal()) {
                 userScopes = scopeService.expandScopes(context.getPrincipal().getScopes());
-                groupScopes = scopeService.expandScopes(scopeService.getGroupScopes(context.getPrincipal().getGroups()));
+                groupScopes = scopeService.expandScopes(groupService.getGroupScopes(context.getPrincipal().getGroups()));
             }
         }
 
-        Set<Scope> allowedScopes = scopeService.getAllowedScopes(domainScopes, clientScopes, userScopes, groupScopes,
+        Set<Scope> allowedScopes = getAllowedScopes(domainScopes, clientScopes, userScopes, groupScopes,
                                     context.isCrossDomain(), context.hasPrincipal());
 
 
@@ -48,6 +52,23 @@ public class ScopesAuthorizationRule implements AuthorizationRule {
             requestedExpandScopes = allowedScopes;
         }
         context.setExpandedRequestedScopes(requestedExpandScopes);
+    }
+
+    private Set<Scope> getAllowedScopes(Set<Scope> domainScopes, Set<Scope> clientScopes, Set<Scope> userScopes, Set<Scope> groupScopes,
+            boolean isCrossDomain, boolean hasPrincipal) {
+        if (isCrossDomain) {
+            return domainScopes;
+        }
+
+        Set<Scope> requestedScopes;
+
+        if (hasPrincipal) {
+            requestedScopes = Sets.union(clientScopes, Sets.union(userScopes, groupScopes));
+        } else {
+            requestedScopes = clientScopes;
+        }
+
+        return Sets.intersection(requestedScopes, domainScopes);
     }
 
     private void checkRequestedScopes(Set<Scope> requestedExpandScopes, Set<Scope> allowedScopes) throws UnauthorizedException {
