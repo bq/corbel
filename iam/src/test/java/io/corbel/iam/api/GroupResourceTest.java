@@ -11,6 +11,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 
+import io.corbel.iam.exception.NotExistentScopeException;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -81,7 +82,7 @@ public class GroupResourceTest {
     }
 
     @Test
-    public void createGroupTest() throws JsonProcessingException, GroupAlreadyExistsException {
+    public void createGroupTest() throws JsonProcessingException, GroupAlreadyExistsException, NotExistentScopeException {
         Group group = new Group(null, NAME, DOMAIN, SCOPES);
         Group createdGroup = new Group(ID, NAME, DOMAIN, SCOPES);
 
@@ -96,8 +97,23 @@ public class GroupResourceTest {
         assertThat(((String) response.getHeaders().getFirst("Location")).endsWith(createdGroup.getId())).isTrue();
     }
 
+
     @Test
-    public void createAlreadyExistingGroupTest() throws GroupAlreadyExistsException, JsonProcessingException {
+    public void createGroupWithBadScopesTest() throws JsonProcessingException, GroupAlreadyExistsException, NotExistentScopeException {
+        Group group = new Group(null, NAME, DOMAIN, SCOPES);
+
+        when(groupService.create(eq(group))).thenThrow(NotExistentScopeException.class);
+
+        String groupJson = new ObjectMapper().writer().writeValueAsString(group);
+
+        Response response = RULE.client().target("/" + ApiVersion.CURRENT + "/group").request().post(Entity.json(groupJson),
+                Response.class);
+
+        assertThat(response.getStatus()).isEqualTo(Response.Status.BAD_REQUEST.getStatusCode());
+    }
+
+    @Test
+    public void createAlreadyExistingGroupTest() throws GroupAlreadyExistsException, JsonProcessingException, NotExistentScopeException {
         Group group = new Group(null, NAME, DOMAIN, SCOPES);
 
         when(groupService.create(eq(group))).thenThrow(new GroupAlreadyExistsException(NAME + " " + ID));
@@ -174,7 +190,7 @@ public class GroupResourceTest {
     }
 
     @Test
-    public void addScopesToGroupTest() throws JsonProcessingException {
+    public void addScopesToGroupTest() throws JsonProcessingException, NotExistentScopeException {
         Group group = new Group(ID, NAME, DOMAIN, SCOPES);
         List<String> scopes = Collections.singletonList("scope");
         String scopesToJson = new ObjectMapper().writer().writeValueAsString(scopes);

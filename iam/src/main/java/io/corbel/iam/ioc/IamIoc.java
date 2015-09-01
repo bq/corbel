@@ -212,8 +212,8 @@ public class IamIoc {
     }
 
     @Bean
-    public GroupService getGroupService() {
-        return new DefaultGroupService(groupRepository);
+    public GroupService getGroupService(ScopeService scopeService) {
+        return new DefaultGroupService(groupRepository, scopeService);
     }
 
     @Bean
