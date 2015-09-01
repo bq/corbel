@@ -1,10 +1,10 @@
 package io.corbel.iam.service;
 
-import io.corbel.iam.exception.ScopeNameException;
-import io.corbel.iam.model.Scope;
-
 import java.util.Collection;
 import java.util.Set;
+
+import io.corbel.iam.exception.ScopeNameException;
+import io.corbel.iam.model.Scope;
 
 /**
  * Business logic for Scope management.
@@ -15,8 +15,6 @@ import java.util.Set;
 public interface ScopeService {
 
     Scope getScope(String id);
-
-    Set<String> getGroupScopes(Collection<String> groups);
 
     Set<Scope> getScopes(Collection<String> scopes);
 
