@@ -21,6 +21,7 @@ import io.corbel.iam.model.Client;
 import io.corbel.iam.model.Domain;
 import io.corbel.iam.model.Scope;
 import io.corbel.iam.model.User;
+import io.corbel.iam.service.GroupService;
 import io.corbel.iam.service.ScopeService;
 import io.corbel.iam.utils.Message;
 
@@ -29,13 +30,14 @@ import io.corbel.iam.utils.Message;
  */
 @RunWith(MockitoJUnitRunner.class) public class ScopesAuthorizationRuleTest {
     @Mock ScopeService scopeServiceMock;
+    @Mock GroupService groupServiceMock;
     private AuthorizationRequestContext context;
     private ScopesAuthorizationRule rule;
 
     @Before
     public void setUp() {
         context = mock(AuthorizationRequestContext.class);
-        rule = new ScopesAuthorizationRule(scopeServiceMock);
+        rule = new ScopesAuthorizationRule(scopeServiceMock, groupServiceMock);
     }
 
     @SuppressWarnings("unchecked")
