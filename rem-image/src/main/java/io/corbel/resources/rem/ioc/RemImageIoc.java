@@ -79,7 +79,7 @@ public class RemImageIoc {
 
     @Bean
     public ImageRemUtil getImageRemUtil() {
-        return new ImageRemUtil();
+        return new ImageRemUtil(env.getProperty("api.defaultPageSize", Integer.class, 10));
     }
 
     @Bean(name = RemImageIocNames.REM_GET)
