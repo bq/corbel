@@ -1,5 +1,6 @@
 package io.corbel.resources.rem.dao;
 
+import com.mongodb.WriteResult;
 import io.corbel.lib.mongo.JsonObjectMongoWriteConverter;
 import io.corbel.lib.mongo.utils.GsonUtil;
 import io.corbel.lib.queries.mongo.builder.CriteriaBuilder;
@@ -153,6 +154,16 @@ public class MongoResmiDao implements ResmiDao {
     }
 
     @Override
+    public void updateCollection(ResourceUri uri, JsonObject entity) {
+        updateMulti(getMongoCollectionName(uri), entity, Optional.empty());
+    }
+
+    @Override
+    public boolean conditionalUpdateCollection(ResourceUri uri, JsonObject entity, List<ResourceQuery> resourceQueries) {
+        return updateMulti(getMongoCollectionName(uri), entity, Optional.of(resourceQueries));
+    }
+
+    @Override
     public void updateResource(ResourceUri uri, JsonObject entity) {
         findAndModify(getMongoCollectionName(uri), Optional.of(uri.getTypeId()), entity, true, Optional.empty());
     }
@@ -162,6 +173,21 @@ public class MongoResmiDao implements ResmiDao {
         JsonObject saved = findAndModify(getMongoCollectionName(uri), Optional.of(uri.getTypeId()), entity, false,
                 Optional.of(resourceQueries));
         return saved != null;
+    }
+
+    private boolean updateMulti(String collection, JsonObject entity, Optional<List<ResourceQuery>> resourceQueries) {
+
+        Update update = updateFromJsonObject(entity,Optional.empty());
+
+        MongoResmiQueryBuilder builder = new MongoResmiQueryBuilder();
+        if (resourceQueries.isPresent()) {
+            builder.query(resourceQueries.get());
+        }
+        Query query = builder.build();
+
+
+        WriteResult result = mongoOperations.updateMulti(query, update, JsonObject.class, collection);
+        return result.isUpdateOfExisting();
     }
 
     private JsonObject findAndModify(String collection, Optional<String> id, JsonObject entity, boolean upsert,
