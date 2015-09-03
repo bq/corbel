@@ -33,7 +33,23 @@ public class ResmiPutRem extends AbstractResmiRem {
 
     @Override
     public Response collection(String type, RequestParameters<CollectionParameters> parameters, URI uri, Optional<JsonObject> entity) {
-        return ErrorResponseFactory.getInstance().methodNotAllowed();
+        ResourceUri resourceUri = buildCollectionUri(type);
+        return entity.map(object -> {
+            try {
+                Optional<List<ResourceQuery>> conditions = Optional.ofNullable(parameters)
+                        .flatMap(RequestParameters::getOptionalApiParameters).map(CollectionParameters::getConditions)
+                        .orElse(Optional.empty());
+                if (conditions.isPresent()) {
+                    resmiService.conditionalUpdateCollection(resourceUri, object, conditions.get());
+                } else {
+                    resmiService.updateCollection(resourceUri, object);
+                }
+            } catch (StartsWithUnderscoreException e) {
+                return ErrorResponseFactory.getInstance().invalidEntity("Invalid attribute name \"" + e.getMessage() + "\"");
+            }
+
+            return noContent();
+        }).orElse(ErrorResponseFactory.getInstance().badRequest());
     }
 
     @Override
