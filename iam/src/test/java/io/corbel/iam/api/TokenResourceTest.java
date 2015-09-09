@@ -1,35 +1,6 @@
 package io.corbel.iam.api;
 
-import static org.fest.assertions.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import io.dropwizard.auth.Authenticator;
-import io.dropwizard.auth.oauth.OAuthFactory;
-import io.dropwizard.testing.junit.ResourceTestRule;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.security.SignatureException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.NewCookie;
-import javax.ws.rs.core.Response;
-
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.mockito.Mockito;
-
+import com.google.common.base.Optional;
 import io.corbel.iam.exception.MissingBasicParamsException;
 import io.corbel.iam.exception.MissingOAuthParamsException;
 import io.corbel.iam.exception.OauthServerConnectionException;
@@ -41,16 +12,28 @@ import io.corbel.iam.service.UpgradeTokenService;
 import io.corbel.iam.utils.TokenCookieFactory;
 import io.corbel.lib.token.TokenInfo;
 import io.corbel.lib.token.reader.TokenReader;
-import io.corbel.lib.ws.auth.AuthorizationInfo;
-import io.corbel.lib.ws.auth.AuthorizationInfoProvider;
-import io.corbel.lib.ws.auth.AuthorizationRequestFilter;
-import io.corbel.lib.ws.auth.BearerTokenAuthenticator;
-import io.corbel.lib.ws.auth.CookieOAuthFactory;
-import com.google.common.base.Optional;
+import io.corbel.lib.ws.auth.*;
+import io.dropwizard.auth.Authenticator;
+import io.dropwizard.auth.oauth.OAuthFactory;
+import io.dropwizard.testing.junit.ResourceTestRule;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.*;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.security.SignatureException;
+
+import static org.fest.assertions.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Alexander De Leon
- * 
  */
 public class TokenResourceTest {
 
@@ -85,7 +68,8 @@ public class TokenResourceTest {
     private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, cookieOAuthProvider,
             "v.*/oauth/token", false));
 
-    @ClassRule public static ResourceTestRule RULE = ResourceTestRule.builder()
+    @ClassRule
+    public static ResourceTestRule RULE = ResourceTestRule.builder()
             .addResource(new TokenResource(authorizationServiceMock, upgradeTokenServiceMock, tokenCookieFactoryMock)).addProvider(filter)
             .addProvider(new AuthorizationInfoProvider().getBinder()).build();
 
@@ -232,6 +216,17 @@ public class TokenResourceTest {
     public void testUpgradeToken() throws UnauthorizedException {
         Response response = RULE.client().target(UPGRADE_TOKEN_ENDPOINT).queryParam(ASSERTION, TEST_ASSERTION)
                 .queryParam(GRANT_TYPE, GrantType.JWT_BEARER).request().header(AUTHORIZATION, "Bearer " + TEST_TOKEN).get(Response.class);
+
+        assertThat(response.getStatus()).isEqualTo(204);
+        verify(upgradeTokenServiceMock).upgradeToken(TEST_ASSERTION, tokenReader);
+    }
+
+    @Test
+    public void testUpgradeTokenPost() throws UnauthorizedException {
+        MultivaluedMap<String, String> formData = new MultivaluedHashMap();
+        formData.add(GRANT_TYPE, GrantType.JWT_BEARER);
+        formData.add(ASSERTION, TEST_ASSERTION);
+        Response response = RULE.client().target(UPGRADE_TOKEN_ENDPOINT).request().header(AUTHORIZATION, "Bearer " + TEST_TOKEN).post(Entity.form(formData), Response.class);
 
         assertThat(response.getStatus()).isEqualTo(204);
         verify(upgradeTokenServiceMock).upgradeToken(TEST_ASSERTION, tokenReader);
