@@ -130,6 +130,11 @@ public class UserRepositoryDecorator implements UserRepository {
     }
 
     @Override
+    public void removeScopes(String scopeId) {
+        decoratedUserRepository.removeScopes(scopeId);
+    }
+
+    @Override
     public String findUserDomain(String id) {
         return decoratedUserRepository.findUserDomain(id);
     }

@@ -11,5 +11,7 @@ public interface GroupRepositoryCustom {
 
     List<Group> findByDomain(String domain, List<ResourceQuery> resourceQueries, Pagination pagination, Sort sort);
 
+    void deleteScope(String scopeId);
+
     void insert(Group group);
 }

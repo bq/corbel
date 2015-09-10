@@ -52,6 +52,15 @@ public class HasScopesRepositoryBase<ENTITY, ID> implements HasScopesRepository<
         mongo.updateFirst(query, update, entityClass);
     }
 
+    @Override
+    public void removeScopes(String scope){
+        Criteria criteria = Criteria.where(FIELD_SCOPES).in(scope);
+        Query query = Query.query(criteria);
+        Update update = new Update();
+        update.pull(FIELD_SCOPES, scope);
+        mongo.updateMulti(query, update, entityClass);
+    }
+
     protected MongoOperations getMongo() {
         return mongo;
     }
