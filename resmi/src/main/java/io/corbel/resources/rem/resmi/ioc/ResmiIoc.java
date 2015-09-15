@@ -50,6 +50,10 @@ import com.google.gson.Gson;
 
     @Value("${resmi.elasticsearch.enabled:true}") private boolean elasticSearchEnabled;
 
+    @Value("${resmi.elasticsearch.index.settings:/elasticsearch/index.settings}") private String elasticSearchIndexSettings;
+
+    @Value("${resmi.elasticsearch.mapping.settings:/elasticsearch/mapping.settings}") private String elasticSearchMappingSettings;
+
     @Autowired private Environment env;
 
     @Override
@@ -137,7 +141,7 @@ import com.google.gson.Gson;
     @Bean
     @Lazy
     public ResmiSearch getResmiSearch() {
-        return new ElasticSearchResmiSearch(getElasticeSerachService(), getNamespaceNormilizer());
+        return new ElasticSearchResmiSearch(getElasticeSerachService(), getNamespaceNormilizer(), elasticSearchIndexSettings);
     }
 
     @Bean
