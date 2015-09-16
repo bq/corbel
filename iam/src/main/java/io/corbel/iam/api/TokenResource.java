@@ -135,6 +135,8 @@ public class TokenResource {
                     new Error("unavailable", "External OAuth Server fail: " + e.getOAuthService() + " " + e.getMessage()));
         } catch (MissingBasicParamsException e) {
             return IamErrorResponseFactory.getInstance().missingBasicParms();
+        } catch (BadSystemClockException e) {
+            return IamErrorResponseFactory.getInstance().unauthorized("bad_system_clock", e.getMessage());
         }
     }
 
