@@ -5,6 +5,8 @@ import io.corbel.lib.mongo.utils.GsonUtil;
 import io.corbel.lib.queries.mongo.builder.CriteriaBuilder;
 import io.corbel.lib.queries.request.AverageResult;
 import io.corbel.lib.queries.request.CountResult;
+import io.corbel.lib.queries.request.MaxResult;
+import io.corbel.lib.queries.request.MinResult;
 import io.corbel.lib.queries.request.Pagination;
 import io.corbel.lib.queries.request.ResourceQuery;
 import io.corbel.lib.queries.request.Sort;
@@ -357,6 +359,26 @@ public class MongoResmiDao implements ResmiDao {
         aggregations.add(Aggregation.group().sum(field).as("sum"));
 
         return mongoOperations.aggregate(Aggregation.newAggregation(aggregations), getMongoCollectionName(resourceUri), SumResult.class)
+                .getUniqueMappedResult();
+    }
+
+    @Override
+    public MaxResult max(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
+        List<AggregationOperation> aggregations = new ArrayList<>();
+        aggregations.add(Aggregation.match(CriteriaBuilder.buildFromResourceQueries(resourceQueries)));
+        aggregations.add(Aggregation.group().max(field).as("max"));
+
+        return mongoOperations.aggregate(Aggregation.newAggregation(aggregations), getMongoCollectionName(resourceUri), MaxResult.class)
+                .getUniqueMappedResult();
+    }
+
+    @Override
+    public MinResult min(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
+        List<AggregationOperation> aggregations = new ArrayList<>();
+        aggregations.add(Aggregation.match(CriteriaBuilder.buildFromResourceQueries(resourceQueries)));
+        aggregations.add(Aggregation.group().min(field).as("min"));
+
+        return mongoOperations.aggregate(Aggregation.newAggregation(aggregations), getMongoCollectionName(resourceUri), MinResult.class)
                 .getUniqueMappedResult();
     }
 
