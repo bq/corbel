@@ -336,7 +336,7 @@ public class MongoResmiDao implements ResmiDao {
     @Override
     public CountResult count(ResourceUri resourceUri, List<ResourceQuery> resourceQueries) {
         Query query = new MongoResmiQueryBuilder().relationSubjectId(resourceUri).query(resourceQueries).build();
-        if (resourceUri.isRelation()) {
+        if (resourceUri.isRelation() && !resourceUri.isTypeWildcard()) {
             query.fields().exclude(_ID).exclude(JsonRelation._SRC_ID);
         }
         LOG.debug("Query executed : " + query.getQueryObject().toString());
@@ -365,8 +365,12 @@ public class MongoResmiDao implements ResmiDao {
 
     private <T extends AggregationResult> T aggregate(ResourceUri resourceUri, List<ResourceQuery> resourceQueries,
             GroupOperation groupOperation, Class<T> clazz) {
+        Criteria criterias = CriteriaBuilder.buildFromResourceQueries(resourceQueries);
+        if (resourceUri.isRelation() && !resourceUri.isTypeWildcard()) {
+            criterias = criterias.and(JsonRelation._SRC_ID).is(resourceUri.getTypeId());
+        }
         List<AggregationOperation> aggregations = new ArrayList<>();
-        aggregations.add(Aggregation.match(CriteriaBuilder.buildFromResourceQueries(resourceQueries)));
+        aggregations.add(Aggregation.match(criterias));
         aggregations.add(groupOperation);
         return mongoOperations.aggregate(Aggregation.newAggregation(aggregations), getMongoCollectionName(resourceUri), clazz)
                 .getUniqueMappedResult();
