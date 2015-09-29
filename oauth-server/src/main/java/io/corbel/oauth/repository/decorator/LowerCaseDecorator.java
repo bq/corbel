@@ -62,6 +62,11 @@ public class LowerCaseDecorator extends UserRepositoryDecorator {
     }
 
     @Override
+    public boolean existsByUsernameAndDomain(String username, String domainId) {
+        return super.existsByUsernameAndDomain(username.toLowerCase(), domainId);
+    }
+
+    @Override
     public boolean exists(String s) {
         return super.exists(s.toLowerCase());
     }
