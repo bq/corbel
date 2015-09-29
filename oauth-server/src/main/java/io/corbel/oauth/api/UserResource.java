@@ -13,6 +13,7 @@ import javax.ws.rs.core.UriInfo;
 
 import io.corbel.lib.token.reader.TokenReader;
 import io.corbel.lib.ws.api.error.ErrorResponseFactory;
+import io.corbel.lib.ws.auth.AuthorizationInfo;
 import io.corbel.lib.ws.model.Error;
 import io.corbel.oauth.model.Client;
 import io.corbel.oauth.model.Role;
@@ -77,7 +78,8 @@ import io.dropwizard.auth.Auth;
                 return null;
             }
         }).map(avatarUri -> Response.temporaryRedirect(avatarUri).build())
-                .orElseGet(() -> ErrorResponseFactory.getInstance().notfound(new Error("not_found", "User " + id + " has no avatar.")));
+                .orElseGet(() -> ErrorResponseFactory.getInstance().notfound
+                        (new Error("not_found", "User " + id + " has no avatar.")));
     }
 
     @Path("/{id}")
