@@ -105,4 +105,19 @@ public class LowerCaseDecorator extends UserRepositoryDecorator {
         return super.patch(data, fieldsToDelete);
     }
 
+    @Override
+    public boolean upsert(String id, User data) {
+        return super.upsert(id, userToLowerCase(data));
+    }
+
+    private User userToLowerCase(User data) {
+        if (data.getUsername() != null) {
+            data.setUsername(data.getUsername().toLowerCase());
+        }
+        if (data.getEmail() != null) {
+            data.setEmail(data.getEmail().toLowerCase());
+        }
+        return data;
+    }
+
 }
