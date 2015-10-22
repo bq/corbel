@@ -1,13 +1,6 @@
 package io.corbel.resources.rem.dao;
 
-import io.corbel.lib.queries.request.AverageResult;
-import io.corbel.lib.queries.request.CountResult;
-import io.corbel.lib.queries.request.MaxResult;
-import io.corbel.lib.queries.request.MinResult;
-import io.corbel.lib.queries.request.Pagination;
-import io.corbel.lib.queries.request.ResourceQuery;
-import io.corbel.lib.queries.request.Sort;
-import io.corbel.lib.queries.request.SumResult;
+import io.corbel.lib.queries.request.*;
 import io.corbel.resources.rem.model.GenericDocument;
 import io.corbel.resources.rem.model.ResourceUri;
 import io.corbel.resources.rem.resmi.exception.MongoAggregationException;
@@ -35,6 +28,18 @@ public interface ResmiDao {
 
     JsonElement findRelation(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
             Optional<Sort> sort);
+
+    JsonArray findCollectionWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
+                                      Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException;
+
+    JsonArray findRelationWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
+                                    Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException;
+
+    JsonArray findCollectionWithProjection(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
+                                           Optional<Sort> sort, String field, String expression) throws MongoAggregationException;
+
+    JsonArray findRelationWithProjection(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
+                                         Optional<Sort> sort, String field, String expression) throws MongoAggregationException;
 
     void updateCollection(ResourceUri uri, JsonObject jsonObject, List<ResourceQuery> resourceQueries);
 
@@ -69,11 +74,4 @@ public interface ResmiDao {
     void ensureExpireIndex(ResourceUri uri);
 
     void ensureIndex(ResourceUri uri, Index index);
-
-    JsonArray findCollectionWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException;
-
-    JsonArray findRelationWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException;
-
 }

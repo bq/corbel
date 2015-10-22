@@ -19,11 +19,7 @@ import io.corbel.resources.rem.resmi.exception.StartsWithUnderscoreException;
 import io.corbel.resources.rem.search.ResmiSearch;
 
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -79,7 +75,7 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
 
     @Override
     public JsonArray findCollection(ResourceUri uri, Optional<CollectionParameters> apiParameters) throws BadConfigurationException {
-        if (apiParameters.flatMap(params -> params.getSearch()).isPresent()) {
+        if (apiParameters.flatMap(CollectionParameters::getSearch).isPresent()) {
             return findInSearchService(uri, apiParameters.get());
         } else {
             return super.findCollection(uri, apiParameters);
@@ -111,13 +107,13 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
             ids.add(new StringQueryLiteral(((JsonObject) element).get(ID).getAsString()));
         }
         ResourceQueryBuilder builder = new ResourceQueryBuilder().add(ID, ids, QueryOperator.$IN);
-        return new CollectionParametersImpl(apiParameters.getPagination(), apiParameters.getSort(), Optional.of(Arrays.asList(builder
-                .build())), Optional.empty(), Optional.empty(), Optional.empty());
+        return new CollectionParametersImpl(apiParameters.getPagination(), apiParameters.getSort(),
+                Optional.of(Collections.singletonList(builder.build())), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     @Override
     public JsonElement findRelation(ResourceUri uri, Optional<RelationParameters> apiParameters) throws BadConfigurationException {
-        if (apiParameters.flatMap(params -> params.getSearch()).isPresent()) {
+        if (apiParameters.flatMap(RelationParameters::getSearch).isPresent()) {
             return findInSearchService(uri, apiParameters.get());
         } else {
             return super.findRelation(uri, apiParameters);
