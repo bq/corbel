@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>io.corbel</groupId>
+        <artifactId>corbel</artifactId>
+        <version>1.25.0-SNAPSHOT</version>
+    </parent>
+    
+    <artifactId>rem-acl</artifactId>
+    <name>rem-acl</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.corbel</groupId>
+            <artifactId>rem-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.corbel.lib</groupId>
+            <artifactId>ws</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>de.smartics.maven.plugin</groupId>
+                <artifactId>maven-buildmetadata-plugin</artifactId>
+                <version>1.1.5</version>
+                <configuration>
+                    <addProjectInfo>true</addProjectInfo>
+                    <addScmInfo>true</addScmInfo>
+                    <connectionType>developerConnection</connectionType>
+                    <buildDatePattern>dd/MM/yyyy HH:mm:ss z</buildDatePattern>
+                    <activatePropertyOutputFileMapping>false</activatePropertyOutputFileMapping>
+                    <propertiesOutputFile>
+                        ${project.build.outputDirectory}/META-INF/${project.artifactId}-plugin-build.properties
+                    </propertiesOutputFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>provide-buildmetadata</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
