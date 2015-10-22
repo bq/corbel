@@ -125,7 +125,6 @@ import com.mongodb.WriteResult;
         when(mongoOperations.findAndModify(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.eq(JsonObject.class), Mockito.any()))
                 .thenReturn(jsonCounter);
 
-
         JsonObject jsonResult = new JsonObject();
         jsonResult.addProperty("_src_id", TEST_ID);
         jsonResult.addProperty("_dst_id", TEST_ID_RELATION_OBJECT);
@@ -134,15 +133,9 @@ import com.mongodb.WriteResult;
         jsonResult.addProperty("data2", "data2");
         jsonResult.addProperty("id", "123");
 
-
-
-
         ArgumentCaptor<Query> queryCaptor = ArgumentCaptor.forClass(Query.class);
         ArgumentCaptor<Update> updateCaptor = ArgumentCaptor.forClass(Update.class);
         ArgumentCaptor<FindAndModifyOptions> optionsCaptor = ArgumentCaptor.forClass(FindAndModifyOptions.class);
-
-
-
 
         when(mongoOperations.findAndModify(any(), any(), any(), eq(JsonObject.class), eq(RELATION_COLLECTION_NAME))).thenAnswer(
                 answerWithId(jsonResult));

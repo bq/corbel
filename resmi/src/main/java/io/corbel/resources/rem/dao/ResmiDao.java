@@ -29,6 +29,12 @@ public interface ResmiDao {
     JsonElement findRelation(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
             Optional<Sort> sort);
 
+    JsonArray findCollectionWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
+                                      Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException;
+
+    JsonArray findRelationWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
+                                    Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException;
+
     void updateCollection(ResourceUri uri, JsonObject jsonObject, List<ResourceQuery> resourceQueries);
 
     void updateResource(ResourceUri uri, JsonObject entity);
@@ -55,7 +61,11 @@ public interface ResmiDao {
 
     MinResult min(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field);
 
-    HistogramResult histogram(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, Optional<Pagination> pagination, Optional<Sort> sort, String field);
+    JsonArray combine(ResourceUri resourceUri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
+                      Optional<Sort> sort, String field, String expression) throws MongoAggregationException;
+
+    HistogramResult histogram(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, Optional<Pagination> pagination,
+                              Optional<Sort> sort, String field);
 
     void moveRelation(ResourceUri uri, RelationMoveOperation relationMoveOperation);
 
@@ -64,11 +74,4 @@ public interface ResmiDao {
     void ensureExpireIndex(ResourceUri uri);
 
     void ensureIndex(ResourceUri uri, Index index);
-
-    JsonArray findCollectionWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException;
-
-    JsonArray findRelationWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException;
-
 }
