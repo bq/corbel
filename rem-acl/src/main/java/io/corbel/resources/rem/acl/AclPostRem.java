@@ -1,5 +1,6 @@
 package io.corbel.resources.rem.acl;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -8,10 +9,13 @@ import java.util.List;
 import java.util.Optional;
 
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
@@ -28,24 +32,28 @@ import io.corbel.resources.rem.utils.AclUtils;
  */
 public class AclPostRem extends AclBaseRem {
 
-    public AclPostRem(AclResourcesService aclResourcesService, List<Rem> remsToExclude) {
+    private final String aclConfigurationCollection;
+    private final Rem aclPutRem;
+
+    public AclPostRem(AclResourcesService aclResourcesService, List<Rem> remsToExclude, String aclConfigurationCollection, Rem aclPutRem) {
         super(aclResourcesService, remsToExclude);
+        this.aclConfigurationCollection = aclConfigurationCollection;
+        this.aclPutRem = aclPutRem;
     }
 
     @Override
     public Response collection(String type, RequestParameters<CollectionParameters> parameters, URI uri, Optional<InputStream> entity) {
 
-        String userId = parameters.getTokenInfo().getUserId();
+        if (type.equals(aclConfigurationCollection)) {
+            return entity.map(e -> configureManageableCollection(e, parameters, uri))
+                    .orElseGet(() -> ErrorResponseFactory.getInstance().badRequest());
+        }
 
-        if (userId == null) {
-            return ErrorResponseFactory.getInstance().methodNotAllowed();
+        if (entity.map(AclUtils::entityIsEmpty).orElse(true)) {
+            return ErrorResponseFactory.getInstance().badRequest();
         }
 
         InputStream requestBody = entity.get();
-
-        if (AclUtils.entityIsEmpty(requestBody)) {
-            return ErrorResponseFactory.getInstance().badRequest();
-        }
 
         boolean jsonMediaTypeAccepted = parameters.getAcceptedMediaTypes().contains(MediaType.APPLICATION_JSON);
 
@@ -57,12 +65,15 @@ public class AclPostRem extends AclBaseRem {
             jsonObject.remove(DefaultAclResourcesService._ACL);
         }
 
-        JsonObject userAcl = new JsonObject();
-        userAcl.addProperty(DefaultAclResourcesService.PERMISSION, AclPermission.ADMIN.toString());
-        userAcl.add(DefaultAclResourcesService.PROPERTIES, new JsonObject());
-
         JsonObject acl = new JsonObject();
-        acl.add(DefaultAclResourcesService.USER_PREFIX + userId, userAcl);
+
+        Optional.ofNullable(parameters.getTokenInfo().getUserId()).ifPresent(userId -> {
+            JsonObject userAcl = new JsonObject();
+            userAcl.addProperty(DefaultAclResourcesService.PERMISSION, AclPermission.ADMIN.toString());
+            userAcl.add(DefaultAclResourcesService.PROPERTIES, new JsonObject());
+
+            acl.add(DefaultAclResourcesService.USER_PREFIX + userId, userAcl);
+        });
 
         jsonObject.add(DefaultAclResourcesService._ACL, acl);
 
@@ -82,8 +93,35 @@ public class AclPostRem extends AclBaseRem {
                 return responsePutNotJsonResource;
             }
         }
+
         return response;
 
+    }
+
+    private Response configureManageableCollection(InputStream entity, RequestParameters<CollectionParameters> parameters, URI uri) {
+        ResourceParameters resourceParameters = new ResourceParametersImpl(null, Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty());
+        RequestParameters<ResourceParameters> requestParameters = new RequestParametersImpl<>(resourceParameters, parameters.getTokenInfo(),
+                parameters.getAcceptedMediaTypes(), parameters.getContentLength(), parameters.getParams(), parameters.getHeaders());
+
+        String id;
+        JsonNode json;
+
+        try {
+            json = new ObjectMapper().readTree(entity);
+            id = Optional.of(json).filter(jsonNode -> jsonNode.has("id")).map(jsonNode -> jsonNode.get("id")).filter(JsonNode::isTextual)
+                    .map(JsonNode::asText).orElseThrow(IOException::new);
+        } catch (IOException e) {
+            return ErrorResponseFactory.getInstance().badRequest();
+        }
+
+        Response response = aclResourcesService.updateConfiguration(new ResourceId(id), requestParameters, json);
+
+        if (response.getStatus() != Response.Status.NO_CONTENT.getStatusCode()) {
+            return response;
+        }
+
+        return Response.created(UriBuilder.fromUri(uri).path("/{id}").build(id)).build();
     }
 
 }
