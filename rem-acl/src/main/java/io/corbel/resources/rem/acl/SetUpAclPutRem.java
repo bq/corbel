@@ -17,6 +17,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 
+import io.corbel.lib.token.TokenInfo;
 import io.corbel.lib.ws.api.error.ErrorResponseFactory;
 import io.corbel.resources.rem.Rem;
 import io.corbel.resources.rem.request.RequestParameters;
@@ -41,14 +42,16 @@ public class SetUpAclPutRem extends AclBaseRem {
     @Override
     public Response resource(String type, ResourceId id, RequestParameters<ResourceParameters> parameters, Optional<InputStream> entity) {
 
-        String userId = parameters.getTokenInfo().getUserId();
+        TokenInfo tokenInfo = parameters.getTokenInfo();
+        String userId = tokenInfo.getUserId();
+
         if (userId == null) {
             return ErrorResponseFactory.getInstance().methodNotAllowed();
         }
 
-        Collection<String> groupIds = parameters.getTokenInfo().getGroups();
 
         InputStream requestBody = entity.get();
+
         if (AclUtils.entityIsEmpty(requestBody)) {
             return ErrorResponseFactory.getInstance().badRequest();
         }
@@ -56,7 +59,11 @@ public class SetUpAclPutRem extends AclBaseRem {
         JsonReader reader = new JsonReader(new InputStreamReader(requestBody));
         JsonObject jsonObject = new JsonParser().parse(reader).getAsJsonObject();
 
-        if (!aclResourcesService.isAuthorized(userId, groupIds, type, id, AclPermission.ADMIN)) {
+        Collection<String> groupIds = tokenInfo.getGroups();
+        String domainId = tokenInfo.getDomainId();
+
+        if (!aclResourcesService.isManagedBy(domainId, userId, groupIds, type)
+                && !aclResourcesService.isAuthorized(userId, groupIds, type, id, AclPermission.ADMIN)) {
             return ErrorResponseFactory.getInstance().unauthorized(AclUtils.buildMessage(AclPermission.ADMIN));
         }
 
