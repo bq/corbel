@@ -11,13 +11,15 @@ import javax.ws.rs.core.Response;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 import io.corbel.resources.rem.Rem;
 import io.corbel.resources.rem.acl.AclPermission;
+import io.corbel.resources.rem.acl.ManagedCollection;
 import io.corbel.resources.rem.request.*;
-import io.corbel.resources.rem.service.RemService;
 
 /**
  * @author Cristian del Cerro
@@ -34,9 +36,17 @@ public class DefaultAclResourcesService implements AclResourcesService {
     public static final String ALL_COLLECTIONS = "*";
     public static final String PERMISSION = "permission";
     public static final String PROPERTIES = "properties";
+    public static final char JOIN_CHAR = ':';
 
     private RemService remService;
     private Rem resmiRem;
+    private final Gson gson;
+    private final String adminsCollection;
+
+    public DefaultAclResourcesService(Gson gson, String adminsCollection) {
+        this.gson = gson;
+        this.adminsCollection = adminsCollection;
+    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -93,8 +103,61 @@ public class DefaultAclResourcesService implements AclResourcesService {
     }
 
     @Override
-    public Optional<JsonObject> getResourceIfIsAuthorized(String userId, Collection<String> groupIds, String type, ResourceId resourceId,
-            AclPermission operation) {
+    public boolean isManagedBy(String domainId, String userId, Collection<String> groupIds, String collection) {
+        initResmiRem();
+
+        Optional<ManagedCollection> userManagers = getManagers(domainId + JOIN_CHAR + collection);
+
+        if (!userManagers.isPresent()) {
+            return true;
+        }
+
+        if (verifyUserPresence(userId, groupIds, userManagers)) {
+            return true;
+        }
+
+        Optional<ManagedCollection> domainManagers = getManagers(domainId);
+
+        return verifyUserPresence(userId, groupIds, domainManagers);
+    }
+
+    private Optional<ManagedCollection> getManagers(String collection) {
+        @SuppressWarnings("unchecked")
+        Response response = resmiRem.resource(adminsCollection, new ResourceId(collection), null, null);
+
+        int status = response.getStatus();
+
+        if (status == Response.Status.NOT_FOUND.getStatusCode()) {
+            return Optional.empty();
+        }
+
+        if (status != Response.Status.OK.getStatusCode()) {
+            throw new WebApplicationException(response);
+        }
+
+        return objectToManagedCollection(response.getEntity());
+    }
+
+    private Optional<ManagedCollection> objectToManagedCollection(Object object) {
+        if (!(object instanceof JsonObject)) {
+            return Optional.empty();
+        }
+
+        try {
+            return Optional.of(gson.fromJson((JsonObject) object, ManagedCollection.class));
+        } catch (JsonSyntaxException e) {
+            return Optional.empty();
+        }
+    }
+
+    private boolean verifyUserPresence(String userId, Collection<String> groupIds, Optional<ManagedCollection> managedCollection) {
+        return managedCollection.map(mc -> mc.getUsers().contains(userId) || mc.getGroups().stream().anyMatch(groupIds::contains))
+                .orElse(false);
+    }
+
+    @Override
+    public Optional<JsonObject> getResource(String type, ResourceId resourceId) {
+
         initResmiRem();
 
         @SuppressWarnings("unchecked")
@@ -112,10 +175,21 @@ public class DefaultAclResourcesService implements AclResourcesService {
             return Optional.empty();
         }
 
-        return Optional.ofNullable(originalObject.get(_ACL)).filter(JsonElement::isJsonObject)
+        return Optional.of(originalObject);
+
+    }
+
+    @Override
+    public Optional<JsonObject> getResourceIfIsAuthorized(String userId, Collection<String> groupIds, String type, ResourceId resourceId,
+            AclPermission operation) {
+
+        Optional<JsonObject> originalObject = getResource(type, resourceId);
+
+        return originalObject.map(resource -> resource.get(_ACL)).filter(JsonElement::isJsonObject)
                 .map(JsonElement::getAsJsonObject).filter(acl -> checkAclEntry(acl, ALL, operation)
                         || checkAclEntry(acl, USER_PREFIX + userId, operation) || checkAclEntry(acl, GROUP_PREFIX, groupIds, operation))
-                .map(acl -> originalObject);
+                .flatMap(acl -> originalObject);
+
     }
 
     private void initResmiRem() {

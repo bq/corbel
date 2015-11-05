@@ -6,12 +6,11 @@ import java.util.Optional;
 
 import javax.ws.rs.core.Response;
 
+import com.google.gson.JsonObject;
+
 import io.corbel.resources.rem.Rem;
 import io.corbel.resources.rem.acl.AclPermission;
 import io.corbel.resources.rem.request.*;
-import io.corbel.resources.rem.service.RemService;
-
-import com.google.gson.JsonObject;
 
 /**
  * @author Cristian del Cerro
@@ -36,6 +35,10 @@ public interface AclResourcesService {
     Response deleteRelation(Rem rem, String type, ResourceId id, String relation, RequestParameters<RelationParameters> parameters);
 
     boolean isAuthorized(String userId, Collection<String> groupIds, String type, ResourceId resourceId, AclPermission operation);
+
+    boolean isManagedBy(String domainId, String userId, Collection<String> groupIds, String collection);
+
+    Optional<JsonObject> getResource(String type, ResourceId resourceId);
 
     Optional<JsonObject> getResourceIfIsAuthorized(String userId, Collection<String> groupIds, String type, ResourceId resourceId,
             AclPermission operation);
