@@ -20,15 +20,12 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.MediaType;
 
-import io.corbel.resources.rem.acl.AclGetRem;
-import io.corbel.resources.rem.acl.AclPermission;
-import io.corbel.resources.rem.request.*;
-import io.corbel.resources.rem.service.AclResourcesService;
-import io.corbel.resources.rem.service.RemService;
-
 import com.google.gson.JsonObject;
 
 import io.corbel.lib.token.TokenInfo;
+import io.corbel.resources.rem.request.*;
+import io.corbel.resources.rem.service.AclResourcesService;
+import io.corbel.resources.rem.service.RemService;
 
 /**
  * @author Cristian del Cerro
@@ -37,6 +34,7 @@ import io.corbel.lib.token.TokenInfo;
 @RunWith(MockitoJUnitRunner.class) public class AclGetRemTest {
 
     private static final String USER_ID = "userId";
+    private static final Optional<String> OPT_USER_ID = Optional.of(USER_ID);
     private static final String GROUP_ID = "groupId";
     private static final String TYPE = "type";
     private static final ResourceId RESOURCE_ID = new ResourceId("resourceId");
@@ -77,7 +75,7 @@ import io.corbel.lib.token.TokenInfo;
         acl.addProperty("ALL", "READ");
         entity.add("_acl", acl);
 
-        when(aclResourcesService.getResourceIfIsAuthorized(eq(null), any(), eq(TYPE), eq(RESOURCE_ID), eq(AclPermission.READ)))
+        when(aclResourcesService.getResourceIfIsAuthorized(eq(Optional.empty()), any(), eq(TYPE), eq(RESOURCE_ID), eq(AclPermission.READ)))
                 .thenReturn(Optional.of(entity));
         Response response = rem.resource(TYPE, RESOURCE_ID, resourceParameters, Optional.empty());
         assertThat(response.getStatus()).isEqualTo(200);
@@ -87,8 +85,8 @@ import io.corbel.lib.token.TokenInfo;
     public void testGetResourceNotFoundObject() {
         when(getResponse.getStatus()).thenReturn(404);
         when(getResponse.getStatusInfo()).thenReturn(Response.Status.NOT_FOUND);
-        doThrow(new WebApplicationException(getResponse)).when(aclResourcesService).getResourceIfIsAuthorized(eq(USER_ID), any(), eq(TYPE),
-                eq(RESOURCE_ID), eq(AclPermission.READ));
+        doThrow(new WebApplicationException(getResponse)).when(aclResourcesService).getResourceIfIsAuthorized(eq(OPT_USER_ID), any(),
+                eq(TYPE), eq(RESOURCE_ID), eq(AclPermission.READ));
         try {
             rem.resource(TYPE, RESOURCE_ID, resourceParameters, null);
         } catch (WebApplicationException wae) {
@@ -104,7 +102,7 @@ import io.corbel.lib.token.TokenInfo;
         acl.addProperty(USER_ID, "ADMIN");
         entity.add("_acl", acl);
 
-        when(aclResourcesService.getResourceIfIsAuthorized(eq(USER_ID), any(), eq(TYPE), eq(RESOURCE_ID), eq(AclPermission.READ)))
+        when(aclResourcesService.getResourceIfIsAuthorized(eq(OPT_USER_ID), any(), eq(TYPE), eq(RESOURCE_ID), eq(AclPermission.READ)))
                 .thenReturn(Optional.of(entity));
 
         when(getResponse.getEntity()).thenReturn(entity);
@@ -199,7 +197,7 @@ import io.corbel.lib.token.TokenInfo;
 
         ResourceId resourceId = new ResourceId("idOrigin");
 
-        when(aclResourcesService.isAuthorized(eq(USER_ID), any(), eq(TYPE), eq(resourceId), eq(AclPermission.READ))).thenReturn(true);
+        when(aclResourcesService.isAuthorized(eq(OPT_USER_ID), any(), eq(TYPE), eq(resourceId), eq(AclPermission.READ))).thenReturn(true);
 
         RelationParameters apiParameters = mock(RelationParameters.class);
         when(relationParameters.getOptionalApiParameters()).thenReturn(Optional.of(apiParameters));
