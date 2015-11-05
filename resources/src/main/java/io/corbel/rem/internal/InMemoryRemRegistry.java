@@ -1,15 +1,8 @@
 package io.corbel.rem.internal;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,13 +15,13 @@ import io.corbel.resources.rem.model.RemDescription;
 
 /**
  * In memory implementation of a REM registryLookUp.
- * 
+ *
  * URI Patterns are stored as partial order where P1 bigger than P2 if P1.match(P2).
- * 
- * Media types are stored as partial order where T1 bigger than T2 if T1.includes(T2)
- * 
+ *
+ * Media types are stored as partial order where T1 bigger than T2 if T2.includes(T1)
+ *
  * @author Alexander De Leon
- * 
+ *
  */
 public class InMemoryRemRegistry implements RemRegistry {
 
@@ -38,7 +31,7 @@ public class InMemoryRemRegistry implements RemRegistry {
     private final Map<String, UriPatternRegistryEntry> registryLookUp = new HashMap<>();
 
     @Override
-    public Rem getRem(String uri, List<MediaType> acceptableMediaTypes, HttpMethod method, List<Rem> remsExcluded) {
+    synchronized public Rem getRem(String uri, List<MediaType> acceptableMediaTypes, HttpMethod method, List<Rem> remsExcluded) {
         for (UriPatternRegistryEntry entry : registry) {
             if (entry.matches(uri)) {
                 for (MediaType mediaType : acceptableMediaTypes) {
@@ -57,7 +50,21 @@ public class InMemoryRemRegistry implements RemRegistry {
     }
 
     @Override
-    public List<RemDescription> getRegistryDescription() {
+    synchronized public void unregisterRem(Class<?> remClass, String uriPattern, MediaType mediaType) {
+        UriPatternRegistryEntry registryEntry = registryLookUp.get(uriPattern);
+
+        if (registryEntry == null) {
+            return;
+        }
+
+        if (registryEntry.removeAndCheckIfEmpty(remClass, mediaType)) {
+            registryLookUp.remove(uriPattern);
+            registry.remove(registryEntry);
+        }
+    }
+
+    @Override
+    synchronized public List<RemDescription> getRegistryDescription() {
         List<RemDescription> descriptionsList = new LinkedList<>();
         for (UriPatternRegistryEntry uriPatternRegistryEntry : registry) {
             for (MediaTypeRegistryEntry mediaTypeRegistryEntry : uriPatternRegistryEntry.getMediaTypeRegistryEntries()) {
@@ -75,7 +82,7 @@ public class InMemoryRemRegistry implements RemRegistry {
     }
 
     @Override
-    public void registerRem(Rem rem, String uriPattern, MediaType mediaType, HttpMethod... methods) {
+    synchronized public void registerRem(Rem rem, String uriPattern, MediaType mediaType, HttpMethod... methods) {
         HttpMethod[] methodsToAdd = (methods == null || methods.length == 0) ? HttpMethod.values() : methods;
 
         UriPatternRegistryEntry registryEntry = registryLookUp.get(uriPattern);
@@ -97,7 +104,7 @@ public class InMemoryRemRegistry implements RemRegistry {
     }
 
     @Override
-    public Rem getRem(String name) {
+    synchronized public Rem getRem(String name) {
         for (UriPatternRegistryEntry entry : registry) {
             for (MediaTypeRegistryEntry mediaTypeRegistry : entry.getMediaTypeRegistryEntries()) {
                 for (Rem rem : mediaTypeRegistry.getRems()) {
@@ -132,6 +139,14 @@ public class InMemoryRemRegistry implements RemRegistry {
             }
         }
 
+        public boolean removeAndCheckIfEmpty(Class<?> remClass) {
+            List<HttpMethod> keysToRemove = remRegistry.entrySet().stream().filter(entry -> entry.getValue().getClass().equals(remClass))
+                    .map(Map.Entry::getKey).collect(Collectors.toList());
+
+            keysToRemove.forEach(remRegistry::remove);
+            return remRegistry.isEmpty();
+        }
+
         public Collection<Rem> getRems() {
             return remRegistry.values();
         }
@@ -152,7 +167,7 @@ public class InMemoryRemRegistry implements RemRegistry {
 
     private class UriPatternRegistryEntry implements Comparable<UriPatternRegistryEntry> {
         private final Pattern uriPattern;
-        private final SortedSet<MediaTypeRegistryEntry> mediaTypeRegistry = new TreeSet<MediaTypeRegistryEntry>(Collections.reverseOrder());
+        private final SortedSet<MediaTypeRegistryEntry> mediaTypeRegistry = new TreeSet<>(Collections.reverseOrder());
         private final Map<MediaType, MediaTypeRegistryEntry> mediaTypeRegistryLookUp = new HashMap<>();
 
         public UriPatternRegistryEntry(String uriPattern) {
@@ -178,6 +193,19 @@ public class InMemoryRemRegistry implements RemRegistry {
                 mediaTypeRegistryLookUp.put(mediaType, entry);
             }
             entry.add(rem, methods);
+        }
+
+        public boolean removeAndCheckIfEmpty(Class<?> remClass, MediaType mediaType) {
+            List<Map.Entry<MediaType, MediaTypeRegistryEntry>> entriesToRemove = mediaTypeRegistryLookUp.entrySet().stream()
+                    .filter(entry -> entry.getKey().equals(mediaType)).filter(entry -> entry.getValue().removeAndCheckIfEmpty(remClass))
+                    .collect(Collectors.toList());
+
+            entriesToRemove.forEach(entry -> {
+                mediaTypeRegistryLookUp.remove(entry.getKey());
+                mediaTypeRegistry.remove(entry.getValue());
+            });
+
+            return mediaTypeRegistry.isEmpty();
         }
 
         public MediaTypeRegistryEntry get(MediaType mediaType) {

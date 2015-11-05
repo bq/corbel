@@ -1,9 +1,9 @@
 package io.corbel.resources.rem.acl.query;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.corbel.lib.queries.BooleanQueryLiteral;
@@ -21,18 +21,15 @@ public class AclQueryBuilder {
 
     List<QueryNode> existsQueryNodes;
 
-    public AclQueryBuilder(String userId, Collection<String> groupIds) {
-        existsQueryNodes = groupIds == null ? new ArrayList<>()
-                : groupIds.stream().map(groupId -> buildQueryNodeExistInAcl(DefaultAclResourcesService.GROUP_PREFIX + groupId))
-                        .collect(Collectors.toList());
+    public AclQueryBuilder(Optional<String> userId, Collection<String> groupIds) {
+        existsQueryNodes = groupIds.stream().map(groupId -> buildQueryNodeExistInAcl(DefaultAclResourcesService.GROUP_PREFIX + groupId))
+                .collect(Collectors.toList());
         existsQueryNodes.add(buildQueryNodeExistInAcl(DefaultAclResourcesService.ALL));
-        if (userId != null) {
-            existsQueryNodes.add(buildQueryNodeExistInAcl(DefaultAclResourcesService.USER_PREFIX + userId));
-        }
+        userId.ifPresent(id -> existsQueryNodes.add(buildQueryNodeExistInAcl(DefaultAclResourcesService.USER_PREFIX + id)));
     }
 
     public List<ResourceQuery> build(List<ResourceQuery> queries) {
-        if (queries == null || queries.isEmpty()) {
+        if (queries.isEmpty()) {
             return buildDefaultAclQueries();
         }
 
