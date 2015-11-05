@@ -1,28 +1,36 @@
 package io.corbel.resources.rem.service;
 
+import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 
 import io.corbel.resources.rem.Rem;
 import io.corbel.resources.rem.acl.AclPermission;
+import io.corbel.resources.rem.model.ManagedCollection;
+import io.corbel.resources.rem.model.RemDescription;
 import io.corbel.resources.rem.request.*;
-import io.corbel.resources.rem.service.RemService;
 
 /**
  * @author Cristian del Cerro
  */
 public class DefaultAclResourcesService implements AclResourcesService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultAclResourcesService.class);
 
     public static final String _ACL = "_acl";
     public static final String ALL = "ALL";
@@ -34,9 +42,28 @@ public class DefaultAclResourcesService implements AclResourcesService {
     public static final String ALL_COLLECTIONS = "*";
     public static final String PERMISSION = "permission";
     public static final String PROPERTIES = "properties";
+    public static final char JOIN_CHAR = ':';
+    public static final String RESMI_GET = "ResmiGetRem";
+    public static final String RESMI_PUT = "ResmiPutRem";
+
+    private final Pattern collectionPattern = Pattern.compile("^(?:.*/)?[\\w-_]+?(?::(?<collection>[\\w-_:]+))?$");
 
     private RemService remService;
-    private Rem resmiRem;
+    private Rem resmiGetRem;
+    private Rem resmiPutRem;
+    private final Gson gson;
+    private final String adminsCollection;
+    private List<Pair<Rem, HttpMethod>> remsAndMethods = Collections.emptyList();
+
+    public DefaultAclResourcesService(Gson gson, String adminsCollection) {
+        this.gson = gson;
+        this.adminsCollection = adminsCollection;
+    }
+
+    @Override
+    public void setRemsAndMethods(List<Pair<Rem, HttpMethod>> remsAndMethods) {
+        this.remsAndMethods = remsAndMethods;
+    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -88,17 +115,67 @@ public class DefaultAclResourcesService implements AclResourcesService {
     }
 
     @Override
-    public boolean isAuthorized(String userId, Collection<String> groupIds, String type, ResourceId resourceId, AclPermission operation) {
+    public boolean isAuthorized(Optional<String> userId, Collection<String> groupIds, String type, ResourceId resourceId,
+            AclPermission operation) {
         return getResourceIfIsAuthorized(userId, groupIds, type, resourceId, operation).isPresent();
     }
 
     @Override
-    public Optional<JsonObject> getResourceIfIsAuthorized(String userId, Collection<String> groupIds, String type, ResourceId resourceId,
-            AclPermission operation) {
-        initResmiRem();
+    public boolean isManagedBy(String domainId, Optional<String> userId, Collection<String> groupIds, String collection) {
+        if (!userId.isPresent() && groupIds.isEmpty()) {
+            return false;
+        }
+
+        Optional<ManagedCollection> userManagers = getManagers(domainId, collection);
+
+        if (userManagers.map(um -> verifyPresence(userId, groupIds, um)).orElse(false)) {
+            return true;
+        }
+
+        Optional<ManagedCollection> domainManagers = getManagers(domainId);
+
+        return domainManagers.map(dm -> verifyPresence(userId, groupIds, dm)).orElse(false);
+    }
+
+    private Optional<ManagedCollection> getManagers(String domainId, String collection) {
+        return getManagers(domainId + JOIN_CHAR + collection);
+    }
+
+    private Optional<ManagedCollection> getManagers(String collection) {
+        Optional<JsonObject> response;
+        try {
+            response = getResource(adminsCollection, new ResourceId(collection));
+        } catch (WebApplicationException e) {
+            if (e.getResponse().getStatus() == Response.Status.NOT_FOUND.getStatusCode()) {
+                return Optional.empty();
+            }
+
+            throw e;
+        }
+
+        return response.flatMap(this::objectToManagedCollection);
+    }
+
+    private Optional<ManagedCollection> objectToManagedCollection(Object object) {
+        try {
+            return Optional.of(gson.fromJson((JsonElement) object, ManagedCollection.class));
+        } catch (ClassCastException | JsonSyntaxException e) {
+            return Optional.empty();
+        }
+    }
+
+    private boolean verifyPresence(Optional<String> userId, Collection<String> groupIds, ManagedCollection managedCollection) {
+        return userId.map(id -> managedCollection.getUsers().contains(id)).orElse(false)
+                || managedCollection.getGroups().stream().anyMatch(groupIds::contains);
+    }
+
+    @Override
+    public Optional<JsonObject> getResource(String type, ResourceId resourceId) {
+
+        initResmiGetRem();
 
         @SuppressWarnings("unchecked")
-        Response response = resmiRem.resource(type, resourceId, null, null);
+        Response response = resmiGetRem.resource(type, resourceId, null, Optional.empty());
 
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new WebApplicationException(response);
@@ -112,15 +189,39 @@ public class DefaultAclResourcesService implements AclResourcesService {
             return Optional.empty();
         }
 
-        return Optional.ofNullable(originalObject.get(_ACL)).filter(JsonElement::isJsonObject)
-                .map(JsonElement::getAsJsonObject).filter(acl -> checkAclEntry(acl, ALL, operation)
-                        || checkAclEntry(acl, USER_PREFIX + userId, operation) || checkAclEntry(acl, GROUP_PREFIX, groupIds, operation))
-                .map(acl -> originalObject);
+        return Optional.of(originalObject);
+
     }
 
-    private void initResmiRem() {
-        if (resmiRem == null) {
-            resmiRem = remService.getRem(ALL_COLLECTIONS, Collections.singletonList(MediaType.APPLICATION_JSON), HttpMethod.GET);
+    @Override
+    public Optional<JsonObject> getResourceIfIsAuthorized(Optional<String> userId, Collection<String> groupIds, String type,
+            ResourceId resourceId, AclPermission operation) {
+
+        Optional<JsonObject> originalObject = getResource(type, resourceId);
+
+        Optional<JsonElement> aclObject = originalObject.map(resource -> resource.get(_ACL));
+
+        if (!aclObject.isPresent() && operation == AclPermission.READ) {
+            return originalObject;
+        }
+
+        return aclObject.filter(JsonElement::isJsonObject).map(JsonElement::getAsJsonObject)
+                .filter(acl -> checkAclEntry(acl, ALL, operation)
+                        || userId.map(id -> checkAclEntry(acl, USER_PREFIX + id, operation)).orElse(false)
+                        || checkAclEntry(acl, GROUP_PREFIX, groupIds, operation))
+                .flatMap(acl -> originalObject);
+
+    }
+
+    private void initResmiPutRem() {
+        if (resmiPutRem == null) {
+            resmiPutRem = remService.getRem(RESMI_PUT);
+        }
+    }
+
+    private void initResmiGetRem() {
+        if (resmiGetRem == null) {
+            resmiGetRem = remService.getRem(RESMI_GET);
         }
     }
 
@@ -137,6 +238,88 @@ public class DefaultAclResourcesService implements AclResourcesService {
                         return Optional.empty();
                     }
                 }).filter(permissionString -> AclPermission.valueOf(permissionString).canPerform(operation)).isPresent();
+    }
+
+    @Override
+    public Response updateConfiguration(ResourceId id, RequestParameters<ResourceParameters> parameters,
+            ManagedCollection managedCollection) {
+        initResmiPutRem();
+        JsonObject jsonObject = new Gson().toJsonTree(managedCollection).getAsJsonObject();
+        return updateResource(resmiPutRem, adminsCollection, id, parameters, jsonObject);
+    }
+
+    @Override
+    public void addAclConfiguration(String collection) {
+        List<RemDescription> remDescriptions = remService.getRegisteredRemDescriptions();
+
+        boolean alreadyRegistered = remDescriptions.stream()
+                .anyMatch(description -> description.getUriPattern().equals(collection) && description.getRemName().startsWith("Acl"));
+
+        if (alreadyRegistered) {
+            return;
+        }
+
+        remsAndMethods.forEach(remAndMethod -> remService.registerRem(remAndMethod.getLeft(), collection, remAndMethod.getRight()));
+    }
+
+    @Override
+    public void removeAclConfiguration(String collection) {
+        remsAndMethods.stream().map(Pair::getLeft).forEach(aclRem -> remService.unregisterRem(aclRem.getClass(), collection));
+    }
+
+    @Override
+    public void refreshRegistry() {
+        initResmiGetRem();
+
+        Response response = getCollection(resmiGetRem, adminsCollection, null);
+
+        if (response.getStatus() != Response.Status.OK.getStatusCode()) {
+            LOG.error("Can't access {}", adminsCollection);
+        }
+
+        JsonArray jsonArray;
+
+        try {
+            jsonArray = Optional.ofNullable(response.getEntity()).filter(object -> object instanceof JsonObject)
+                    .map(object -> (JsonObject) object).filter(JsonObject::isJsonArray).map(JsonObject::getAsJsonArray)
+                    .orElseThrow(IOException::new);
+
+        } catch (IOException e) {
+            LOG.error("Can't read {} properly", adminsCollection);
+            return;
+        }
+
+        for (JsonElement jsonElement : jsonArray) {
+
+            Optional<JsonObject> idField = Optional.of(jsonElement).filter(JsonElement::isJsonObject).map(JsonElement::getAsJsonObject)
+                    .filter(jsonObject -> jsonObject.has("id"));
+
+            if (!idField.isPresent()) {
+                LOG.error("Document in acl configuration collection has no id field: {}", jsonElement.toString());
+                continue;
+            }
+
+            Optional<String> id = idField.map(jsonObject -> jsonObject.get("id")).filter(JsonElement::isJsonPrimitive)
+                    .map(JsonElement::getAsJsonPrimitive).filter(JsonPrimitive::isString).map(JsonPrimitive::getAsString);
+
+            if (!id.isPresent()) {
+                LOG.error("Unrecognized id: {}", jsonElement.toString());
+                continue;
+            }
+
+            id.flatMap(string -> {
+                Matcher matcher = collectionPattern.matcher(string);
+
+                if (matcher.matches()) {
+                    return Optional.of(matcher.group("collection")).filter(collection -> !collection.isEmpty());
+
+                } else {
+                    return Optional.empty();
+                }
+            }).ifPresent(this::addAclConfiguration);
+
+        }
+
     }
 
     @Override
