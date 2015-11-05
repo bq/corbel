@@ -17,6 +17,7 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.stream.JsonReader;
 
+import io.corbel.lib.token.TokenInfo;
 import io.corbel.lib.ws.api.error.ErrorResponseFactory;
 import io.corbel.resources.rem.Rem;
 import io.corbel.resources.rem.request.RequestParameters;
@@ -41,28 +42,22 @@ public class SetUpAclPutRem extends AclBaseRem {
     @Override
     public Response resource(String type, ResourceId id, RequestParameters<ResourceParameters> parameters, Optional<InputStream> entity) {
 
-        String userId = parameters.getTokenInfo().getUserId();
-        if (userId == null) {
-            return ErrorResponseFactory.getInstance().methodNotAllowed();
-        }
-
-        Collection<String> groupIds = parameters.getTokenInfo().getGroups();
-
-        InputStream requestBody = entity.get();
-        if (AclUtils.entityIsEmpty(requestBody)) {
+        if (entity.map(AclUtils::entityIsEmpty).orElse(true)) {
             return ErrorResponseFactory.getInstance().badRequest();
         }
 
-        JsonReader reader = new JsonReader(new InputStreamReader(requestBody));
+        JsonReader reader = new JsonReader(new InputStreamReader(entity.get()));
         JsonObject jsonObject = new JsonParser().parse(reader).getAsJsonObject();
+        TokenInfo tokenInfo = parameters.getTokenInfo();
 
-        if (!aclResourcesService.isAuthorized(userId, groupIds, type, id, AclPermission.ADMIN)) {
+        if (!aclResourcesService.isManagedBy(tokenInfo, type)
+                && !aclResourcesService.isAuthorized(tokenInfo, type, id, AclPermission.ADMIN)) {
             return ErrorResponseFactory.getInstance().unauthorized(AclUtils.buildMessage(AclPermission.ADMIN));
         }
 
         JsonObject filteredAclObject = getFilteredAclObject(jsonObject);
 
-        if (filteredAclObject.entrySet().isEmpty() || !hasAdminPermission(userId, groupIds, filteredAclObject)) {
+        if (filteredAclObject.entrySet().isEmpty() || !hasAdminPermission(tokenInfo, filteredAclObject)) {
             return ErrorResponseFactory.getInstance().badRequest();
         }
 
@@ -123,9 +118,14 @@ public class SetUpAclPutRem extends AclBaseRem {
                 .filter(permissionValue -> permissionValue.equals(AclPermission.ADMIN.toString())).isPresent();
     }
 
-    private boolean hasAdminPermission(String userId, Collection<String> groupIds, JsonObject acl) {
-        Stream<String> userAndAllStream = Arrays.asList(DefaultAclResourcesService.ALL, DefaultAclResourcesService.USER_PREFIX + userId)
-                .stream();
+    private boolean hasAdminPermission(TokenInfo tokenInfo, JsonObject acl) {
+        return hasAdminPermission(Optional.ofNullable(tokenInfo.getUserId()), tokenInfo.getGroups(), acl);
+    }
+
+    private boolean hasAdminPermission(Optional<String> userId, Collection<String> groupIds, JsonObject acl) {
+        Stream<String> userAndAllStream = userId
+                .map(id -> Arrays.asList(DefaultAclResourcesService.ALL, DefaultAclResourcesService.USER_PREFIX + id))
+                .orElseGet(() -> Collections.singletonList(DefaultAclResourcesService.ALL)).stream();
         Stream<String> groupsStream = groupIds.stream().map(id -> DefaultAclResourcesService.GROUP_PREFIX + id);
 
         return Stream.concat(userAndAllStream, groupsStream).anyMatch(id -> idHasAdminPermission(id, acl));
