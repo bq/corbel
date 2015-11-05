@@ -2,7 +2,6 @@ package io.corbel.resources.rem.acl;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +17,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
+import io.corbel.lib.token.TokenInfo;
 import io.corbel.lib.ws.api.error.ErrorResponseFactory;
 import io.corbel.resources.rem.Rem;
 import io.corbel.resources.rem.request.RelationParameters;
@@ -33,7 +33,6 @@ import io.corbel.resources.rem.utils.AclUtils;
  */
 public class AclPutRem extends AclBaseRem {
 
-
     public AclPutRem(AclResourcesService aclResourcesService, List<Rem> remsToExclude) {
         super(aclResourcesService, remsToExclude);
     }
@@ -41,15 +40,13 @@ public class AclPutRem extends AclBaseRem {
     @Override
     public Response resource(String type, ResourceId id, RequestParameters<ResourceParameters> parameters, Optional<InputStream> entity) {
 
-        String userId = parameters.getTokenInfo().getUserId();
-        if (userId == null) {
-            return ErrorResponseFactory.getInstance().methodNotAllowed();
-        }
+        TokenInfo tokenInfo = parameters.getTokenInfo();
 
-        Collection<String> groupIds = parameters.getTokenInfo().getGroups();
+        boolean userIsAnAdmin = aclResourcesService.isManagedBy(tokenInfo, type);
 
         InputStream requestBody = entity.get();
-        if (AclUtils.entityIsEmpty(requestBody)) {
+
+        if (!userIsAnAdmin && AclUtils.entityIsEmpty(requestBody)) {
             return ErrorResponseFactory.getInstance().badRequest();
         }
 
@@ -57,7 +54,8 @@ public class AclPutRem extends AclBaseRem {
         Optional<JsonObject> originalObject = Optional.empty();
 
         try {
-            originalObject = aclResourcesService.getResourceIfIsAuthorized(userId, groupIds, type, id, AclPermission.WRITE);
+            originalObject = userIsAnAdmin ? aclResourcesService.getResource(type, id)
+                    : aclResourcesService.getResourceIfIsAuthorized(tokenInfo, type, id, AclPermission.WRITE);
         } catch (WebApplicationException exception) {
             if (exception.getResponse().getStatus() == Status.NOT_FOUND.getStatusCode()) {
                 newResource = true;
@@ -72,7 +70,8 @@ public class AclPutRem extends AclBaseRem {
             aclValue.add(DefaultAclResourcesService.PROPERTIES, new JsonObject());
 
             JsonObject user = new JsonObject();
-            user.add(DefaultAclResourcesService.USER_PREFIX + userId, aclValue);
+            Optional.ofNullable(tokenInfo.getUserId())
+                    .ifPresent(presentUserId -> user.add(DefaultAclResourcesService.USER_PREFIX + presentUserId, aclValue));
 
             JsonObject acl = new JsonObject();
             acl.add(DefaultAclResourcesService._ACL, user);
@@ -94,6 +93,7 @@ public class AclPutRem extends AclBaseRem {
             jsonObject.remove(DefaultAclResourcesService._ACL);
             return aclResourcesService.updateResource(rem, type, id, parameters, jsonObject);
         }
+
         return aclResourcesService.updateResource(rem, type, id, parameters, requestBody);
     }
 
@@ -101,25 +101,32 @@ public class AclPutRem extends AclBaseRem {
     public Response relation(String type, ResourceId id, String relation, RequestParameters<RelationParameters> parameters,
             Optional<InputStream> entity) {
 
-        String userId = parameters.getTokenInfo().getUserId();
-        Collection<String> groupIds = parameters.getTokenInfo().getGroups();
-
-        if (userId == null || id.isWildcard()) {
+        if (id.isWildcard()) {
             return ErrorResponseFactory.getInstance().methodNotAllowed();
         }
 
-        InputStream requestBody = entity.get();
-        if (aclResourcesService.isAuthorized(userId, groupIds, type, id, AclPermission.WRITE)) {
+        TokenInfo tokenInfo = parameters.getTokenInfo();
+
+        if (aclResourcesService.isManagedBy(tokenInfo, type)
+                || aclResourcesService.isAuthorized(tokenInfo, type, id, AclPermission.WRITE)) {
+
             Rem rem = remService.getRem(type, parameters.getAcceptedMediaTypes(), HttpMethod.PUT, Collections.singletonList(this));
             JsonObject jsonObject = new JsonObject();
+
+            InputStream requestBody = entity.get();
+
             if (!AclUtils.entityIsEmpty(requestBody)) {
                 JsonReader reader = new JsonReader(new InputStreamReader(requestBody));
                 jsonObject = new JsonParser().parse(reader).getAsJsonObject();
             }
+
             return aclResourcesService.putRelation(rem, type, id, relation, parameters, jsonObject);
-        } else {
+        }
+
+        else {
             return ErrorResponseFactory.getInstance().unauthorized(AclUtils.buildMessage(AclPermission.WRITE));
         }
 
     }
+
 }
