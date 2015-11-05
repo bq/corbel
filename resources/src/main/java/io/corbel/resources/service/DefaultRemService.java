@@ -71,6 +71,16 @@ public class DefaultRemService implements RemService {
     }
 
     @Override
+    public void registerRem(Rem rem, String uriPattern, HttpMethod httpMethod) {
+        registry.registerRem(rem, uriPattern, httpMethod);
+    }
+
+    @Override
+    public void deregisterRem(Class<?> remClass, String uriPattern) {
+        registry.unregisterRem(remClass, uriPattern, MediaType.ALL);
+    }
+
+    @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public Response collection(Rem rem, String type, RequestParameters<CollectionParameters> parameters, URI uri, Optional entity) {
         return rem.collection(type, parameters, uri, entity);
