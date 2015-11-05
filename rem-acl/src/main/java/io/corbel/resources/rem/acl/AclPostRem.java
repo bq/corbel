@@ -35,19 +35,12 @@ public class AclPostRem extends AclBaseRem {
     @Override
     public Response collection(String type, RequestParameters<CollectionParameters> parameters, URI uri, Optional<InputStream> entity) {
 
-        String userId = parameters.getTokenInfo().getUserId();
-
-        if (userId == null) {
-            return ErrorResponseFactory.getInstance().methodNotAllowed();
-        }
-
-        InputStream requestBody = entity.get();
-
-        if (AclUtils.entityIsEmpty(requestBody)) {
+        if (AclUtils.entityIsEmpty(entity)) {
             return ErrorResponseFactory.getInstance().badRequest();
         }
 
         boolean jsonMediaTypeAccepted = parameters.getAcceptedMediaTypes().contains(MediaType.APPLICATION_JSON);
+        InputStream requestBody = entity.get();
 
         JsonObject jsonObject = new JsonObject();
 
@@ -57,12 +50,15 @@ public class AclPostRem extends AclBaseRem {
             jsonObject.remove(DefaultAclResourcesService._ACL);
         }
 
-        JsonObject userAcl = new JsonObject();
-        userAcl.addProperty(DefaultAclResourcesService.PERMISSION, AclPermission.ADMIN.toString());
-        userAcl.add(DefaultAclResourcesService.PROPERTIES, new JsonObject());
-
         JsonObject acl = new JsonObject();
-        acl.add(DefaultAclResourcesService.USER_PREFIX + userId, userAcl);
+
+        Optional.ofNullable(parameters.getTokenInfo().getUserId()).ifPresent(userId -> {
+            JsonObject userAcl = new JsonObject();
+            userAcl.addProperty(DefaultAclResourcesService.PERMISSION, AclPermission.ADMIN.toString());
+            userAcl.add(DefaultAclResourcesService.PROPERTIES, new JsonObject());
+
+            acl.add(DefaultAclResourcesService.USER_PREFIX + userId, userAcl);
+        });
 
         jsonObject.add(DefaultAclResourcesService._ACL, acl);
 
@@ -82,6 +78,7 @@ public class AclPostRem extends AclBaseRem {
                 return responsePutNotJsonResource;
             }
         }
+
         return response;
 
     }
