@@ -1,6 +1,13 @@
 package io.corbel.iam.service;
 
-import io.corbel.event.*;
+import io.corbel.event.AuthorizationEvent;
+import io.corbel.event.DeviceEvent;
+import io.corbel.event.DomainDeletedEvent;
+import io.corbel.event.NotificationEvent;
+import io.corbel.event.ScopeUpdateEvent;
+import io.corbel.event.UserAuthenticationEvent;
+import io.corbel.event.UserCreatedEvent;
+import io.corbel.event.UserDeletedEvent;
 import io.corbel.eventbus.service.EventBus;
 import io.corbel.iam.model.Device;
 import io.corbel.iam.model.User;
@@ -36,6 +43,20 @@ public class DefaultEventsService implements EventsService {
     }
 
     @Override
+    public void sendUserModifiedEvent(User user) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void sendUserAuthenticationEvent(User user) {
+        UserAuthenticationEvent event = new UserAuthenticationEvent(user.getDomain(), user.getId(), user.getEmail(), user.getUsername(),
+                user.getFirstName(), user.getLastName(), user.getProfileUrl(), user.getPhoneNumber(), user.getCountry(),
+                user.getProperties(), user.getScopes(), user.getGroups());
+        eventBus.dispatch(event);
+    }
+
+    @Override
     public void sendNotificationEvent(String notificationId, String recipient, Map<String, String> properties) {
         NotificationEvent notificationEvent = new NotificationEvent(notificationId, recipient);
         notificationEvent.setProperties(properties);
@@ -59,23 +80,20 @@ public class DefaultEventsService implements EventsService {
     }
 
     @Override
-    public void sendUserAuthenticationEvent(String domainId, String id) {
-        eventBus.dispatch(AuthorizationEvent.userAuthenticationEvent(domainId, id));
-    }
-
-    @Override
     public void sendClientAuthenticationEvent(String domainId, String id) {
         eventBus.dispatch(AuthorizationEvent.clientAuthenticationEvent(domainId, id));
     }
 
     @Override
     public void sendDeviceCreateEvent(Device device) {
-        eventBus.dispatch(new DeviceEvent(DeviceEvent.Type.CREATED, device.getDomain(), device.getId(), device.getUserId(), device.getType().name(), device.getName()));
+        eventBus.dispatch(new DeviceEvent(DeviceEvent.Type.CREATED, device.getDomain(), device.getId(), device.getUserId(), device
+                .getType().name(), device.getName()));
     }
 
     @Override
     public void sendDeviceUpdateEvent(Device device) {
-        eventBus.dispatch(new DeviceEvent(DeviceEvent.Type.UPDATED, device.getDomain(), device.getId(), device.getUserId(), device.getType().name(), device.getName()));
+        eventBus.dispatch(new DeviceEvent(DeviceEvent.Type.UPDATED, device.getDomain(), device.getId(), device.getUserId(), device
+                .getType().name(), device.getName()));
 
     }
 
