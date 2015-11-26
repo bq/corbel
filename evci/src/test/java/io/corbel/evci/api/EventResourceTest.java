@@ -12,10 +12,7 @@ import com.google.gson.JsonObject;
 import io.corbel.lib.queries.builder.QueryParametersBuilder;
 import io.corbel.lib.token.TokenInfo;
 import io.corbel.lib.token.reader.TokenReader;
-import io.corbel.lib.ws.auth.AuthorizationInfo;
-import io.corbel.lib.ws.auth.AuthorizationInfoProvider;
-import io.corbel.lib.ws.auth.AuthorizationRequestFilter;
-import io.corbel.lib.ws.auth.BearerTokenAuthenticator;
+import io.corbel.lib.ws.auth.*;
 import io.corbel.lib.ws.encoding.MatrixEncodingRequestFilter;
 import io.corbel.lib.ws.json.serialization.EmptyEntitiesAllowedJacksonMessageBodyProvider;
 import io.corbel.lib.ws.queries.QueryParametersProvider;
@@ -55,11 +52,12 @@ public class EventResourceTest {
     private static final String TEST_TOKEN = "xxxx";
 
     private static final EventsService eventsService = mock(EventsService.class);
+    private static final PublicAccessService publicAccessService = mock(PublicAccessService.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private static BearerTokenAuthenticator authenticatorMock = mock(BearerTokenAuthenticator.class);
     private static OAuthFactory oAuthFactory = new OAuthFactory<>(authenticatorMock, "realm", AuthorizationInfo.class);
-    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, null, "", false));
+    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, null, publicAccessService, "",  false));
 
     @ClassRule public static ResourceTestRule RULE;
 
@@ -92,7 +90,7 @@ public class EventResourceTest {
         HttpServletRequest requestMock = mock(HttpServletRequest.class);
         when(requestMock.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + TEST_TOKEN);
         doReturn(requestMock).when(filter).getRequest();
-        doNothing().when(filter).checkAccessRules(eq(authorizationInfoMock), any(), any());
+        doNothing().when(filter).checkTokenAccessRules(eq(authorizationInfoMock), any(), any());
         when(tokenInfo.getUserId()).thenReturn(TEST_USER_ID);
         when(tokenInfo.getDomainId()).thenReturn(DOMAIN);
     }

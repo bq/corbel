@@ -17,6 +17,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import io.corbel.lib.ws.auth.PublicAccessService;
 import org.glassfish.jersey.client.ClientProperties;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -73,6 +74,8 @@ public class UserResourceTest extends UserResourceTestBase {
     private static final AuthorizationInfo authorizationInfoMock = mock(AuthorizationInfo.class);
     private static final QueryParser queryParserMock = mock(QueryParser.class);
     private static final DeviceService devicesServiceMock = mock(DeviceService.class);
+    private static final PublicAccessService publicAccessService = mock(PublicAccessService.class);
+
 
     @SuppressWarnings("unchecked")
     private static final Authenticator<String, AuthorizationInfo> authenticator = mock(Authenticator.class);
@@ -80,7 +83,7 @@ public class UserResourceTest extends UserResourceTestBase {
     private static OAuthFactory oAuthFactory = new OAuthFactory<>(authenticator, "realm", AuthorizationInfo.class);
 
     @SuppressWarnings("unchecked") private static final AuthorizationRequestFilter filter = spy(
-            new AuthorizationRequestFilter(oAuthFactory, null, "", false));
+            new AuthorizationRequestFilter(oAuthFactory, null, publicAccessService, "", false));
 
     @ClassRule public static ResourceTestRule RULE = ResourceTestRule
             .builder()
@@ -100,7 +103,7 @@ public class UserResourceTest extends UserResourceTestBase {
         when(requestMock.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + TEST_TOKEN);
         when(authenticator.authenticate(any())).thenReturn(com.google.common.base.Optional.of(authorizationInfoMock));
         doReturn(requestMock).when(filter).getRequest();
-        doNothing().when(filter).checkAccessRules(eq(authorizationInfoMock), any(), any());
+        doNothing().when(filter).checkTokenAccessRules(eq(authorizationInfoMock), any(), any());
     }
 
     @Override

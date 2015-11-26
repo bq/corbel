@@ -51,6 +51,9 @@ public class GroupResourceTest {
     public static final SearchParser searchParserMock = mock(SearchParser.class);
     public static final PaginationParser paginationParserMock = mock(PaginationParser.class);
 
+    private static final PublicAccessService publicAccessService = mock(PublicAccessService.class);
+
+
     public static final QueryParametersBuilder queryParametersBuilder = new QueryParametersBuilder(queryParserMock, aggregationParserMock,
             sortParserMock, paginationParserMock, searchParserMock);
 
@@ -60,7 +63,7 @@ public class GroupResourceTest {
     private static OAuthFactory oAuthFactory = new OAuthFactory<>(authenticatorMock, "realm", AuthorizationInfo.class);
     @SuppressWarnings("unchecked") private static CookieOAuthFactory<AuthorizationInfo> cookieOAuthFactory = mock(CookieOAuthFactory.class);
     @SuppressWarnings("unchecked") private static final AuthorizationRequestFilter filter = spy(
-            new AuthorizationRequestFilter(oAuthFactory, cookieOAuthFactory, "", false));
+            new AuthorizationRequestFilter(oAuthFactory, cookieOAuthFactory, publicAccessService, "", false));
 
     @ClassRule public static ResourceTestRule RULE = ResourceTestRule.builder().addResource(new GroupResource(groupService))
             .addProvider(filter).addProvider(new AuthorizationInfoProvider().getBinder()).addProvider(GenericExceptionMapper.class)
@@ -78,7 +81,7 @@ public class GroupResourceTest {
         HttpServletRequest requestMock = mock(HttpServletRequest.class);
         when(requestMock.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + TOKEN);
         doReturn(requestMock).when(filter).getRequest();
-        doNothing().when(filter).checkAccessRules(eq(authorizationInfoMock), any(), any());
+        doNothing().when(filter).checkTokenAccessRules(eq(authorizationInfoMock), any(), any());
     }
 
     @Test

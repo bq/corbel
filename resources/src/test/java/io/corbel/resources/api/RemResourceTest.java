@@ -5,6 +5,7 @@ package io.corbel.resources.api;
 
 import io.corbel.event.ResourceEvent;
 import io.corbel.eventbus.service.EventBus;
+import io.corbel.lib.ws.auth.*;
 import io.corbel.rem.internal.RemEntityTypeResolver;
 import io.corbel.resources.rem.Rem;
 import io.corbel.resources.rem.RemRegistry;
@@ -21,10 +22,6 @@ import io.corbel.lib.queries.parser.*;
 import io.corbel.lib.queries.request.*;
 import io.corbel.lib.token.TokenInfo;
 import io.corbel.lib.token.reader.TokenReader;
-import io.corbel.lib.ws.auth.AuthorizationInfo;
-import io.corbel.lib.ws.auth.AuthorizationInfoProvider;
-import io.corbel.lib.ws.auth.AuthorizationRequestFilter;
-import io.corbel.lib.ws.auth.BearerTokenAuthenticator;
 import io.corbel.lib.ws.encoding.MatrixEncodingRequestFilter;
 import io.corbel.lib.ws.json.serialization.EmptyEntitiesAllowedJacksonMessageBodyProvider;
 import io.corbel.lib.ws.queries.QueryParametersProvider;
@@ -88,6 +85,7 @@ public class RemResourceTest {
     private static RemService remService = new DefaultRemService(registryMock);
     private static RemEntityTypeResolver remEntityTypeResolverMock = mock(RemEntityTypeResolver.class);
     private static QueryParser queryParserMock = mock(QueryParser.class);
+    private static final PublicAccessService publicAccessService = mock(PublicAccessService.class);
 
     private static BearerTokenAuthenticator authenticatorMock = mock(BearerTokenAuthenticator.class);
     private static ObjectMapper objectMapper = new ObjectMapper();
@@ -95,7 +93,7 @@ public class RemResourceTest {
     private static EventBus eventBusMock = mock(EventBus.class);
 
     private static OAuthFactory oAuthFactory = new OAuthFactory<>(authenticatorMock, "realm", AuthorizationInfo.class);
-    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, null, "", true));
+    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, null, publicAccessService, "", true));
 
     private static final RemResource remResource;
 
@@ -145,7 +143,7 @@ public class RemResourceTest {
         HttpServletRequest requestMock = mock(HttpServletRequest.class);
         when(requestMock.getHeader(HttpHeaders.AUTHORIZATION)).thenReturn("Bearer " + TEST_TOKEN);
         doReturn(requestMock).when(filter).getRequest();
-        doNothing().when(filter).checkAccessRules(eq(authorizationInfoMock), any(), eq(DOMAIN));
+        doNothing().when(filter).checkTokenAccessRules(eq(authorizationInfoMock), any(), eq(DOMAIN));
         when(tokenInfo.getUserId()).thenReturn(TEST_USER_ID);
         when(tokenInfo.getDomainId()).thenReturn(DOMAIN);
     }
