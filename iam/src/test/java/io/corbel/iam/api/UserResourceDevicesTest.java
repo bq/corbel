@@ -12,6 +12,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+
+import io.corbel.lib.ws.auth.PublicAccessService;
 import io.dropwizard.auth.Authenticator;
 import io.dropwizard.auth.oauth.OAuthFactory;
 import io.dropwizard.testing.junit.ResourceTestRule;
@@ -68,6 +70,8 @@ public class UserResourceDevicesTest extends UserResourceTestBase {
     private static final AuthorizationInfo authorizationInfoMock = mock(AuthorizationInfo.class);
     private static final QueryParser queryParserMock = mock(QueryParser.class);
     private static final DeviceService devicesServiceMock = mock(DeviceService.class);
+    private static final PublicAccessService publicAccessService = mock(PublicAccessService.class);
+
     private static final AuthorizationInfoProvider authorizationInfoProvider = new AuthorizationInfoProvider();
     private static final String TEST_DEVICE_NAME = "My device name";
     private static final String TEST_DEVICE_URI = "Test device URI";
@@ -76,7 +80,7 @@ public class UserResourceDevicesTest extends UserResourceTestBase {
 
     private static final Authenticator<String, AuthorizationInfo> authenticator = mock(Authenticator.class);
     private static OAuthFactory oAuthFactory = new OAuthFactory<>(authenticator, "realm", AuthorizationInfo.class);
-    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, null, "",false));
+    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, null, publicAccessService, "",false));
 
     @ClassRule public static ResourceTestRule RULE = ResourceTestRule
             .builder()

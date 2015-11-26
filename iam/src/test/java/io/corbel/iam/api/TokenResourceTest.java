@@ -61,11 +61,14 @@ public class TokenResourceTest {
     private static final TokenInfo token = mock(TokenInfo.class);
     private static final TokenReader tokenReader = mock(TokenReader.class);
 
+    private static final PublicAccessService publicAccessService = mock(PublicAccessService.class);
+
+
     private static final Authenticator<String, AuthorizationInfo> authenticator = mock(Authenticator.class);
     private static OAuthFactory oAuthFactory = new OAuthFactory<>(authenticator, "realm", AuthorizationInfo.class);
     private static CookieOAuthFactory<AuthorizationInfo> cookieOAuthProvider = new CookieOAuthFactory<AuthorizationInfo>(authenticator,
             "realm", AuthorizationInfo.class);
-    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, cookieOAuthProvider,
+    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, cookieOAuthProvider, publicAccessService,
             "v.*/oauth/token", false));
 
     @ClassRule

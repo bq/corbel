@@ -4,10 +4,7 @@ import io.corbel.iam.model.User;
 import io.corbel.iam.service.UserService;
 import io.corbel.lib.token.TokenInfo;
 import io.corbel.lib.token.reader.TokenReader;
-import io.corbel.lib.ws.auth.AuthorizationInfo;
-import io.corbel.lib.ws.auth.AuthorizationInfoProvider;
-import io.corbel.lib.ws.auth.AuthorizationRequestFilter;
-import io.corbel.lib.ws.auth.BearerTokenAuthenticator;
+import io.corbel.lib.ws.auth.*;
 import com.google.common.base.Optional;
 import io.dropwizard.auth.oauth.OAuthFactory;
 import io.dropwizard.testing.junit.ResourceTestRule;
@@ -36,8 +33,11 @@ public class UsernameResourceTest extends UserResourceTestBase {
     private static final TokenReader tokenReaderMock = mock(TokenReader.class);
     private static final TokenInfo tokenMock = mock(TokenInfo.class);
 
+    private static final PublicAccessService publicAccessService = mock(PublicAccessService.class);
+
+
     private static OAuthFactory oAuthFactory = new OAuthFactory<>(authenticatorMock, "realm", AuthorizationInfo.class);
-    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, null, "", false));
+    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, null, publicAccessService, "", false));
 
     private static final String URL_PREFIX = "/" + ApiVersion.CURRENT + "/username/";
 

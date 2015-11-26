@@ -12,10 +12,7 @@ import io.corbel.lib.queries.request.ResourceQuery;
 import io.corbel.lib.queries.request.Sort;
 import io.corbel.lib.ws.api.error.GenericExceptionMapper;
 import io.corbel.lib.ws.api.error.JsonValidationExceptionMapper;
-import io.corbel.lib.ws.auth.AuthorizationInfo;
-import io.corbel.lib.ws.auth.AuthorizationInfoProvider;
-import io.corbel.lib.ws.auth.AuthorizationRequestFilter;
-import io.corbel.lib.ws.auth.CookieOAuthFactory;
+import io.corbel.lib.ws.auth.*;
 import io.corbel.lib.ws.queries.QueryParametersProvider;
 
 import com.google.gson.JsonObject;
@@ -61,6 +58,8 @@ public class DomainResourceTest {
     private static final PaginationParser paginationParserMock = mock(PaginationParser.class);
     private static final QueryParser queryParserMock = mock(QueryParser.class);
     private static final AuthorizationInfo authorizationInfoMock = mock(AuthorizationInfo.class);
+    private static final PublicAccessService publicAccessService = mock(PublicAccessService.class);
+
     private final static String ISSUER_DOMAIN_ID = "domain";
     private final static String DOMAIN_ID = "jksdawqqqqdfjdaslkfj";
     private final static String CLIENT_ID = "zsdetzerqdfjdaslkfj";
@@ -70,7 +69,7 @@ public class DomainResourceTest {
     private static OAuthFactory oAuthFactory = new OAuthFactory<>(authenticator, "realm", AuthorizationInfo.class);
     private static CookieOAuthFactory<AuthorizationInfo> cookieOAuthProvider = new CookieOAuthFactory<AuthorizationInfo>(authenticator,
             "realm", AuthorizationInfo.class);
-    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, cookieOAuthProvider, "", false));
+    private static final AuthorizationRequestFilter filter = spy(new AuthorizationRequestFilter(oAuthFactory, cookieOAuthProvider, publicAccessService, "", false));
 
     @ClassRule
     public static ResourceTestRule RULE = ResourceTestRule
