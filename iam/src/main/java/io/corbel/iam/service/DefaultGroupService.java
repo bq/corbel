@@ -2,7 +2,9 @@ package io.corbel.iam.service;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import io.corbel.iam.exception.GroupAlreadyExistsException;
@@ -77,8 +79,13 @@ public class DefaultGroupService implements GroupService {
     }
 
     private void checkScopes(Collection<String> scopes) throws NotExistentScopeException {
+        if (CollectionUtils.isEmpty(scopes)) {
+            return;
+        }
+
         String notExistentScopes = scopes.stream().filter(scope -> scopeRepository.findOne(scope) == null)
                 .collect(Collectors.joining(", "));
+
         if (!notExistentScopes.isEmpty()) {
             throw new NotExistentScopeException(notExistentScopes);
         }
