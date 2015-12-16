@@ -112,26 +112,25 @@
             	</exclusion>
             </exclusions>
         </dependency>
-		<!-- Temporal dependency until Facebook solve the breaking change in spring-social-facebook library -->
-        <dependency>
-			<groupId>com.github.corbel-platform</groupId>
+		<dependency>
+			<groupId>org.springframework.social</groupId>
 			<artifactId>spring-social-facebook</artifactId>
-			<version>2.0.2.RELEASE-temporal</version>
-            <exclusions>
-            	<exclusion>
-            		<artifactId>jackson-core</artifactId>
-            		<groupId>com.fasterxml.jackson.core</groupId>
-            	</exclusion>
-            	<exclusion>
-            		<artifactId>jackson-databind</artifactId>
-            		<groupId>com.fasterxml.jackson.core</groupId>
-            	</exclusion>
-            	<exclusion>
-            		<artifactId>jackson-annotations</artifactId>
-            		<groupId>com.fasterxml.jackson.core</groupId>
-            	</exclusion>
-            </exclusions>
-        </dependency>
+			<version>2.0.3.RELEASE</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>jackson-core</artifactId>
+					<groupId>com.fasterxml.jackson.core</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>jackson-databind</artifactId>
+					<groupId>com.fasterxml.jackson.core</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>jackson-annotations</artifactId>
+					<groupId>com.fasterxml.jackson.core</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
         <dependency>
             <groupId>org.springframework.social</groupId>
             <artifactId>spring-social-twitter</artifactId>
@@ -222,13 +221,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
-	<!-- Temporal repository until Facebook solve the breaking change in spring-social-facebook library -->
-	<repositories>
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
-	</repositories>
-
 </project>
