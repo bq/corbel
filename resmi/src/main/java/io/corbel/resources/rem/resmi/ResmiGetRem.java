@@ -42,7 +42,7 @@ public class ResmiGetRem extends AbstractResmiRem {
 
     @Override
     public Response collection(String type, RequestParameters<CollectionParameters> parameters, URI uri, Optional<JsonObject> entity) {
-        ResourceUri resourceUri = buildCollectionUri(type);
+        ResourceUri resourceUri = buildCollectionUri(parameters.getRequestDomain(), type);
         try {
             if (parameters.getOptionalApiParameters().flatMap(CollectionParameters::getAggregation).isPresent()) {
                 return buildResponse(resmiService.aggregate(resourceUri, parameters.getOptionalApiParameters().get()));
@@ -63,14 +63,14 @@ public class ResmiGetRem extends AbstractResmiRem {
 
     @Override
     public Response resource(String type, ResourceId id, RequestParameters<ResourceParameters> parameters, Optional<JsonObject> entity) {
-        ResourceUri resourceUri = buildResourceUri(type, id.getId());
+        ResourceUri resourceUri = buildResourceUri(parameters.getRequestDomain(), type, id.getId());
         return buildResponse(resmiService.findResource(resourceUri));
     }
 
     @Override
     public Response relation(String type, ResourceId id, String relation, RequestParameters<RelationParameters> parameters,
             Optional<JsonObject> entity) {
-        ResourceUri resourceUri = buildRelationUri(type, id.getId(), relation,
+        ResourceUri resourceUri = buildRelationUri(parameters.getRequestDomain(), type, id.getId(), relation,
                 parameters.getOptionalApiParameters().flatMap(RelationParameters::getPredicateResource));
         try {
             if (parameters.getOptionalApiParameters().flatMap(CollectionParameters::getAggregation).isPresent()) {

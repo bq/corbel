@@ -18,18 +18,18 @@ public class InMemorySearchableFieldsRegistry implements SearchableFieldsRegistr
     }
 
     @Override
-    public Set<String> getFieldsFromType(String type) {
-        return searchableFields.getOrDefault(new ResourceUri(type), Collections.<String>emptySet());
+    public Set<String> getFieldsFromType(String domain, String type) {
+        return getFieldsFromResourceUri(new ResourceUri(domain, type));
     }
 
     @Override
-    public Set<String> getFieldsFromRelation(String type, String relation) {
-        return searchableFields.getOrDefault(new ResourceUri(type, null, relation), Collections.<String>emptySet());
+    public Set<String> getFieldsFromRelation(String domain, String type, String relation) {
+        return getFieldsFromResourceUri(new ResourceUri(domain, type, null, relation));
     }
 
     @Override
     public Set<String> getFieldsFromResourceUri(ResourceUri resourceUri) {
-        return getFieldsFromRelation(resourceUri.getType(), resourceUri.getRelation());
+        return searchableFields.getOrDefault(resourceUri, Collections.<String>emptySet());
     }
 
     @Override
