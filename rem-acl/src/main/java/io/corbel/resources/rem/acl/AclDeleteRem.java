@@ -33,7 +33,7 @@ public class AclDeleteRem extends AclBaseRem {
     public Response resource(String type, ResourceId id, RequestParameters<ResourceParameters> parameters, Optional<InputStream> entity) {
 
         try {
-            if (!aclResourcesService.isAuthorized(parameters.getTokenInfo(), type, id, AclPermission.ADMIN)) {
+            if (!aclResourcesService.isAuthorized(parameters.getRequestDomain(), parameters.getTokenInfo(), type, id, AclPermission.ADMIN)) {
                 return ErrorResponseFactory.getInstance().unauthorized(AclUtils.buildMessage(AclPermission.ADMIN));
             }
         } catch (AclFieldNotPresentException e) {
@@ -54,7 +54,7 @@ public class AclDeleteRem extends AclBaseRem {
         }
 
         try {
-            if (!aclResourcesService.isAuthorized(parameters.getTokenInfo(), type, id, AclPermission.ADMIN)) {
+            if (!aclResourcesService.isAuthorized(parameters.getRequestDomain(), parameters.getTokenInfo(), type, id, AclPermission.ADMIN)) {
                 return ErrorResponseFactory.getInstance().unauthorized(AclUtils.buildMessage(AclPermission.ADMIN));
             }
         } catch (AclFieldNotPresentException e) {
