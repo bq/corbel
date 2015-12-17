@@ -10,6 +10,8 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 
 import com.google.common.collect.Lists;
+import io.corbel.resources.rem.BaseRem;
+import io.corbel.resources.rem.service.RemService;
 import org.springframework.http.HttpMethod;
 
 import com.google.gson.*;
@@ -25,12 +27,12 @@ import io.corbel.resources.rem.request.ResourceParameters;
 import io.corbel.resources.rem.service.AclResourcesService;
 import io.corbel.resources.rem.service.DefaultAclResourcesService;
 import io.corbel.resources.rem.utils.AclUtils;
+import org.springframework.http.MediaType;
 
 /**
  * @author Cristian del Cerro
  */
 public class SetUpAclPutRem extends AclBaseRem {
-
     private Pattern prefixPattern = Pattern
             .compile("(?:(?:" + DefaultAclResourcesService.USER_PREFIX + ")|(?:" + DefaultAclResourcesService.GROUP_PREFIX + "))\\S+");
 
@@ -66,7 +68,7 @@ public class SetUpAclPutRem extends AclBaseRem {
         excluded.addAll(remsToExclude);
 
         try {
-            isAuthorized = aclResourcesService.isAuthorized(tokenInfo, type, id, AclPermission.ADMIN);
+            isAuthorized = aclResourcesService.isAuthorized(parameters.getRequestDomain(), tokenInfo, type, id, AclPermission.ADMIN);
         } catch (AclFieldNotPresentException ignored) {}
 
         if (!isAuthorized) {
@@ -76,8 +78,8 @@ public class SetUpAclPutRem extends AclBaseRem {
         JsonObject filteredAclObject = getFilteredAclObject(jsonObject);
 
         if (!hasAdminPermission(tokenInfo, filteredAclObject)) {
-            Optional.ofNullable(tokenInfo.getUserId()).ifPresent(userId -> filteredAclObject
-                    .addProperty(DefaultAclResourcesService.USER_PREFIX + userId, AclPermission.ADMIN.toString()));
+            filteredAclObject
+                    .addProperty(DefaultAclResourcesService.USER_PREFIX + tokenInfo.getUserId(), AclPermission.ADMIN.toString());
         }
 
         JsonObject objectToSave = new JsonObject();
