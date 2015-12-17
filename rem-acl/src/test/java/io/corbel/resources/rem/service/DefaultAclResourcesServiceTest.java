@@ -13,6 +13,9 @@ import java.util.Optional;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import io.corbel.lib.token.TokenInfo;
+import io.corbel.resources.rem.request.RequestParameters;
+import io.corbel.resources.rem.request.RequestParametersImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,17 +40,18 @@ import io.corbel.resources.rem.request.ResourceId;
     private static final ResourceId ID_NOT_ALLOWED = new ResourceId("idNotAllowed");
     private static final ResourceId RESOURCE_ID = new ResourceId("idAllowed");
     private static final String USER_ID = "userId";
-    private static final Optional<String> OPT_USER_ID = Optional.of(USER_ID);
     private static final String GROUP_ID = "groupId";
     private static final Collection<String> GROUPS = Collections.singletonList(GROUP_ID);
+    private static final String REQUESTED_DOMAIN_ID = "requestedDomainId";
     private static final String DOMAIN_ID = "domainId";
     private static final String TYPE = "type";
     private static final String ADMINS_COLLECTION = "adminsCollection";
     private static final char JOINER = ':';
-    private static final String MANAGED_COLLECTION_ID = DOMAIN_ID + JOINER + TYPE;
+    private static final String MANAGED_COLLECTION_ID = REQUESTED_DOMAIN_ID + JOINER + TYPE;
     private static final ResourceId MANAGED_COLLECTION_RESOURCE = new ResourceId(MANAGED_COLLECTION_ID);
-    private static final ResourceId MANAGED_DOMAIN_RESOURCE = new ResourceId(DOMAIN_ID);
+    private static final ResourceId MANAGED_DOMAIN_RESOURCE = new ResourceId(REQUESTED_DOMAIN_ID);
 
+    @Mock private TokenInfo tokenInfoMock;
     @Mock private RemService remService;
     @Mock private Rem resmiGetRem;
     @Mock private Rem resmiPutRem;
@@ -56,11 +60,14 @@ import io.corbel.resources.rem.request.ResourceId;
 
     private DefaultAclResourcesService aclService = new DefaultAclResourcesService(gson, ADMINS_COLLECTION);
 
-    @Before
+     @Before
     public void setUp() throws Exception {
         when(remService.getRem(DefaultAclResourcesService.RESMI_GET)).thenReturn(resmiGetRem);
         when(remService.getRem(DefaultAclResourcesService.RESMI_PUT)).thenReturn(resmiPutRem);
         aclService.setRemService(remService);
+        when(tokenInfoMock.getUserId()).thenReturn(USER_ID);
+        when(tokenInfoMock.getGroups()).thenReturn(GROUPS);
+        when(tokenInfoMock.getDomainId()).thenReturn(DOMAIN_ID);
     }
 
     @Test
@@ -69,7 +76,7 @@ import io.corbel.resources.rem.request.ResourceId;
         Response managedResponse = mockNotFoundResponse();
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), any(), any(), eq(Optional.empty()))).thenReturn(managedResponse);
         when(resmiGetRem.resource(eq(TYPE), eq(RESOURCE_ID), any(), any())).thenReturn(response);
-        assertThat(aclService.isAuthorized(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE, RESOURCE_ID, AclPermission.READ)).isTrue();
+        assertThat(aclService.isAuthorized(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE, RESOURCE_ID, AclPermission.READ)).isTrue();
     }
 
     @Test
@@ -78,7 +85,7 @@ import io.corbel.resources.rem.request.ResourceId;
         Response managedResponse = mockNotFoundResponse();
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), any(), any(), eq(Optional.empty()))).thenReturn(managedResponse);
         when(resmiGetRem.resource(eq(TYPE), eq(RESOURCE_ID), any(), any())).thenReturn(response);
-        assertThat(aclService.isAuthorized(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE, RESOURCE_ID, AclPermission.READ)).isTrue();
+        assertThat(aclService.isAuthorized(REQUESTED_DOMAIN_ID,tokenInfoMock, TYPE, RESOURCE_ID, AclPermission.READ)).isTrue();
     }
 
     @Test(expected = AclFieldNotPresentException.class)
@@ -87,7 +94,7 @@ import io.corbel.resources.rem.request.ResourceId;
         Response managedResponse = mockNotFoundResponse();
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), any(), any(), eq(Optional.empty()))).thenReturn(managedResponse);
         when(resmiGetRem.resource(eq(TYPE), eq(RESOURCE_ID), any(), any())).thenReturn(response);
-        aclService.isAuthorized(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE, RESOURCE_ID, AclPermission.READ);
+        aclService.isAuthorized(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE, RESOURCE_ID, AclPermission.READ);
     }
 
     @Test
@@ -96,7 +103,7 @@ import io.corbel.resources.rem.request.ResourceId;
         Response managedResponse = mockNotFoundResponse();
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), any(), any(), eq(Optional.empty()))).thenReturn(managedResponse);
         when(resmiGetRem.resource(eq(TYPE), eq(RESOURCE_ID), any(), any())).thenReturn(response);
-        assertThat(aclService.isAuthorized(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE, RESOURCE_ID, AclPermission.WRITE)).isFalse();
+        assertThat(aclService.isAuthorized(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE, RESOURCE_ID, AclPermission.WRITE)).isFalse();
     }
 
     @Test
@@ -105,7 +112,7 @@ import io.corbel.resources.rem.request.ResourceId;
         Response managedResponse = mockNotFoundResponse();
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), any(), any(), eq(Optional.empty()))).thenReturn(managedResponse);
         when(resmiGetRem.resource(eq(TYPE), eq(RESOURCE_ID), any(), any())).thenReturn(response);
-        assertThat(aclService.isAuthorized(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE, RESOURCE_ID, AclPermission.WRITE)).isFalse();
+        assertThat(aclService.isAuthorized(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE, RESOURCE_ID, AclPermission.WRITE)).isFalse();
     }
 
     @Test
@@ -114,7 +121,7 @@ import io.corbel.resources.rem.request.ResourceId;
         Response managedResponse = mockNotFoundResponse();
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), any(), any(), eq(Optional.empty()))).thenReturn(managedResponse);
         when(resmiGetRem.resource(eq(TYPE), eq(RESOURCE_ID), any(), any())).thenReturn(response);
-        assertThat(aclService.isAuthorized(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE, RESOURCE_ID, AclPermission.WRITE)).isFalse();
+        assertThat(aclService.isAuthorized(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE, RESOURCE_ID, AclPermission.WRITE)).isFalse();
     }
 
     @Test
@@ -123,7 +130,7 @@ import io.corbel.resources.rem.request.ResourceId;
         Response managedResponse = mockNotFoundResponse();
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), any(), any(), eq(Optional.empty()))).thenReturn(managedResponse);
         when(resmiGetRem.resource(eq(TYPE), eq(ID_NOT_ALLOWED), any(), any())).thenReturn(response);
-        assertThat(aclService.isAuthorized(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE, ID_NOT_ALLOWED, AclPermission.READ)).isFalse();
+        assertThat(aclService.isAuthorized(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE, ID_NOT_ALLOWED, AclPermission.READ)).isFalse();
     }
 
     @Test
@@ -132,7 +139,7 @@ import io.corbel.resources.rem.request.ResourceId;
         Response managedResponse = mockNotFoundResponse();
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), any(), any(), eq(Optional.empty()))).thenReturn(managedResponse);
         when(resmiGetRem.resource(eq(TYPE), eq(RESOURCE_ID), any(), any())).thenReturn(response);
-        assertThat(aclService.isAuthorized(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE, RESOURCE_ID, AclPermission.READ)).isTrue();
+        assertThat(aclService.isAuthorized(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE, RESOURCE_ID, AclPermission.READ)).isTrue();
     }
 
     @Test
@@ -141,7 +148,7 @@ import io.corbel.resources.rem.request.ResourceId;
         Response managedResponse = mockNotFoundResponse();
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), any(), any(), eq(Optional.empty()))).thenReturn(managedResponse);
         when(resmiGetRem.resource(eq(TYPE), eq(RESOURCE_ID), any(), any())).thenReturn(response);
-        assertThat(aclService.isAuthorized(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE, RESOURCE_ID, AclPermission.WRITE)).isFalse();
+        assertThat(aclService.isAuthorized(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE, RESOURCE_ID, AclPermission.WRITE)).isFalse();
     }
 
     @Test
@@ -150,7 +157,7 @@ import io.corbel.resources.rem.request.ResourceId;
         Response managedResponse = mockNotFoundResponse();
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), any(), any(), eq(Optional.empty()))).thenReturn(managedResponse);
         when(resmiGetRem.resource(eq(TYPE), eq(RESOURCE_ID), any(), any())).thenReturn(response);
-        assertThat(aclService.isAuthorized(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE, RESOURCE_ID, AclPermission.READ)).isFalse();
+        assertThat(aclService.isAuthorized(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE, RESOURCE_ID, AclPermission.READ)).isFalse();
     }
 
     private Response mockResponseWithEmptyAcl() {
@@ -194,7 +201,7 @@ import io.corbel.resources.rem.request.ResourceId;
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any())).thenReturn(responseMock);
 
         try {
-            assertThat(aclService.isManagedBy(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE)).isTrue();
+            assertThat(aclService.isManagedBy(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE)).isTrue();
         } catch (WebApplicationException e) {
             verify(remService).getRem(DefaultAclResourcesService.RESMI_GET);
             verify(resmiGetRem).resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any());
@@ -213,7 +220,7 @@ import io.corbel.resources.rem.request.ResourceId;
 
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any())).thenReturn(responseMock);
 
-        assertThat(aclService.isManagedBy(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE)).isTrue();
+        assertThat(aclService.isManagedBy(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE)).isTrue();
 
         verify(remService).getRem(DefaultAclResourcesService.RESMI_GET);
         verify(resmiGetRem).resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any());
@@ -230,7 +237,7 @@ import io.corbel.resources.rem.request.ResourceId;
 
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any())).thenReturn(responseMock);
 
-        assertThat(aclService.isManagedBy(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE)).isTrue();
+        assertThat(aclService.isManagedBy(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE)).isTrue();
 
         verify(remService).getRem(DefaultAclResourcesService.RESMI_GET);
         verify(resmiGetRem).resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any());
@@ -249,14 +256,16 @@ import io.corbel.resources.rem.request.ResourceId;
         when(domainResponseMock.getStatus()).thenReturn(Response.Status.NOT_FOUND.getStatusCode());
         when(domainResponseMock.getStatusInfo()).thenReturn(mock(Response.StatusType.class));
 
-        when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any())).thenReturn(responseMock);
-        when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_DOMAIN_RESOURCE), any(), any())).thenReturn(domainResponseMock);
 
-        assertThat(aclService.isManagedBy(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE)).isFalse();
+        RequestParameters requestParameters = new RequestParametersImpl<>(null, null, "_silkroad", null, null, null, null);
+        when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), eq(requestParameters), any())).thenReturn(responseMock);
+        when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_DOMAIN_RESOURCE), eq(requestParameters), any())).thenReturn(domainResponseMock);
+
+        assertThat(aclService.isManagedBy(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE)).isFalse();
 
         verify(remService).getRem(DefaultAclResourcesService.RESMI_GET);
-        verify(resmiGetRem).resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any());
-        verify(resmiGetRem).resource(eq(ADMINS_COLLECTION), eq(MANAGED_DOMAIN_RESOURCE), any(), any());
+        verify(resmiGetRem).resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), eq(requestParameters), any());
+        verify(resmiGetRem).resource(eq(ADMINS_COLLECTION), eq(MANAGED_DOMAIN_RESOURCE), eq(requestParameters), any());
         verifyNoMoreInteractions(remService, resmiGetRem);
     }
 
@@ -277,7 +286,7 @@ import io.corbel.resources.rem.request.ResourceId;
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any())).thenReturn(responseMock);
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_DOMAIN_RESOURCE), any(), any())).thenReturn(domainResponseMock);
 
-        assertThat(aclService.isManagedBy(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE)).isTrue();
+        assertThat(aclService.isManagedBy(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE)).isTrue();
 
         verify(remService).getRem(DefaultAclResourcesService.RESMI_GET);
         verify(resmiGetRem).resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any());
@@ -302,7 +311,7 @@ import io.corbel.resources.rem.request.ResourceId;
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any())).thenReturn(responseMock);
         when(resmiGetRem.resource(eq(ADMINS_COLLECTION), eq(MANAGED_DOMAIN_RESOURCE), any(), any())).thenReturn(domainResponseMock);
 
-        assertThat(aclService.isManagedBy(DOMAIN_ID, OPT_USER_ID, GROUPS, TYPE)).isTrue();
+        assertThat(aclService.isManagedBy(REQUESTED_DOMAIN_ID, tokenInfoMock, TYPE)).isTrue();
 
         verify(remService).getRem(DefaultAclResourcesService.RESMI_GET);
         verify(resmiGetRem).resource(eq(ADMINS_COLLECTION), eq(MANAGED_COLLECTION_RESOURCE), any(), any());
