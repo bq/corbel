@@ -33,7 +33,7 @@ import org.springframework.stereotype.Component;
 
     private static final Logger LOG = LoggerFactory.getLogger(RemAclPlugin.class);
 
-    private static final String ACL_MEDIA_TYPE = "application/corbel.acl+json";
+    public static final String ACL_MEDIA_TYPE = "application/corbel.acl+json";
     private static final String ARTIFACT_ID = "rem-acl";
     private static final String ACL_CONFIGURATION_COLLECTION = "acl:Configuration";
 
