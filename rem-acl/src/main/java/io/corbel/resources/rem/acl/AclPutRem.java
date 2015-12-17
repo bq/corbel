@@ -56,7 +56,7 @@ public class AclPutRem extends AclBaseRem {
         Optional<JsonObject> originalObject = Optional.empty();
 
         try {
-            originalObject = aclResourcesService.getResourceIfIsAuthorized(tokenInfo, type, id, AclPermission.WRITE);
+            originalObject = aclResourcesService.getResourceIfIsAuthorized(parameters.getRequestDomain(), tokenInfo, type, id, AclPermission.WRITE);
         }
 
         catch (AclFieldNotPresentException e) {
@@ -119,7 +119,7 @@ public class AclPutRem extends AclBaseRem {
         }
 
         try {
-            if (!aclResourcesService.isAuthorized(tokenInfo, type, id, AclPermission.WRITE)) {
+            if (!aclResourcesService.isAuthorized(parameters.getRequestDomain(), tokenInfo, type, id, AclPermission.WRITE)) {
                 return ErrorResponseFactory.getInstance().unauthorized(AclUtils.buildMessage(AclPermission.WRITE));
             }
         } catch (AclFieldNotPresentException e) {
