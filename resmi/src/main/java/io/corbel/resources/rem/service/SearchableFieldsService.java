@@ -12,6 +12,6 @@ public interface SearchableFieldsService {
 
     List<SearchResource> getSearchableFields();
 
-    void addSearchableFields(SearchResource searchResource);
+    void addSearchableFields(String domain, SearchResource searchResource);
 
 }

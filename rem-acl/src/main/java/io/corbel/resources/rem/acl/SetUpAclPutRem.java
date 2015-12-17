@@ -9,6 +9,8 @@ import java.util.stream.Stream;
 
 import javax.ws.rs.core.Response;
 
+import io.corbel.resources.rem.BaseRem;
+import io.corbel.resources.rem.service.RemService;
 import org.springframework.http.HttpMethod;
 
 import com.google.gson.*;
@@ -24,17 +26,23 @@ import io.corbel.resources.rem.request.ResourceParameters;
 import io.corbel.resources.rem.service.AclResourcesService;
 import io.corbel.resources.rem.service.DefaultAclResourcesService;
 import io.corbel.resources.rem.utils.AclUtils;
+import org.springframework.http.MediaType;
 
 /**
  * @author Cristian del Cerro
  */
-public class SetUpAclPutRem extends AclBaseRem {
+public class SetUpAclPutRem extends BaseRem<InputStream> {
+    public static final List<MediaType> JSON_MEDIATYPE = Collections.singletonList(MediaType.APPLICATION_JSON);
 
+    private final AclResourcesService aclResourcesService;
+    private final List<Rem> remsToExclude;
     private Pattern prefixPattern = Pattern
             .compile("(?:(?:" + DefaultAclResourcesService.USER_PREFIX + ")|(?:" + DefaultAclResourcesService.GROUP_PREFIX + "))\\S+");
+    private RemService remService;
 
     public SetUpAclPutRem(AclResourcesService aclResourcesService, List<Rem> remsToExclude) {
-        super(aclResourcesService, remsToExclude);
+        this.aclResourcesService = aclResourcesService;
+        this.remsToExclude = remsToExclude;
     }
 
     @Override
@@ -62,7 +70,7 @@ public class SetUpAclPutRem extends AclBaseRem {
         boolean isAuthorized = false;
 
         try {
-            isAuthorized = aclResourcesService.isAuthorized(tokenInfo, type, id, AclPermission.ADMIN);
+            isAuthorized = aclResourcesService.isAuthorized(parameters.getRequestDomain(), tokenInfo, type, id, AclPermission.ADMIN);
         } catch (AclFieldNotPresentException ignored) {}
 
         if (!isAuthorized) {
@@ -72,16 +80,24 @@ public class SetUpAclPutRem extends AclBaseRem {
         JsonObject filteredAclObject = getFilteredAclObject(jsonObject);
 
         if (!hasAdminPermission(tokenInfo, filteredAclObject)) {
-            Optional.ofNullable(tokenInfo.getUserId()).ifPresent(userId -> filteredAclObject
-                    .addProperty(DefaultAclResourcesService.USER_PREFIX + userId, AclPermission.ADMIN.toString()));
+            filteredAclObject
+                    .addProperty(DefaultAclResourcesService.USER_PREFIX + tokenInfo.getUserId(), AclPermission.ADMIN.toString());
         }
 
         JsonObject objectToSave = new JsonObject();
         objectToSave.add(DefaultAclResourcesService._ACL, filteredAclObject);
 
-        Rem rem = remService.getRem(type, JSON_MEDIATYPE, HttpMethod.PUT, REMS_TO_EXCLUDE);
+        Rem rem = remService.getRem(type, JSON_MEDIATYPE, HttpMethod.PUT, remsToExclude);
         return aclResourcesService.updateResource(rem, type, id, parameters, objectToSave);
 
+    }
+    public void setRemService(RemService remService) {
+        this.remService = remService;
+    }
+
+    @Override
+    public Class<InputStream> getType() {
+        return InputStream.class;
     }
 
     private JsonObject getFilteredAclObject(JsonObject aclObject) {

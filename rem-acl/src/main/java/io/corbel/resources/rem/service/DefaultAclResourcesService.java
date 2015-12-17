@@ -12,6 +12,9 @@ import java.util.regex.Pattern;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
+import io.corbel.resources.rem.ioc.AclRemNames;
+import io.corbel.resources.rem.plugin.RemAclPlugin;
+import io.corbel.resources.rem.request.builder.RequestParametersBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +29,7 @@ import io.corbel.resources.rem.acl.exception.AclFieldNotPresentException;
 import io.corbel.resources.rem.model.ManagedCollection;
 import io.corbel.resources.rem.model.RemDescription;
 import io.corbel.resources.rem.request.*;
+import org.springframework.http.MediaType;
 
 /**
  * @author Cristian del Cerro
@@ -33,6 +37,9 @@ import io.corbel.resources.rem.request.*;
 public class DefaultAclResourcesService implements AclResourcesService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultAclResourcesService.class);
+
+    public static final String REGISTRY_DOMAIN = "_silkroad";
+
 
     public static final String _ACL = "_acl";
     public static final String ALL = "ALL";
@@ -116,37 +123,35 @@ public class DefaultAclResourcesService implements AclResourcesService {
     }
 
     @Override
-    public boolean isAuthorized(TokenInfo tokenInfo, String type, ResourceId resourceId, AclPermission operation)
+    public boolean isAuthorized(String requestedDomain, TokenInfo tokenInfo, String type, ResourceId resourceId, AclPermission operation)
             throws AclFieldNotPresentException {
-        return isAuthorized(tokenInfo.getDomainId(), Optional.ofNullable(tokenInfo.getUserId()), tokenInfo.getGroups(), type, resourceId,
+        return isAuthorized(requestedDomain, tokenInfo.getDomainId(), Optional.ofNullable(tokenInfo.getUserId()), tokenInfo.getGroups(), type, resourceId,
                 operation);
     }
 
-    @Override
-    public boolean isAuthorized(String domainId, Optional<String> userId, Collection<String> groupIds, String type, ResourceId resourceId,
+    private boolean isAuthorized(String requestedDomain, String domainId, Optional<String> userId, Collection<String> groupIds, String type, ResourceId resourceId,
             AclPermission operation) throws AclFieldNotPresentException {
-        return getResourceIfIsAuthorized(domainId, userId, groupIds, type, resourceId, operation).isPresent();
+        return getResourceIfIsAuthorized(requestedDomain, domainId, userId, groupIds, type, resourceId, operation).isPresent();
     }
 
     @Override
-    public boolean isManagedBy(TokenInfo tokenInfo, String collection) {
-        return isManagedBy(tokenInfo.getDomainId(), Optional.ofNullable(tokenInfo.getUserId()), tokenInfo.getGroups(), collection);
+    public boolean isManagedBy(String requestedDomain, TokenInfo tokenInfo, String collection) {
+        return isManagedBy(requestedDomain, Optional.ofNullable(tokenInfo.getUserId()), tokenInfo.getGroups(), collection);
     }
 
-    @Override
-    public boolean isManagedBy(String domainId, Optional<String> userId, Collection<String> groupIds, String collection) {
+    private boolean isManagedBy(String requestedDomain, Optional<String> userId, Collection<String> groupIds, String collection) {
         if (!userId.isPresent() && groupIds.isEmpty()) {
             return false;
         }
 
-        Optional<ManagedCollection> collectionManagers = getManagers(domainId, collection);
+        Optional<ManagedCollection> collectionManagers = getManagers(requestedDomain, collection);
 
         if (collectionManagers.filter(presentCollectionManagers -> verifyPresence(userId, groupIds, presentCollectionManagers))
                 .isPresent()) {
             return true;
         }
 
-        Optional<ManagedCollection> domainManagers = getManagers(domainId);
+        Optional<ManagedCollection> domainManagers = getManagers(requestedDomain);
 
         return domainManagers.filter(presentDomainManagers -> verifyPresence(userId, groupIds, presentDomainManagers)).isPresent();
     }
@@ -159,7 +164,7 @@ public class DefaultAclResourcesService implements AclResourcesService {
         Optional<JsonObject> response;
 
         try {
-            response = getResource(adminsCollection, new ResourceId(collection));
+            response = getResource(REGISTRY_DOMAIN, adminsCollection, new ResourceId(collection));
         }
 
         catch (WebApplicationException e) {
@@ -186,10 +191,10 @@ public class DefaultAclResourcesService implements AclResourcesService {
                 || managedCollection.getGroups().stream().anyMatch(groupIds::contains);
     }
 
-    private Optional<JsonObject> getResource(String type, ResourceId resourceId) {
-
+    private Optional<JsonObject> getResource(String domain, String type, ResourceId resourceId) {
+        RequestParameters requestParameters = new RequestParametersBuilder().setDoaminRequest(domain).build();
         @SuppressWarnings("unchecked")
-        Response response = getResmiGetRem().resource(type, resourceId, null, Optional.empty());
+        Response response = getResmiGetRem().resource(type, resourceId, requestParameters, Optional.empty());
 
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             throw new WebApplicationException(response);
@@ -208,21 +213,20 @@ public class DefaultAclResourcesService implements AclResourcesService {
     }
 
     @Override
-    public Optional<JsonObject> getResourceIfIsAuthorized(TokenInfo tokenInfo, String type, ResourceId resourceId, AclPermission operation)
+    public Optional<JsonObject> getResourceIfIsAuthorized(String requestedDomain, TokenInfo tokenInfo, String type, ResourceId resourceId, AclPermission operation)
             throws AclFieldNotPresentException {
-        return getResourceIfIsAuthorized(tokenInfo.getDomainId(), Optional.ofNullable(tokenInfo.getUserId()), tokenInfo.getGroups(), type,
+        return getResourceIfIsAuthorized(requestedDomain, tokenInfo.getDomainId(), Optional.ofNullable(tokenInfo.getUserId()), tokenInfo.getGroups(), type,
                 resourceId, operation);
     }
 
-    @Override
-    public Optional<JsonObject> getResourceIfIsAuthorized(String domainId, Optional<String> userId, Collection<String> groupIds,
+    private Optional<JsonObject> getResourceIfIsAuthorized(String requestedDomain, String domainId, Optional<String> userId, Collection<String> groupIds,
             String type, ResourceId resourceId, AclPermission operation) throws AclFieldNotPresentException {
 
-        if (isManagedBy(domainId, userId, groupIds, type)) {
-            return getResource(type, resourceId);
-        }
+        Optional<JsonObject> originalObject = getResource(requestedDomain, type, resourceId);
 
-        Optional<JsonObject> originalObject = getResource(type, resourceId);
+        if (isManagedBy(domainId, userId, groupIds, type)) {
+            return originalObject;
+        }
 
         Optional<JsonElement> aclObject = originalObject.map(resource -> resource.get(_ACL));
 
@@ -254,10 +258,10 @@ public class DefaultAclResourcesService implements AclResourcesService {
     }
 
     @Override
-    public Response updateConfiguration(ResourceId id, RequestParameters<ResourceParameters> parameters,
-            ManagedCollection managedCollection) {
+    public Response updateConfiguration(ResourceId id, ManagedCollection managedCollection) {
         JsonObject jsonObject = gson.toJsonTree(managedCollection).getAsJsonObject();
-        return updateResource(getResmiPutRem(), adminsCollection, id, parameters, jsonObject);
+        RequestParameters requestParameters = new RequestParametersBuilder().setDoaminRequest(REGISTRY_DOMAIN).build();
+        return updateResource(getResmiPutRem(), adminsCollection, id, requestParameters, jsonObject);
     }
 
     @Override
@@ -283,7 +287,8 @@ public class DefaultAclResourcesService implements AclResourcesService {
 
     @Override
     public void refreshRegistry() {
-        Response response = getCollection(getResmiGetRem(), adminsCollection, null);
+        RequestParameters requestParameters =  new RequestParametersBuilder().setDoaminRequest(REGISTRY_DOMAIN).build();
+        Response response = getCollection(getResmiGetRem(), adminsCollection, requestParameters);
 
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             LOG.error("Can't access {}", adminsCollection);

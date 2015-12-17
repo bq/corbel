@@ -76,7 +76,8 @@ public class AclPostRem extends AclBaseRem {
             String id = path.substring(path.lastIndexOf("/") + 1);
             Rem rem = remService.getRem(type, parameters.getAcceptedMediaTypes(), HttpMethod.PUT, REMS_TO_EXCLUDE);
 
-            RequestParameters<ResourceParameters> requestParameters = new RequestParametersImpl<>(null, null,
+            RequestParameters<ResourceParameters> requestParameters = new RequestParametersImpl<>(null, parameters.getTokenInfo(),
+                    parameters.getRequestDomain(),
                     parameters.getAcceptedMediaTypes(), null, parameters.getHeaders(), null);
             Response responsePutNotJsonResource = aclResourcesService.updateResource(rem, type, new ResourceId(id), requestParameters,
                     requestBody);

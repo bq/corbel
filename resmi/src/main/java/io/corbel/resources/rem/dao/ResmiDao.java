@@ -19,7 +19,7 @@ import com.google.gson.JsonObject;
  */
 public interface ResmiDao {
 
-    boolean exists(String type, String id);
+    boolean existsResources(ResourceUri uri);
 
     JsonObject findResource(ResourceUri uri);
 
