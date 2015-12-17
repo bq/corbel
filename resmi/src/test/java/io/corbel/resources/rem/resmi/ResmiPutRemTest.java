@@ -58,6 +58,7 @@ public class ResmiPutRemTest extends ResmiRemTest {
         RequestParameters<ResourceParameters> requestParametersMock = mock(RequestParameters.class);
         when(requestParametersMock.getOptionalApiParameters()).thenReturn(Optional.of(resourceParametersMock));
         when(resourceParametersMock.getConditions()).thenReturn(conditions);
+        when(requestParametersMock.getRequestDomain()).thenReturn(DOMAIN);
         return requestParametersMock;
 
     }
@@ -75,7 +76,7 @@ public class ResmiPutRemTest extends ResmiRemTest {
 
     @Test
     public void updateCollectionTestWithCondition() throws StartsWithUnderscoreException {
-        ResourceUri resourceUri = new ResourceUri(TEST_TYPE);
+        ResourceUri resourceUri = new ResourceUri(DOMAIN, TEST_TYPE);
         JsonObject json = new JsonObject();
         json.add("a", new JsonPrimitive("1"));
         @SuppressWarnings("unchecked")
@@ -90,7 +91,7 @@ public class ResmiPutRemTest extends ResmiRemTest {
 
     @Test
     public void updateCollectionTestWithFailCondition() throws StartsWithUnderscoreException {
-        ResourceUri resourceUri = new ResourceUri(TEST_TYPE);
+        ResourceUri resourceUri = new ResourceUri(DOMAIN, TEST_TYPE);
         JsonObject json = new JsonObject();
         json.add("a", new JsonPrimitive("1"));
         @SuppressWarnings("unchecked")
@@ -118,7 +119,7 @@ public class ResmiPutRemTest extends ResmiRemTest {
 
     @Test
     public void updateResourceTestWithCondition() throws StartsWithUnderscoreException {
-        ResourceUri resourceUri = new ResourceUri(TEST_TYPE, ID);
+        ResourceUri resourceUri = new ResourceUri(DOMAIN, TEST_TYPE, ID);
 
         JsonObject json = new JsonObject();
         json.add("a", new JsonPrimitive("1"));
@@ -134,7 +135,7 @@ public class ResmiPutRemTest extends ResmiRemTest {
 
     @Test
     public void updateResourceTestWithFailCondition() throws StartsWithUnderscoreException {
-        ResourceUri resourceUri = new ResourceUri(TEST_TYPE, ID);
+        ResourceUri resourceUri = new ResourceUri(DOMAIN, TEST_TYPE, ID);
         JsonObject json = new JsonObject();
         json.add("a", new JsonPrimitive("1"));
         @SuppressWarnings("unchecked")
@@ -163,7 +164,7 @@ public class ResmiPutRemTest extends ResmiRemTest {
 
     @Test
     public void updateMissingTest() {
-        Response response = putRem.resource(TEST_TYPE, TEST_ID, null, Optional.empty());
+        Response response = putRem.resource(TEST_TYPE, TEST_ID, getParametersWithEmptyUri(), Optional.empty());
         assertThat(response.getStatus()).isEqualTo(400);
     }
 
