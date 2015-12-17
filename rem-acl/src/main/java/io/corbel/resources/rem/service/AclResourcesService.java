@@ -43,23 +43,15 @@ public interface AclResourcesService {
 
     Response deleteRelation(Rem rem, String type, ResourceId id, String relation, RequestParameters<RelationParameters> parameters);
 
-    boolean isAuthorized(TokenInfo tokenInfo, String type, ResourceId resourceId, AclPermission operation)
+    boolean isAuthorized(String requestedDomain, TokenInfo tokenInfo, String type, ResourceId resourceId, AclPermission operation)
             throws AclFieldNotPresentException;
 
-    boolean isAuthorized(String domainId, Optional<String> userId, Collection<String> groupIds, String type, ResourceId resourceId,
-            AclPermission operation) throws AclFieldNotPresentException;
+    boolean isManagedBy(String requestDomain, TokenInfo tokenInfo, String type);
 
-    boolean isManagedBy(TokenInfo tokenInfo, String collection);
-
-    boolean isManagedBy(String domainId, Optional<String> userId, Collection<String> groupIds, String collection);
-
-    Optional<JsonObject> getResourceIfIsAuthorized(TokenInfo tokenInfo, String type, ResourceId resourceId, AclPermission operation)
+    Optional<JsonObject> getResourceIfIsAuthorized(String requestedDomain, TokenInfo tokenInfo, String type, ResourceId resourceId, AclPermission operation)
             throws AclFieldNotPresentException;
 
-    Optional<JsonObject> getResourceIfIsAuthorized(String domainId, Optional<String> userId, Collection<String> groupIds, String type,
-            ResourceId resourceId, AclPermission operation) throws AclFieldNotPresentException;
-
-    Response updateConfiguration(ResourceId id, RequestParameters<ResourceParameters> parameters, ManagedCollection managedCollection);
+    Response updateConfiguration(ResourceId id, ManagedCollection managedCollection);
 
     void addAclConfiguration(String collection);
 

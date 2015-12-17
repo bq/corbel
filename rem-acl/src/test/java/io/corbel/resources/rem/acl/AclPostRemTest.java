@@ -46,7 +46,6 @@ import io.corbel.resources.rem.service.RemService;
     private static final String ID = "resourceId";
     private static final ResourceId RESOURCE_ID = new ResourceId("resourceId");
     private static final MultivaluedMap<String, Object> POST_METADATA = new StringKeyIgnoreCaseMultivaluedMap<>();
-    private static final String ACL_CONFIGURATION_COLLECTION = "acl:Configuration";
 
     private AclPostRem rem;
 
