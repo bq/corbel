@@ -113,10 +113,9 @@ public class MongoResmiDao implements ResmiDao {
 
         Query query = mongoResmiQueryBuilder.relationSubjectId(uri).query(resourceQueries.orElse(null)).pagination(pagination.orElse(null))
                 .sort(sort.orElse(null)).build();
-        query.fields().exclude(_ID);
-
+        query.fields().exclude(_ID).exclude(JsonRelation._SRC_ID);
         LOG.debug("findRelation Query executed : " + query.getQueryObject().toString());
-        JsonArray result = renameIds(JsonUtils.convertToArray(mongoOperations.find(query, JsonObject.class, getMongoCollectionName(uri))), uri.isTypeWildcard());
+        JsonArray result = renameIds(JsonUtils.convertToArray(mongoOperations.find(query, JsonObject.class, getMongoCollectionName(uri))));
 
         if (uri.getRelationId() != null) {
             if (result.size() == 1) {
@@ -142,7 +141,7 @@ public class MongoResmiDao implements ResmiDao {
             Optional<Sort> sort, List<String> groups, boolean first) throws MongoAggregationException {
         Aggregation aggregation = buildGroupAggregation(uri, resourceQueries, pagination, sort, groups, first);
         List<JsonObject> result = mongoOperations.aggregate(aggregation, getMongoCollectionName(uri), JsonObject.class).getMappedResults();
-        return renameIds(JsonUtils.convertToArray(first ? extractDocuments(result) : result), uri.isTypeWildcard());
+        return renameIds(JsonUtils.convertToArray(first ? extractDocuments(result) : result));
     }
 
     private Aggregation buildGroupAggregation(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries,
@@ -290,22 +289,19 @@ public class MongoResmiDao implements ResmiDao {
     /*
      * TODO: This should be refactor out of here (alex 31.01.14)
      */
-    private JsonArray renameIds(JsonArray array, boolean wildcard) {
+    private JsonArray renameIds(JsonArray array) {
         for (JsonElement element : array) {
             if (element.isJsonObject()) {
                 JsonObject object = element.getAsJsonObject();
-                renameIds(object, wildcard);
+                renameIds(object);
             }
         }
         return array;
     }
 
-    private JsonElement renameIds(JsonObject object, boolean wildcard) {
+    private JsonElement renameIds(JsonObject object) {
         object.add("id", object.get(JsonRelation._DST_ID));
         object.remove(JsonRelation._DST_ID);
-        if(!wildcard) {
-            object.remove(JsonRelation._SRC_ID);
-        }
         return object;
     }
 
