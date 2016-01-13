@@ -72,6 +72,8 @@ import io.corbel.resources.rem.service.RemService;
         when(tokenInfo.getGroups()).thenReturn(GROUPS);
         when(parameters.getTokenInfo()).thenReturn(tokenInfo);
 
+        when(parameters.getOptionalApiParameters()).thenReturn(Optional.empty());
+
         when(parameters.getRequestedDomain()).thenReturn(REQUESTED_DOMAIN_ID);
     }
 
@@ -142,7 +144,7 @@ import io.corbel.resources.rem.service.RemService;
             acl.add(DefaultAclResourcesService._ACL, objectToSave);
 
             when(beforeResponse.getStatus()).thenReturn(200);
-            when(aclResourcesService.updateResource(any(), eq(TYPE), eq(RESOURCE_ID), eq(parameters), eq(acl), any())).thenReturn(beforeResponse);
+            when(aclResourcesService.updateResource(any(), eq(TYPE), eq(RESOURCE_ID), any(), eq(acl), any())).thenReturn(beforeResponse);
 
             Response afterResponse = rem.resource(TYPE, RESOURCE_ID, parameters,
                     Optional.of(new ByteArrayInputStream(objectToSave.toString().getBytes())), Optional.empty());
@@ -169,7 +171,7 @@ import io.corbel.resources.rem.service.RemService;
         acl.add(DefaultAclResourcesService._ACL, objectToSave);
 
         when(response.getStatus()).thenReturn(200);
-        when(aclResourcesService.updateResource(any(), eq(TYPE), eq(RESOURCE_ID), eq(parameters), eq(acl), any())).thenReturn(response);
+        when(aclResourcesService.updateResource(any(), eq(TYPE), eq(RESOURCE_ID), any(), eq(acl), any())).thenReturn(response);
 
         response = rem.resource(TYPE, RESOURCE_ID, parameters, Optional.of(getEntityAsInputStream(objectToSave)));
         assertThat(response.getStatus()).isEqualTo(200);
@@ -187,7 +189,7 @@ import io.corbel.resources.rem.service.RemService;
 
             Response expectedResponse = mock(Response.class);
             when(expectedResponse.getStatus()).thenReturn(200);
-            when(aclResourcesService.updateResource(any(), eq(TYPE), eq(RESOURCE_ID), eq(parameters), any(), any())).thenReturn(expectedResponse);
+            when(aclResourcesService.updateResource(any(), eq(TYPE), eq(RESOURCE_ID), any(), any(), any())).thenReturn(expectedResponse);
 
             Response response = rem.resource(TYPE, RESOURCE_ID, parameters, Optional.of(new ByteArrayInputStream(objectToSave.toString().getBytes())));
             assertThat(response.getStatus()).isEqualTo(200);
