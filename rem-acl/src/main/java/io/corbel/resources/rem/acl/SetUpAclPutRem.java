@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import javax.ws.rs.core.Response;
 
 import com.google.common.collect.Lists;
+import io.corbel.resources.rem.request.RequestParametersImpl;
 import org.springframework.http.HttpMethod;
 
 import com.google.gson.*;
@@ -25,6 +26,7 @@ import io.corbel.resources.rem.request.ResourceParameters;
 import io.corbel.resources.rem.service.AclResourcesService;
 import io.corbel.resources.rem.service.DefaultAclResourcesService;
 import io.corbel.resources.rem.utils.AclUtils;
+import org.springframework.http.MediaType;
 
 /**
  * @author Cristian del Cerro
@@ -83,7 +85,15 @@ public class SetUpAclPutRem extends AclBaseRem {
         objectToSave.add(DefaultAclResourcesService._ACL, filteredAclObject);
 
         Rem rem = remService.getRem(type, JSON_MEDIATYPE, HttpMethod.PUT, excluded);
-        return aclResourcesService.updateResource(rem, type, id, parameters, objectToSave, excluded);
+
+        RequestParameters requestParameters = new RequestParametersImpl<>(parameters.getOptionalApiParameters().orElse(null),
+                parameters.getTokenInfo(),
+                DefaultAclResourcesService.REGISTRY_DOMAIN,
+                parameters.getAcceptedMediaTypes(),
+                parameters.getContentLength(),
+                parameters.getParams(),
+                parameters.getHeaders());
+        return aclResourcesService.updateResource(rem, type, id, requestParameters, objectToSave, excluded);
 
     }
 
