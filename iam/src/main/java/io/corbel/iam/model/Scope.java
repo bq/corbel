@@ -1,31 +1,30 @@
 package io.corbel.iam.model;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.hibernate.validator.constraints.NotEmpty;
-
-import io.corbel.lib.ws.json.serialization.JsonArrayToSetDeserializer;
-import io.corbel.lib.ws.json.serialization.JsonObjectDeserializer;
-import io.corbel.lib.ws.json.serialization.JsonObjectSerializer;
-import io.corbel.lib.ws.json.serialization.JsonObjectSetToJsonArraySerializer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.gson.JsonObject;
+import io.corbel.iam.model.validation.ValidateScope;
+import io.corbel.lib.ws.json.serialization.JsonArrayToSetDeserializer;
+import io.corbel.lib.ws.json.serialization.JsonObjectDeserializer;
+import io.corbel.lib.ws.json.serialization.JsonObjectSerializer;
+import io.corbel.lib.ws.json.serialization.JsonObjectSetToJsonArraySerializer;
+
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Alexander De Leon
  * 
  */
+@ValidateScope
 public class Scope extends Entity {
     public static final String COMPOSITE_SCOPE_TYPE = "composite_scope";
 
     private String type;
-    @NotEmpty private String audience;
-    @NotEmpty @JsonDeserialize(using = JsonArrayToSetDeserializer.class) private Set<JsonObject> rules;
+    private String audience;
+    @JsonDeserialize(using = JsonArrayToSetDeserializer.class) private Set<JsonObject> rules;
     private Set<String> scopes;
     @JsonDeserialize(using = JsonObjectDeserializer.class) private JsonObject parameters;
 
