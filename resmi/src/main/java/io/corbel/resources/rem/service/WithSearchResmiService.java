@@ -4,6 +4,7 @@ import io.corbel.lib.queries.QueryNodeImpl;
 import io.corbel.lib.queries.StringQueryLiteral;
 import io.corbel.lib.queries.builder.ResourceQueryBuilder;
 import io.corbel.lib.queries.request.Aggregation;
+import io.corbel.lib.queries.request.Pagination;
 import io.corbel.lib.queries.request.QueryNode;
 import io.corbel.lib.queries.request.QueryOperator;
 import io.corbel.lib.queries.request.ResourceQuery;
@@ -155,8 +156,10 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
             ids.add(new StringQueryLiteral(id));
         }
         ResourceQueryBuilder builder = new ResourceQueryBuilder().add(ID, ids, QueryOperator.$IN);
-        return new CollectionParametersImpl(apiParameters.getPagination(), apiParameters.getSort(), Optional.of(Collections
-                .singletonList(builder.build())), Optional.empty(), Optional.empty(), Optional.empty());
+        Pagination pagination = apiParameters.getPagination();
+        pagination.setPage(0);
+        return new CollectionParametersImpl(pagination, apiParameters.getSort(), Optional.of(Collections.singletonList(builder.build())),
+                Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     @Override
