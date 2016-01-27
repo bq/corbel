@@ -30,6 +30,7 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.expression.spel.SpelParseException;
 
 import java.util.*;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
@@ -88,15 +89,21 @@ public class MongoResmiDao implements ResmiDao {
 
     @Override
     public JsonElement findRelation(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sort) {
+            Optional<Sort> sort) throws ResmiAggregationException {
         MongoResmiQueryBuilder mongoResmiQueryBuilder = new MongoResmiQueryBuilder();
 
         if (uri.getRelationId() != null) {
             mongoResmiQueryBuilder.relationDestinationId(uri.getRelationId());
         }
 
-        Query query = mongoResmiQueryBuilder.relationSubjectId(uri).query(resourceQueries.orElse(null)).pagination(pagination.orElse(null))
-                .sort(sort.orElse(null)).build();
+        Query query;
+        try {
+            query = mongoResmiQueryBuilder.relationSubjectId(uri).query(resourceQueries.orElse(null)).pagination(pagination.orElse(null))
+                    .sort(sort.orElse(null)).build();
+        }
+        catch (PatternSyntaxException pse) {
+            throw new ResmiAggregationException(pse.getMessage());
+        }
         query.fields().exclude(_ID);
 
         LOG.debug("findRelation Query executed : " + query.getQueryObject().toString());

@@ -26,14 +26,14 @@ public interface ResmiService {
     String ID = "id";
     String _ID = "_id";
 
-    JsonArray findCollection(ResourceUri uri, Optional<CollectionParameters> apiParameters) throws BadConfigurationException;
+    JsonArray findCollection(ResourceUri uri, Optional<CollectionParameters> apiParameters) throws BadConfigurationException, ResmiAggregationException;
 
     JsonArray findCollectionDistinct(ResourceUri uri, Optional<CollectionParameters> apiParameters, List<String> fields, boolean first)
             throws BadConfigurationException, ResmiAggregationException;
 
     JsonObject findResource(ResourceUri uri);
 
-    JsonElement findRelation(ResourceUri uri, Optional<RelationParameters> apiParameters) throws BadConfigurationException;
+    JsonElement findRelation(ResourceUri uri, Optional<RelationParameters> apiParameters) throws BadConfigurationException, ResmiAggregationException;
 
     JsonElement aggregate(ResourceUri uri, CollectionParameters apiParameters) throws BadConfigurationException, ResmiAggregationException;
 

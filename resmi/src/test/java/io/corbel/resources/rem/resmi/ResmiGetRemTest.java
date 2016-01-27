@@ -74,7 +74,7 @@ public class ResmiGetRemTest extends ResmiRemTest {
     }
 
     @Test
-    public void testGetCollection() throws BadConfigurationException {
+    public void testGetCollection() throws BadConfigurationException, ResmiAggregationException {
         ResourceUri resourceUri = new ResourceUri(DOMAIN, TEST_TYPE);
         JsonArray jsonArray = new JsonArray();
         when(resmiServiceMock.findCollection(resourceUri, Optional.of(collectionParametersMock))).thenReturn(jsonArray);
@@ -130,7 +130,7 @@ public class ResmiGetRemTest extends ResmiRemTest {
     }
 
     @Test
-    public void testGetRelation() throws BadConfigurationException {
+    public void testGetRelation() throws BadConfigurationException, ResmiAggregationException {
         JsonArray jsonArray = new JsonArray();
         ResourceUri resourceUri = new ResourceUri(DOMAIN, TEST_TYPE, ID, TEST_TYPE_RELATION, null);
         ResourceId resourceId = new ResourceId(ID);
@@ -154,7 +154,7 @@ public class ResmiGetRemTest extends ResmiRemTest {
     }
 
     @Test
-    public void testGetRelationResource() throws BadConfigurationException {
+    public void testGetRelationResource() throws BadConfigurationException, ResmiAggregationException {
         JsonArray jsonArray = new JsonArray();
         ResourceUri resourceUri = new ResourceUri(DOMAIN, TEST_TYPE, ID, TEST_TYPE_RELATION, DST_ID);
         ResourceId resourceId = new ResourceId(ID);
@@ -180,7 +180,7 @@ public class ResmiGetRemTest extends ResmiRemTest {
     }
 
     @Test
-    public void testGetRelationResourceNotFound() throws BadConfigurationException {
+    public void testGetRelationResourceNotFound() throws BadConfigurationException, ResmiAggregationException {
         ResourceUri resourceUri = new ResourceUri(DOMAIN, TEST_TYPE, ID, TEST_TYPE_RELATION, DST_ID);
         ResourceId resourceId = new ResourceId(ID);
 

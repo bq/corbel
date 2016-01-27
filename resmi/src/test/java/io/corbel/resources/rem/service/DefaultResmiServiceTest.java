@@ -76,7 +76,7 @@ import io.corbel.resources.rem.resmi.exception.StartsWithUnderscoreException;
     }
 
     @Test
-    public void findTest() throws BadConfigurationException {
+    public void findTest() throws BadConfigurationException, ResmiAggregationException {
         ResourceUri resourceUri = new ResourceUri(DOMAIN, TYPE);
         JsonArray fakeResult = new JsonArray();
         when(
@@ -100,7 +100,7 @@ import io.corbel.resources.rem.resmi.exception.StartsWithUnderscoreException;
     }
 
     @Test
-    public void findRelationTest() throws BadConfigurationException {
+    public void findRelationTest() throws BadConfigurationException, ResmiAggregationException {
         JsonElement fakeResult = new JsonObject();
         ResourceUri resourceUri = new ResourceUri(DOMAIN, TYPE, ID, RELATION_TYPE, "test");
 

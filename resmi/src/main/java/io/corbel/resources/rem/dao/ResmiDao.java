@@ -27,7 +27,7 @@ public interface ResmiDao {
             Optional<Sort> sort);
 
     JsonElement findRelation(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sort);
+            Optional<Sort> sort) throws ResmiAggregationException;
 
     JsonArray findCollectionWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
                                       Optional<Sort> sort, List<String> groups, boolean first) throws ResmiAggregationException;

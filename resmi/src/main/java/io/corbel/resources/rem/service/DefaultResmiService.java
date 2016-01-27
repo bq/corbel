@@ -77,7 +77,7 @@ public class DefaultResmiService implements ResmiService {
     }
 
     @Override
-    public JsonArray findCollection(ResourceUri uri, Optional<CollectionParameters> apiParameters) throws BadConfigurationException {
+    public JsonArray findCollection(ResourceUri uri, Optional<CollectionParameters> apiParameters) throws BadConfigurationException, ResmiAggregationException {
         return resmiDao.findCollection(uri, apiParameters.flatMap(CollectionParameters::getQueries),
                 apiParameters.map(CollectionParameters::getPagination), apiParameters.flatMap(CollectionParameters::getSort));
     }
@@ -96,7 +96,7 @@ public class DefaultResmiService implements ResmiService {
     }
 
     @Override
-    public JsonElement findRelation(ResourceUri uri, Optional<RelationParameters> apiParameters) throws BadConfigurationException {
+    public JsonElement findRelation(ResourceUri uri, Optional<RelationParameters> apiParameters) throws BadConfigurationException, ResmiAggregationException {
         return resmiDao.findRelation(uri, apiParameters.flatMap(RelationParameters::getQueries),
                 apiParameters.map(RelationParameters::getPagination), apiParameters.flatMap(RelationParameters::getSort));
     }

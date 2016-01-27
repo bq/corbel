@@ -101,7 +101,7 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
     }
 
     @Override
-    public JsonArray findCollection(ResourceUri uri, Optional<CollectionParameters> apiParameters) throws BadConfigurationException {
+    public JsonArray findCollection(ResourceUri uri, Optional<CollectionParameters> apiParameters) throws BadConfigurationException, ResmiAggregationException {
         if (apiParameters.flatMap(CollectionParameters::getSearch).isPresent()) {
             return findInSearchService(uri, apiParameters.get());
         } else {
@@ -109,7 +109,7 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
         }
     }
 
-    private JsonArray findInSearchService(ResourceUri resourceUri, CollectionParameters apiParameters) throws BadConfigurationException {
+    private JsonArray findInSearchService(ResourceUri resourceUri, CollectionParameters apiParameters) throws BadConfigurationException, ResmiAggregationException {
         Search searchObject = apiParameters.getSearch().get();
         JsonArray searchResult;
         if (searchObject.getText().isPresent()) {
@@ -160,7 +160,7 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
     }
 
     @Override
-    public JsonElement findRelation(ResourceUri uri, Optional<RelationParameters> apiParameters) throws BadConfigurationException {
+    public JsonElement findRelation(ResourceUri uri, Optional<RelationParameters> apiParameters) throws BadConfigurationException, ResmiAggregationException {
         if (apiParameters.flatMap(RelationParameters::getSearch).isPresent()) {
             return findInSearchService(uri, apiParameters.get());
         } else {
