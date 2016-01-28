@@ -1,29 +1,23 @@
 package io.corbel.resources.rem.resmi;
 
+import com.google.gson.JsonObject;
 import io.corbel.lib.ws.api.error.ErrorResponseFactory;
 import io.corbel.lib.ws.model.Error;
 import io.corbel.resources.rem.model.ResourceUri;
-import io.corbel.resources.rem.request.CollectionParameters;
-import io.corbel.resources.rem.request.RelationParameters;
-import io.corbel.resources.rem.request.RequestParameters;
-import io.corbel.resources.rem.request.ResourceId;
-import io.corbel.resources.rem.request.ResourceParameters;
+import io.corbel.resources.rem.request.*;
 import io.corbel.resources.rem.resmi.exception.ResmiAggregationException;
 import io.corbel.resources.rem.service.BadConfigurationException;
 import io.corbel.resources.rem.service.ResmiService;
+import org.elasticsearch.search.builder.SearchSourceBuilderException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import javax.ws.rs.core.Response;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.gson.JsonObject;
 
 /**
  * @author Rubén Carrasco
@@ -81,7 +75,7 @@ public class ResmiGetRem extends AbstractResmiRem {
             } else {
                 return buildResponse(resmiService.findRelation(resourceUri, parameters.getOptionalApiParameters()));
             }
-        } catch (ResmiAggregationException rae) {
+        } catch (ResmiAggregationException | SearchSourceBuilderException e) {
             return ErrorResponseFactory.getInstance().badRequest();
         } catch (Exception e) {
             LOG.error("Unexpected error: Failed get relation data", e);
