@@ -1,14 +1,10 @@
 package io.corbel.resources.rem.search;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import io.corbel.lib.queries.request.Pagination;
 import io.corbel.lib.queries.request.ResourceQuery;
 import io.corbel.lib.queries.request.Sort;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
@@ -20,12 +16,16 @@ import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.script.ScriptService.ScriptType;
+import org.elasticsearch.search.builder.SearchSourceBuilderException;
 import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
+import javax.ws.rs.BadRequestException;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @author Rubén Carrasco
@@ -85,15 +85,19 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     @Override
     public JsonArray search(String index, String type, String search, List<ResourceQuery> queries, Pagination pagination,
             Optional<Sort> sort) {
-        SearchRequestBuilder request = client.prepareSearch(index).setTypes(type).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(ElasticSearchResourceQueryBuilder.build(search, queries))
-                .setFrom(pagination.getPage() * pagination.getPageSize()).setSize(pagination.getPageSize());
+        try{
+            SearchRequestBuilder request = client.prepareSearch(index).setTypes(type).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                    .setQuery(ElasticSearchResourceQueryBuilder.build(search, queries)).setFrom(pagination.getPage())
+                    .setSize(pagination.getPageSize());
 
-        if (sort.isPresent()) {
-            request.addSort(sort.get().getField(), SortOrder.valueOf(sort.get().getDirection().name()));
+            if (sort.isPresent()) {
+                request.addSort(sort.get().getField(), SortOrder.valueOf(sort.get().getDirection().name()));
+            }
+
+            return extractResponse(request.execute().actionGet());
+        }catch (SearchSourceBuilderException e){
+            throw new BadRequestException("Provided search filters cannot be applied.");
         }
-
-        return extractResponse(request.execute().actionGet());
     }
 
     @Override
@@ -115,12 +119,16 @@ public class DefaultElasticSearchService implements ElasticSearchService {
 
     private SearchResponse search(String index, String type, String templateName, Map<String, Object> templateParams,
             Optional<Integer> page, Optional<Integer> size) {
-        SearchRequestBuilder request = client.prepareSearch(index).setTypes(type).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setTemplateName(templateName).setTemplateType(ScriptType.INDEXED).setTemplateParams(templateParams);
-        if (page.isPresent() && size.isPresent()) {
-            request.setFrom(page.get() * size.get()).setSize(size.get());
+        try{
+            SearchRequestBuilder request = client.prepareSearch(index).setTypes(type).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                    .setTemplateName(templateName).setTemplateType(ScriptType.INDEXED).setTemplateParams(templateParams);
+            if (page.isPresent() && size.isPresent()) {
+                request.setFrom(page.get()).setSize(size.get());
+            }
+            return request.execute().actionGet();
+        }catch (SearchSourceBuilderException e){
+            throw new BadRequestException("Provided search filters cannot be applied. "+e.getMessage());
         }
-        return request.execute().actionGet();
     }
 
     private JsonArray extractResponse(SearchResponse response) {
