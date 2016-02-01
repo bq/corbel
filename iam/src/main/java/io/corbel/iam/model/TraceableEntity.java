@@ -26,7 +26,7 @@ public class TraceableEntity extends Entity {
     }
 
     public Date getCreatedDate() {
-        return createdDate;
+        return new Date(createdDate.getTime());
     }
 
     public void setCreatedDate(Date createdDate) {
