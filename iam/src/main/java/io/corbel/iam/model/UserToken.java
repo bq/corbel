@@ -22,7 +22,7 @@ public class UserToken {
     public UserToken(String token, String userId, Date expireAt) {
         this.token = token;
         this.userId = userId;
-        this.expireAt = expireAt;
+        this.expireAt = new Date(expireAt.getTime());
     }
 
     public String getToken() {
@@ -42,7 +42,7 @@ public class UserToken {
     }
 
     public Date getExpireAt() {
-        return expireAt;
+        return new Date(expireAt.getTime());
     }
 
     public void setExpireAt(Date expireAt) {
