@@ -15,7 +15,9 @@ import org.springframework.stereotype.Component;
 public class ImageRemPlugin extends RemPlugin {
 
     private static final Logger LOG = LoggerFactory.getLogger(ImageRemPlugin.class);
-    private static final String ARTIFACT_ID = "rem-image";
+    private static final String IMAGE_CACHE_COLLECTION = "image.cache.collection";
+    private static final String IMAGE_PATH = "image/*";
+    private final String ARTIFACT_ID = "rem-image";
 
     @Override
     protected void init() {
@@ -36,12 +38,12 @@ public class ImageRemPlugin extends RemPlugin {
         ImageDeleteRem beanImageDeleteRem = (ImageDeleteRem) context.getBean(RemImageIocNames.REM_DELETE, Rem.class);
         beanImageDeleteRem.setRemService(remService);
 
-        registry.registerRem(beanImageGetRem, "^(?!" + context.getEnvironment().getProperty("image.cache.collection") + "$).*",
-                MediaType.parseMediaType("image/*"), HttpMethod.GET);
-        registry.registerRem(beanImagePutRem, "^(?!" + context.getEnvironment().getProperty("image.cache.collection") + "$).*",
-                MediaType.parseMediaType("image/*"), HttpMethod.PUT);
-        registry.registerRem(beanImageDeleteRem, "^(?!" + context.getEnvironment().getProperty("image.cache.collection") + "$).*",
-                MediaType.parseMediaType("image/*"), HttpMethod.DELETE);
+        registry.registerRem(beanImageGetRem, "^(?!" + context.getEnvironment().getProperty(IMAGE_CACHE_COLLECTION) + "$).*",
+                MediaType.parseMediaType(IMAGE_PATH), HttpMethod.GET);
+        registry.registerRem(beanImagePutRem, "^(?!" + context.getEnvironment().getProperty(IMAGE_CACHE_COLLECTION) + "$).*",
+                MediaType.parseMediaType(IMAGE_PATH), HttpMethod.PUT);
+        registry.registerRem(beanImageDeleteRem, "^(?!" + context.getEnvironment().getProperty(IMAGE_CACHE_COLLECTION) + "$).*",
+                MediaType.parseMediaType(IMAGE_PATH), HttpMethod.DELETE);
     }
 
     @Override
