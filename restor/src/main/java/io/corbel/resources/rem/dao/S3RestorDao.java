@@ -8,6 +8,10 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
 import io.corbel.resources.rem.model.RestorObject;
 
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Stream;
+
 /**
  * @author Alberto J. Rubio
  */
@@ -64,8 +68,25 @@ public class S3RestorDao implements RestorDao {
 
     @Override
     public void deleteObjectWithPrefix(RestorResourceUri resourceUri, String prefix) {
-        amazonS3Client.listObjects(new ListObjectsRequest().withBucketName(bucket).withPrefix(prefix)).getObjectSummaries()
-                .forEach(objectSummary -> deleteObject(new RestorResourceUri(resourceUri.getDomain(), resourceUri.getMediaType(), resourceUri.getType(), objectSummary.getKey())));
+        ObjectListing objectListing = amazonS3Client.listObjects(new ListObjectsRequest().withBucketName(bucket).withPrefix(prefix));
+        String mediaType = resourceUri.getMediaType().replace('/', '_');
+        boolean truncated;
+
+        do {
+            objectListing.getObjectSummaries()
+                    .stream().map(S3ObjectSummary::getKey)
+                    .map(key -> {
+                        String parts[] = key.split("/");
+                        String id = parts[parts.length - 1];
+                        return id.endsWith(mediaType) ? id.substring(0, id.length() - mediaType.length() -1) : id;
+                    })
+                    .map(id -> new RestorResourceUri(resourceUri.getDomain(), resourceUri.getMediaType(), resourceUri.getType(), id))
+                    .forEach(this::deleteObject);
+
+            if (truncated = objectListing.isTruncated()) {
+                objectListing = amazonS3Client.listNextBatchOfObjects(objectListing);
+            }
+        } while (truncated);
     }
 
     private void deleteObject(RestorResourceUri resourceUri, int retryNumber) {
