@@ -1,5 +1,16 @@
 package io.corbel.resources.rem.ioc;
 
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.EnableAsync;
+
 import io.corbel.lib.config.ConfigurationIoC;
 import io.corbel.resources.rem.ImageDeleteRem;
 import io.corbel.resources.rem.ImageGetRem;
@@ -10,26 +21,11 @@ import io.corbel.resources.rem.service.DefaultImageCacheService;
 import io.corbel.resources.rem.service.DefaultImageOperationsService;
 import io.corbel.resources.rem.service.ImageCacheService;
 import io.corbel.resources.rem.service.ImageOperationsService;
-import io.corbel.resources.rem.util.ImageRemUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.core.env.Environment;
-import org.springframework.scheduling.annotation.EnableAsync;
 
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+@SuppressWarnings("unused") @Configuration @EnableAsync @Import({ConfigurationIoC.class}) public class RemImageIoc {
 
-@SuppressWarnings("unused")
-@Configuration
-@EnableAsync
-@Import({ConfigurationIoC.class})
-public class RemImageIoc {
-
-    @Autowired
-    private Environment env;
+    private static final String CACHE_COLLECTION_DEFAULT = "image:ImageCache";
+    @Autowired private Environment env;
 
     @Bean
     public static Map<String, ImageOperation> getOperations(List<ImageOperation> imageOperationList) {
@@ -82,24 +78,19 @@ public class RemImageIoc {
         return new DefaultImageCacheService(env.getProperty("image.cache.collection"));
     }
 
-    @Bean
-    public ImageRemUtil getImageRemUtil() {
-        return new ImageRemUtil();
-    }
-
     @Bean(name = RemImageIocNames.REM_GET)
     public Rem getImageGetRem(ImageOperationsService imageOperationsService, ImageCacheService imageCacheService) {
         return new ImageGetRem(imageOperationsService, imageCacheService, env.getProperty("imagemagick.conver.memoryLimit", "200MiB"));
     }
 
     @Bean(name = RemImageIocNames.REM_PUT)
-    public Rem getImagePutRem(ImageRemUtil imageRemUtil) {
-        return new ImagePutRem(env.getProperty("image.cache.collection", "image:ImageCache"), imageRemUtil);
+    public Rem getImagePutRem(ImageCacheService imageCacheService) {
+        return new ImagePutRem(imageCacheService);
     }
 
     @Bean(name = RemImageIocNames.REM_DELETE)
-    public Rem getImageDeleteRem(ImageRemUtil imageRemUtil) {
-        return new ImageDeleteRem(env.getProperty("image.cache.collection", "image:ImageCache"), imageRemUtil);
+    public Rem getImageDeleteRem(ImageCacheService imageCacheService) {
+        return new ImageDeleteRem(imageCacheService);
     }
 
 }
