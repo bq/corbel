@@ -1,17 +1,14 @@
 package io.corbel.resources.rem.search;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import io.corbel.lib.queries.request.Pagination;
 import io.corbel.lib.queries.request.ResourceQuery;
 import io.corbel.lib.queries.request.Sort;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-
 import org.elasticsearch.action.admin.indices.alias.IndicesAliasesRequest;
 import org.elasticsearch.action.admin.indices.close.CloseIndexRequest;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequestBuilder;
 import org.elasticsearch.action.admin.indices.mapping.put.PutMappingRequest;
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import org.elasticsearch.action.search.SearchRequestBuilder;
@@ -24,8 +21,10 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 /**
  * @author Rubén Carrasco
@@ -71,7 +70,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     public void setupMapping(String index, String type, String source) {
         if (indexExists(index)) {
             client.admin().indices().close(new CloseIndexRequest(index)).actionGet();
-            PutMappingRequest mappingRequest = new PutMappingRequest(index).type(type).source(source).ignoreConflicts(true);
+            PutMappingRequest mappingRequest = new PutMappingRequest(index).type(type).source(source)/*.ignoreConflicts(true)*/;
             client.admin().indices().putMapping(mappingRequest).actionGet();
             client.admin().indices().open(new OpenIndexRequest(index)).actionGet();
         }
