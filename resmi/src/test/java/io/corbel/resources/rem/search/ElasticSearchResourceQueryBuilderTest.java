@@ -49,7 +49,7 @@ public class ElasticSearchResourceQueryBuilderTest {
         QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQueries);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         assertEquals("{\"query_string\":{\"query\":\"search string\"}}", result.get("filtered").get("query").toString());
-        assertEquals("{\"not\":{\"filter\":{\"term\":{\"name\":\"Metallica\"}}}}", getAndFilters(result, 0).get(0).toString());
+        assertEquals("{\"not\":{\"query\":{\"term\":{\"name\":\"Metallica\"}}}}", getAndFilters(result, 0).get(0).toString());
     }
 
     @Test
@@ -85,7 +85,7 @@ public class ElasticSearchResourceQueryBuilderTest {
         QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQuery);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         assertEquals("{\"query_string\":{\"query\":\"search string\"}}", result.get("filtered").get("query").toString());
-        assertEquals("{\"not\":{\"filter\":{\"terms\":{\"categories\":[\"Metallica\"]}}}}", getAndFilters(result, 0).get(0).toString());
+        assertEquals("{\"not\":{\"query\":{\"terms\":{\"categories\":[\"Metallica\"]}}}}", getAndFilters(result, 0).get(0).toString());
     }
 
     @Test
@@ -103,7 +103,7 @@ public class ElasticSearchResourceQueryBuilderTest {
         QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQuery);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         assertEquals("{\"query_string\":{\"query\":\"search string\"}}", result.get("filtered").get("query").toString());
-        assertEquals("{\"not\":{\"filter\":{\"exists\":{\"field\":\"categories\"}}}}", getAndFilters(result, 0).get(0).toString());
+        assertEquals("{\"not\":{\"query\":{\"exists\":{\"field\":\"categories\"}}}}", getAndFilters(result, 0).get(0).toString());
     }
 
     @Test

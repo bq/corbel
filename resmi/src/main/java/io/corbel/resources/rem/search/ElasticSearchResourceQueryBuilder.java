@@ -24,7 +24,7 @@ public class ElasticSearchResourceQueryBuilder {
         if (queries == null || queries.isEmpty()) {
             return QueryBuilders.queryStringQuery(search);
         } else {
-            OrFilterBuilder orBuilder = FilterBuilders.orFilter();
+            OrQueryBuilder orBuilder = QueryBuilders.orQuery();
             for (ResourceQuery query : queries) {
                 orBuilder.add(getFilterBuilder(query));
             }
@@ -32,8 +32,8 @@ public class ElasticSearchResourceQueryBuilder {
         }
     }
 
-    private static FilterBuilder getFilterBuilder(ResourceQuery query) {
-        AndFilterBuilder andFilterBuilder = FilterBuilders.andFilter();
+    private static QueryBuilder getFilterBuilder(ResourceQuery query) {
+        AndQueryBuilder andFilterBuilder = QueryBuilders.andQuery();
         for (QueryNode node : query) {
             andFilterBuilder.add(getFilterBuilder(node));
         }
@@ -41,28 +41,27 @@ public class ElasticSearchResourceQueryBuilder {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private static FilterBuilder getFilterBuilder(QueryNode node) {
+    private static QueryBuilder getFilterBuilder(QueryNode node) {
         switch (node.getOperator()) {
             case $EQ:
-                return FilterBuilders.termFilter(node.getField(), node.getValue().getLiteral());
+                return QueryBuilders.termQuery(node.getField(), node.getValue().getLiteral());
             case $NE:
-                return FilterBuilders.notFilter(FilterBuilders.termFilter(node.getField(), node.getValue().getLiteral()));
+                return QueryBuilders.notQuery(QueryBuilders.termQuery(node.getField(), node.getValue().getLiteral()));
             case $GT:
-                return FilterBuilders.rangeFilter(node.getField()).gt(node.getValue().getLiteral());
+                return QueryBuilders.rangeQuery(node.getField()).gt(node.getValue().getLiteral());
             case $GTE:
-                return FilterBuilders.rangeFilter(node.getField()).gte(node.getValue().getLiteral());
+                return QueryBuilders.rangeQuery(node.getField()).gte(node.getValue().getLiteral());
             case $LT:
-                return FilterBuilders.rangeFilter(node.getField()).lt(node.getValue().getLiteral());
+                return QueryBuilders.rangeQuery(node.getField()).lt(node.getValue().getLiteral());
             case $LTE:
-                return FilterBuilders.rangeFilter(node.getField()).lte(node.getValue().getLiteral());
+                return QueryBuilders.rangeQuery(node.getField()).lte(node.getValue().getLiteral());
             case $EXISTS:
-                return (Boolean) node.getValue().getLiteral() ? FilterBuilders.existsFilter(node.getField())
-                        : FilterBuilders.notFilter(FilterBuilders.existsFilter(node.getField()));
+                return (Boolean) node.getValue().getLiteral() ? QueryBuilders.existsQuery(node.getField())
+                        : QueryBuilders.notQuery(QueryBuilders.existsQuery(node.getField()));
             case $IN:
-                return FilterBuilders.inFilter(node.getField(), getValues((List<QueryLiteral>) node.getValue().getLiteral()));
+                return QueryBuilders.termsQuery(node.getField(), getValues((List<QueryLiteral>) node.getValue().getLiteral()));
             case $NIN:
-                return FilterBuilders
-                        .notFilter(FilterBuilders.inFilter(node.getField(), getValues((List<QueryLiteral>) node.getValue().getLiteral())));
+                return QueryBuilders.notQuery(QueryBuilders.termsQuery(node.getField(), getValues((List<QueryLiteral>) node.getValue().getLiteral())));
             default:
                 return null;
         }
