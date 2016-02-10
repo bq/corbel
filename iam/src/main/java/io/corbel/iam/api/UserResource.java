@@ -238,6 +238,16 @@ import java.util.stream.Collectors;
                 }).orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
     }
 
+    @DELETE
+    @Path("/me/allSession")
+    public Response deleteAllSessions(@Auth AuthorizationInfo authorizationInfo) {
+        return Optional.ofNullable(userService.findById(authorizationInfo.getUserId()))
+                .filter(user -> userDomainMatchAuthorizationDomain(user, authorizationInfo)).map(user -> {
+                    userService.invalidateAllTokens(user.getId());
+                    return Response.noContent().build();
+                }).orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
+    }
+
     @PUT
     @Path("/{id}/disconnect")
     public Response disconnect(@PathParam("id") String userId, @Auth AuthorizationInfo authorizationInfo) {
