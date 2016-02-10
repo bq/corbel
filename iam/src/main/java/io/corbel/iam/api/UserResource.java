@@ -239,6 +239,16 @@ import java.util.stream.Collectors;
     }
 
     @PUT
+    @Path("/me/clearToken")
+    public Response clearToken(@Auth AuthorizationInfo authorizationInfo) {
+        return Optional.ofNullable(userService.findById(authorizationInfo.getUserId()))
+                .filter(user -> userDomainMatchAuthorizationDomain(user, authorizationInfo)).map(user -> {
+                    userService.invalidateToken(user.getId(), authorizationInfo.getToken(), false);
+                    return Response.noContent().build();
+                }).orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
+    }
+
+    @PUT
     @Path("/{id}/disconnect")
     public Response disconnect(@PathParam("id") String userId, @Auth AuthorizationInfo authorizationInfo) {
         return resolveMeIdAliases(userId, authorizationInfo).filter(user -> userDomainMatchAuthorizationDomain(user, authorizationInfo))

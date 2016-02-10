@@ -130,7 +130,8 @@ public class DefaultUserService implements UserService {
         }
     }
 
-    private void invalidateToken(String userId, String accessToken, boolean invalidateRefreshToken) {
+    @Override
+    public void invalidateToken(String userId, String accessToken, boolean invalidateRefreshToken) {
         authorizationRulesRepository.deleteByToken(accessToken);
         if (invalidateRefreshToken) {
             refreshTokenService.invalidateRefreshToken(userId, Optional.of(accessToken));

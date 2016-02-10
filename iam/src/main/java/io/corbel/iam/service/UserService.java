@@ -40,6 +40,8 @@ public interface UserService {
 
     boolean existsByEmailAndDomain(String email, String domainId);
 
+    void invalidateToken(String userId, String accessToken, boolean invalidateRefreshToken);
+
     User getUserProfile(User user, Set<String> userProfileFields) throws UserProfileConfigurationException;
 
     void sendMailResetPassword(String email, String clientId, String domain);
