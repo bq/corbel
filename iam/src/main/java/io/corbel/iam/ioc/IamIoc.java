@@ -371,7 +371,7 @@ public class IamIoc {
     }
 
     @Bean
-    public IdGenerator<Device> getDeviceIdGenerator() {
+    public DeviceIdGenerator getDeviceIdGenerator() {
         return new DeviceIdGenerator(DigesterFactory.sha1());
     }
 

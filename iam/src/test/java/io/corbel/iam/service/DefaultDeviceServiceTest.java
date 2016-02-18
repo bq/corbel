@@ -27,6 +27,7 @@ import io.corbel.iam.repository.DeviceRepository;
 @RunWith(MockitoJUnitRunner.class) public class DefaultDeviceServiceTest {
     private static final String TEST_DEVICE_ID = "TEST_ID";
     private static final String TEST_USER_ID = "TEST_USER_ID";
+    private static final String TEST_UID = "TEST_UID";
     private static final String TEST_DOMAIN = "TEST_DOMAIN";
 
     private DefaultDeviceService deviceService;
@@ -55,8 +56,9 @@ import io.corbel.iam.repository.DeviceRepository;
     @Test
     public void testGetDeviceByIdAndUserId() {
         when(deviceRepositoryMock.findByIdAndUserId(TEST_DEVICE_ID, TEST_USER_ID)).thenReturn(deviceMock);
+        when(deviceIdGeneratorMock.generateId(TEST_DOMAIN, TEST_USER_ID, TEST_UID)).thenReturn(TEST_DEVICE_ID);
 
-        Device device = deviceService.getByIdAndUserId(TEST_DEVICE_ID, TEST_USER_ID);
+        Device device = deviceService.getByUidAndUserId(TEST_UID, TEST_USER_ID, TEST_DOMAIN);
 
         assertThat(deviceMock).isEqualTo(device);
     }
@@ -94,8 +96,9 @@ import io.corbel.iam.repository.DeviceRepository;
     @Test
     public void testDeleteByIdAndUserId() {
         when(deviceRepositoryMock.deleteByIdAndUserId(TEST_DEVICE_ID, TEST_USER_ID)).thenReturn(1L);
+        when(deviceIdGeneratorMock.generateId(TEST_DOMAIN, TEST_USER_ID, TEST_UID)).thenReturn(TEST_DEVICE_ID);
 
-        deviceService.deleteByIdAndUserId(TEST_DEVICE_ID, TEST_USER_ID, TEST_DOMAIN);
+        deviceService.deleteByUidAndUserId(TEST_UID, TEST_USER_ID, TEST_DOMAIN);
 
         verify(deviceRepositoryMock).deleteByIdAndUserId(TEST_DEVICE_ID, TEST_USER_ID);
         verify(eventsServiceMock).sendDeviceDeleteEvent(TEST_DEVICE_ID, TEST_USER_ID, TEST_DOMAIN);
@@ -104,8 +107,9 @@ import io.corbel.iam.repository.DeviceRepository;
     @Test
     public void testDeleteByIdAndUserIdNotExist() {
         when(deviceRepositoryMock.deleteByIdAndUserId(TEST_DEVICE_ID, TEST_USER_ID)).thenReturn(0L);
+        when(deviceIdGeneratorMock.generateId(TEST_DOMAIN, TEST_USER_ID, TEST_UID)).thenReturn(TEST_DEVICE_ID);
 
-        deviceService.deleteByIdAndUserId(TEST_DEVICE_ID, TEST_USER_ID, TEST_DOMAIN);
+        deviceService.deleteByUidAndUserId(TEST_UID, TEST_USER_ID, TEST_DOMAIN);
 
         verify(deviceRepositoryMock).deleteByIdAndUserId(TEST_DEVICE_ID, TEST_USER_ID);
         verify(eventsServiceMock, never()).sendDeviceDeleteEvent(TEST_DEVICE_ID, TEST_USER_ID, TEST_DOMAIN);
