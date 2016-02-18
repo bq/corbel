@@ -4,7 +4,9 @@ import java.time.Clock;
 import java.util.Date;
 import java.util.List;
 
+import com.google.common.base.Joiner;
 import io.corbel.iam.model.Device;
+import io.corbel.iam.model.DeviceIdGenerator;
 import io.corbel.iam.model.User;
 import io.corbel.iam.repository.DeviceRepository;
 import io.corbel.lib.mongo.IdGenerator;
@@ -15,11 +17,11 @@ import io.corbel.lib.mongo.IdGenerator;
 public class DefaultDeviceService implements DeviceService {
 
     private final DeviceRepository deviceRepository;
-    private final IdGenerator<Device> deviceIdGenerator;
+    private final DeviceIdGenerator deviceIdGenerator;
     private final EventsService eventsService;
     private final Clock clock;
 
-    public DefaultDeviceService(DeviceRepository deviceRepository, IdGenerator<Device> deviceIdGenerator, EventsService eventsService,
+    public DefaultDeviceService(DeviceRepository deviceRepository, DeviceIdGenerator deviceIdGenerator, EventsService eventsService,
             Clock clock) {
         this.deviceRepository = deviceRepository;
         this.deviceIdGenerator = deviceIdGenerator;
@@ -33,7 +35,8 @@ public class DefaultDeviceService implements DeviceService {
     }
 
     @Override
-    public Device getByIdAndUserId(String deviceId, String userId) {
+    public Device getByUidAndUserId(String deviceUid, String userId, String domain) {
+        String deviceId = deviceIdGenerator.generateId(domain, userId, deviceUid);
         return deviceRepository.findByIdAndUserId(deviceId, userId);
     }
 
@@ -59,7 +62,8 @@ public class DefaultDeviceService implements DeviceService {
     }
 
     @Override
-    public void deleteByIdAndUserId(String deviceId, String userId, String domainId) {
+    public void deleteByUidAndUserId(String deviceUid, String userId, String domainId) {
+        String deviceId = deviceIdGenerator.generateId(domainId, userId, deviceUid);
         long result = deviceRepository.deleteByIdAndUserId(deviceId, userId);
         if ( result > 0 ) {
             eventsService.sendDeviceDeleteEvent(deviceId, userId, domainId);
