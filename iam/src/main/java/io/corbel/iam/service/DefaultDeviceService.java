@@ -4,9 +4,12 @@ import java.time.Clock;
 import java.util.Date;
 import java.util.List;
 
+import com.google.common.base.Joiner;
 import io.corbel.iam.model.Device;
+import io.corbel.iam.model.DeviceIdGenerator;
 import io.corbel.iam.model.User;
 import io.corbel.iam.repository.DeviceRepository;
+import io.corbel.iam.utils.UserDomainIdGenerator;
 import io.corbel.lib.mongo.IdGenerator;
 
 /**
@@ -33,7 +36,8 @@ public class DefaultDeviceService implements DeviceService {
     }
 
     @Override
-    public Device getByIdAndUserId(String deviceId, String userId) {
+    public Device getByUidAndUserId(String deviceUid, String userId, String domain) {
+        String deviceId = UserDomainIdGenerator.generateDeviceId(domain, userId, deviceUid);
         return deviceRepository.findByIdAndUserId(deviceId, userId);
     }
 
@@ -59,7 +63,8 @@ public class DefaultDeviceService implements DeviceService {
     }
 
     @Override
-    public void deleteByIdAndUserId(String deviceId, String userId, String domainId) {
+    public void deleteByUidAndUserId(String deviceUid, String userId, String domainId) {
+        String deviceId = UserDomainIdGenerator.generateDeviceId(domainId, userId, deviceUid);
         long result = deviceRepository.deleteByIdAndUserId(deviceId, userId);
         if ( result > 0 ) {
             eventsService.sendDeviceDeleteEvent(deviceId, userId, domainId);
