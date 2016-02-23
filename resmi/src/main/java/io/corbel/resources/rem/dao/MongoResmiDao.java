@@ -54,6 +54,11 @@ public class MongoResmiDao implements ResmiDao {
     private static final String CREATED_AT = "_createdAt";
     private static final String COUNT = "count";
     private static final String AVERAGE = "average";
+    private static final String SUM = "sum";
+
+    private static final int MONGO_DOUBLE_TYPE = 1;
+    private static final int MONGO_INT_TYPE = 16;
+    private static final int MONGO_LONG_TYPE = 18;
 
 
     private final MongoOperations mongoOperations;
@@ -366,25 +371,39 @@ public class MongoResmiDao implements ResmiDao {
     public JsonElement average(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
         List<DBObject> results = aggregate(resourceUri, resourceQueries, group().avg(field).as(AVERAGE));
 
-        return fieldNotExists(resourceUri, field, results,AVERAGE)? aggregationResultsFactory.averageResult(Optional.empty()):
-                aggregationResultsFactory.averageResult(results.isEmpty() ? Optional.empty() : Optional.ofNullable(
+        if((results.get(0).get(AVERAGE).equals(0) || results.get(0).get(AVERAGE).equals(0.0)) &&
+                (!fieldExists(resourceUri, field) || !fieldIsNumeric(resourceUri, field))) {
+
+            return aggregationResultsFactory.averageResult(Optional.empty());
+        }
+
+        return aggregationResultsFactory.averageResult(results.isEmpty() ? Optional.empty() : Optional.ofNullable(
                         (Number) results.get(0).get(AVERAGE)).map(Number::doubleValue));
     }
 
-
     @Override
-    public JsonElement sum(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
-        List<DBObject> results = aggregate(resourceUri, resourceQueries, group().sum(field).as("sum"));
+        public JsonElement sum(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
+        List<DBObject> results = aggregate(resourceUri, resourceQueries, group().sum(field).as(SUM));
 
-         return fieldNotExists(resourceUri, field, results,"sum")? aggregationResultsFactory.sumResult(Optional.empty()):
-                 aggregationResultsFactory.sumResult(results.isEmpty() ? Optional.empty() : Optional.ofNullable(
-                         (Number) results.get(0).get("sum")).map(Number::doubleValue));
+        if((results.get(0).get(SUM).equals(0) || results.get(0).get(SUM).equals(0.0)) &&
+                (!fieldExists(resourceUri, field) || !fieldIsNumeric(resourceUri, field))) {
+            return aggregationResultsFactory.sumResult(Optional.empty());
+        }
+
+        return aggregationResultsFactory.sumResult(results.isEmpty() ? Optional.empty() : Optional.ofNullable(
+                (Number) results.get(0).get(SUM)).map(Number::doubleValue));
     }
 
-    protected boolean fieldNotExists(ResourceUri resourceUri, String field, List<DBObject> results,String type) {
+    protected boolean fieldExists(ResourceUri resourceUri, String field) {
         Query query = Query.query(Criteria.where(field).exists(true));
+        return mongoOperations.count(query, getMongoCollectionName(resourceUri)) != 0;
+    }
 
-        return ((results.get(0).get(type).equals(0) || results.get(0).get(type).equals(0.0)) && mongoOperations.count(query, getMongoCollectionName(resourceUri)) == 0);
+    protected boolean fieldIsNumeric(ResourceUri resourceUri, String field) {
+        Query query = Query.query(Criteria.where(field).type(MONGO_DOUBLE_TYPE).orOperator(Criteria.where(field).type(MONGO_INT_TYPE)
+                .orOperator(Criteria.where(field).type(MONGO_LONG_TYPE))));
+
+        return mongoOperations.count(query, getMongoCollectionName(resourceUri)) != 0;
     }
 
     @Override
