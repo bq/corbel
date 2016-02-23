@@ -28,6 +28,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.expression.spel.SpelParseException;
+import org.springframework.util.NumberUtils;
 
 import java.util.*;
 import java.util.regex.PatternSyntaxException;
@@ -54,6 +55,11 @@ public class MongoResmiDao implements ResmiDao {
     private static final String CREATED_AT = "_createdAt";
     private static final String COUNT = "count";
     private static final String AVERAGE = "average";
+    private static final String SUM = "sum";
+
+    private static final int MONGO_DOUBLE_TYPE = 1;
+    private static final int MONGO_INT_TYPE = 16;
+    private static final int MONGO_LONG_TYPE = 18;
 
 
     private final MongoOperations mongoOperations;
@@ -364,27 +370,44 @@ public class MongoResmiDao implements ResmiDao {
 
     @Override
     public JsonElement average(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
-        List<DBObject> results = aggregate(resourceUri, resourceQueries, group().avg(field).as(AVERAGE));
+        List<DBObject> results = aggregate(resourceUri, resourceQueries, group().avg(field).as(AVERAGE).count().as(COUNT));
 
-        return fieldNotExists(resourceUri, field, results,AVERAGE)? aggregationResultsFactory.averageResult(Optional.empty()):
-                aggregationResultsFactory.averageResult(results.isEmpty() ? Optional.empty() : Optional.ofNullable(
-                        (Number) results.get(0).get(AVERAGE)).map(Number::doubleValue));
+        DBObject result = results.get(0);
+        Object average = result.get(AVERAGE);
+        int count = (int) result.get(COUNT);
+
+        if (count==0 ||
+                ((average.equals(0) || average.equals(0.0)) && !fieldIsNumeric(resourceUri, field))) {
+            return aggregationResultsFactory.averageResult(Optional.empty());
+        }
+
+        return aggregationResultsFactory.averageResult(results.isEmpty() ? Optional.empty() : Optional.ofNullable(
+                        (Number) average).map(Number::doubleValue));
     }
-
 
     @Override
-    public JsonElement sum(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
-        List<DBObject> results = aggregate(resourceUri, resourceQueries, group().sum(field).as("sum"));
+        public JsonElement sum(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
+        List<DBObject> results = aggregate(resourceUri, resourceQueries, group().sum(field).as(SUM).count().as(COUNT));
 
-         return fieldNotExists(resourceUri, field, results,"sum")? aggregationResultsFactory.sumResult(Optional.empty()):
-                 aggregationResultsFactory.sumResult(results.isEmpty() ? Optional.empty() : Optional.ofNullable(
-                         (Number) results.get(0).get("sum")).map(Number::doubleValue));
+
+        DBObject result = results.get(0);
+        Object sum = result.get(SUM);
+        int count = (int) result.get(COUNT);
+
+        if (count==0 ||
+                ((sum.equals(0) || sum.equals(0.0)) && !fieldIsNumeric(resourceUri, field))) {
+            return aggregationResultsFactory.sumResult(Optional.empty());
+        }
+
+        return aggregationResultsFactory.sumResult(results.isEmpty() ? Optional.empty() : Optional.ofNullable(
+                (Number) results.get(0).get(SUM)).map(Number::doubleValue));
     }
 
-    protected boolean fieldNotExists(ResourceUri resourceUri, String field, List<DBObject> results,String type) {
-        Query query = Query.query(Criteria.where(field).exists(true));
+    protected boolean fieldIsNumeric(ResourceUri resourceUri, String field) {
+        Query query = Query.query(Criteria.where(field).type(MONGO_DOUBLE_TYPE).orOperator(Criteria.where(field).type(MONGO_INT_TYPE)
+                .orOperator(Criteria.where(field).type(MONGO_LONG_TYPE))));
 
-        return ((results.get(0).get(type).equals(0) || results.get(0).get(type).equals(0.0)) && mongoOperations.count(query, getMongoCollectionName(resourceUri)) == 0);
+        return mongoOperations.count(query, getMongoCollectionName(resourceUri)) != 0;
     }
 
     @Override
