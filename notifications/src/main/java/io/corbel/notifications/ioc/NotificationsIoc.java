@@ -2,6 +2,9 @@ package io.corbel.notifications.ioc;
 
 import java.io.InputStream;
 
+import io.corbel.notifications.api.NotificationConfigResource;
+import io.corbel.notifications.model.NotificationConfigByDomain;
+import io.corbel.notifications.repository.NotificationConfigByDomainRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
@@ -52,8 +55,9 @@ import com.notnoop.apns.ApnsServiceBuilder;
     @Autowired private Environment env;
 
     @Bean
-    public NotificationsShell getNotificationsShell(NotificationRepository notificationRepository) {
-        return new NotificationsShell(notificationRepository);
+    public NotificationsShell getNotificationsShell(NotificationRepository notificationRepository,
+                                                    NotificationConfigByDomainRepository notificationConfigByDomainRepository) {
+        return new NotificationsShell(notificationRepository, notificationConfigByDomainRepository);
     }
 
     @Bean
@@ -63,14 +67,20 @@ import com.notnoop.apns.ApnsServiceBuilder;
     }
 
     @Bean
+    public NotificationConfigResource getNotificationConfigResource(NotificationConfigByDomainRepository notificationConfigByDomainRepository) {
+        return new NotificationConfigResource(notificationConfigByDomainRepository);
+    }
+
+    @Bean
     public MongoRepositoryFactory getMongoRepositoryFactory(MongoOperations mongoOperations) {
         return new MongoRepositoryFactory(mongoOperations);
     }
 
     @Bean
     public SenderNotificationsService getNotificationsEventService(NotificationRepository notificationRepository,
-            NotificationsDispatcher notificationsDispatcher) {
-        return new DefaultSenderNotificationsService(getTemplateFiller(), notificationsDispatcher, notificationRepository);
+            NotificationsDispatcher notificationsDispatcher, NotificationConfigByDomainRepository notificationConfigByDomainRepository) {
+        return new DefaultSenderNotificationsService(getTemplateFiller(), notificationsDispatcher, notificationRepository,
+                notificationConfigByDomainRepository);
     }
 
     @Bean
