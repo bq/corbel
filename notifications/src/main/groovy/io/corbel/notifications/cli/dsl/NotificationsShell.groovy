@@ -2,7 +2,9 @@ package io.corbel.notifications.cli.dsl
 
 import io.corbel.lib.cli.console.Description
 import io.corbel.lib.cli.console.Shell
+import io.corbel.notifications.model.Domain
 import io.corbel.notifications.model.NotificationTemplate
+import io.corbel.notifications.repository.DomainRepository
 import io.corbel.notifications.repository.NotificationRepository
 
 /**
@@ -12,10 +14,13 @@ import io.corbel.notifications.repository.NotificationRepository
 @Shell("notifications")
 class NotificationsShell {
 
-    NotificationRepository notificationRepository;
+    NotificationRepository notificationRepository
+    DomainRepository notificationConfigByDomainRepository
 
-    public NotificationsShell(NotificationRepository notificationRepository) {
+    public NotificationsShell(NotificationRepository notificationRepository,
+                              DomainRepository notificationConfigByDomainRepository) {
         this.notificationRepository = notificationRepository
+        this.notificationConfigByDomainRepository = notificationConfigByDomainRepository;
     }
 
     @Description("Creates a new notification on the DB. The input parameter is a map containing the notification data.")
@@ -31,6 +36,18 @@ class NotificationsShell {
         notification.text = notificationFields.text
         notification.title = notificationFields.title
         notificationRepository.save(notification)
+    }
+
+    @Description("Creates a new notification Config by Domain on the DB. The input parameter is a map containing the notification config data.")
+    def createNotificationConfig(domainFields) {
+        assert domainFields.id : 'Domain id is required'
+        assert domainFields.templates : 'Domain templates is required'
+        assert domainFields.properties : 'Domain properties is required'
+        Domain domain = new Domain()
+        notificationConfigByDomain.id = domainFields.id
+        notificationConfigByDomain.templates = domainFields.templates
+        notificationConfigByDomain.properties = domainFields.properties
+        notificationConfigByDomainRepository.save(domain)
     }
 
 }
