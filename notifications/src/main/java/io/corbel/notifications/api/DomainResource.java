@@ -36,17 +36,17 @@ public class DomainResource {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response postNotificationConfig(@Valid Domain domain, @PathParam(DOMAIN) String domainId,
-                                           @Context UriInfo uriInfo) {
+    public Response postDomain(@Valid Domain domain, @PathParam(DOMAIN) String domainId,
+                               @Context UriInfo uriInfo) {
         domain.setId(domainId);
         domainRepository.save(domain);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(domain.getId()).build()).build();
     }
 
     @GET
-    public Response getNotificationsConfig(@Rest QueryParameters queryParameters, @PathParam(DOMAIN) String domainId) {
+    public Response getDomains(@Rest QueryParameters queryParameters, @PathParam(DOMAIN) String domainId) {
         if (queryParameters.getAggregation().isPresent()) {
-            return getNotificationConfigAggregation(domainId, queryParameters.getQuery()
+            return getDomainAggregation(domainId, queryParameters.getQuery()
                     .orElse(null), queryParameters.getAggregation().orElse(null));
         } else {
             List<Domain> domainList = domainRepository.find(addDomainToQuery(domainId, queryParameters.getQuery()
@@ -57,7 +57,7 @@ public class DomainResource {
 
     }
 
-    private Response getNotificationConfigAggregation(String domainId, ResourceQuery query, Aggregation aggregation) {
+    private Response getDomainAggregation(String domainId, ResourceQuery query, Aggregation aggregation) {
         if (!AggregationOperator.$COUNT.equals(aggregation.getOperator())) {
             return Response.status(BAD_REQUEST_STATUS).build();
         }
@@ -74,21 +74,18 @@ public class DomainResource {
     }
 
     @GET
-    @Path("/{id}")
-    public Response getNotificationConfig(@PathParam("id") String id, @PathParam(DOMAIN) String domainId) {
-        Domain domain = domainRepository.findOne(id);
-        if (domain == null || !domainId.equals(domain.getId())) {
+    public Response getDomain(@PathParam(DOMAIN) String domainId) {
+        Domain domain = domainRepository.findOne(domainId);
+        if (domain == null) {
             return NotificationsErrorResponseFactory.getInstance().notFound();
         }
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(domain).build();
     }
 
     @PUT
-    @Path("/{id}")
-    public Response updateNotificationConfig(Domain domainData, @PathParam(DOMAIN) String domainId,
-                                             @PathParam("id") String id) {
+    public Response updateDomain(Domain domainData, @PathParam(DOMAIN) String domainId) {
 
-        Domain domain = domainRepository.findOne(id);
+        Domain domain = domainRepository.findOne(domainId);
 
         if((domainData.getId() != null && !domainId.equals(domainData.getId()))
                 || domain == null) {
@@ -102,12 +99,8 @@ public class DomainResource {
     }
 
     @DELETE
-    @Path("/{id}")
-    public Response deleteNotificationConfig(@PathParam("id") String id, @PathParam(DOMAIN) String domainId) {
-        Domain domain = domainRepository.findOne(id);
-        if(domain.getId().equals(domainId)) {
-            domainRepository.delete(id);
-        }
+    public Response deleteDomain(@PathParam(DOMAIN) String domainId) {
+        domainRepository.delete(domainId);
         return Response.status(Response.Status.NO_CONTENT).build();
     }
 }
