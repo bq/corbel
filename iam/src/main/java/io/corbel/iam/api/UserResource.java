@@ -38,7 +38,7 @@ import io.dropwizard.auth.Auth;
 /**
  * @author Alexander De Leon
  */
-@Path(ApiVersion.CURRENT + "/user") public class UserResource {
+@Path(ApiVersion.CURRENT + "/{domain}/user") public class UserResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(UserResource.class);
     private static final String ME = "me";
@@ -51,7 +51,7 @@ import io.dropwizard.auth.Auth;
     private final AggregationResultsFactory<JsonElement> aggregationResultsFactory;
 
     public UserResource(UserService userService, DomainService domainService, IdentityService identityService, DeviceService deviceService,
-                        AggregationResultsFactory<JsonElement> aggregationResultsFactory, Clock clock) {
+            AggregationResultsFactory<JsonElement> aggregationResultsFactory, Clock clock) {
         this.userService = userService;
         this.domainService = domainService;
         this.identityService = identityService;
@@ -61,17 +61,16 @@ import io.dropwizard.auth.Auth;
     }
 
     @GET
-    public Response getUsers(@Rest QueryParameters queryParameters, @Auth AuthorizationInfo authorizationInfo) {
-        String domainId = authorizationInfo.getDomainId();
+    public Response getUsers(@PathParam("domain") String domain, @Rest QueryParameters queryParameters) {
         ResourceQuery query = queryParameters.getQuery().orElse(null);
         Pagination pagination = queryParameters.getPagination();
         Sort sort = queryParameters.getSort().orElse(null);
         Aggregation aggregation = queryParameters.getAggregation().orElse(null);
 
         if (queryParameters.getAggregation().isPresent()) {
-            return getUsersAggregation(domainId, query, aggregation);
+            return getUsersAggregation(domain, query, aggregation);
         } else {
-            List<User> users = userService.findUsersByDomain(domainId, query, pagination, sort).stream().map(User::getUserProfile)
+            List<User> users = userService.findUsersByDomain(domain, query, pagination, sort).stream().map(User::getUserProfile)
                     .collect(Collectors.toList());
             return Response.ok().type(MediaType.APPLICATION_JSON).entity(users).build();
         }
@@ -79,59 +78,51 @@ import io.dropwizard.auth.Auth;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response postUser(@Valid UserWithIdentity user, @Context UriInfo uriInfo, @Auth AuthorizationInfo authorizationInfo) {
-        Optional<Domain> optDomain = domainService.getDomain(authorizationInfo.getDomainId());
+    public Response postUser(@PathParam("domain") String domainId, @Valid UserWithIdentity user, @Context UriInfo uriInfo,
+            @Auth AuthorizationInfo authorizationInfo) {
 
-        if (!optDomain.isPresent()) {
-            return IamErrorResponseFactory.getInstance().invalidEntity(Message.NOT_FOUND.getMessage());
-        }
-
-        Domain domain = optDomain.get();
-
-        user.setDomain(domain.getId());
-
-        user.setScopes(domain.getDefaultScopes());
-
-        setTracebleEntity(user, authorizationInfo);
-
-        User createdUser;
-        // The new user can only be on the domainId of the client making the request
-        try {
-            createdUser = userService.create(ensureNoId(user));
-        } catch (CreateUserException duplicatedUser) {
-            return IamErrorResponseFactory.getInstance().entityExists(Message.USER_EXISTS, duplicatedUser.getMessage());
-        }
-
-        Identity identity = user.getIdentity();
-        if (identity != null) {
+        return domainService.getDomain(domainId).map(domain -> {
+            user.setDomain(domain.getId());
+            user.setScopes(domain.getDefaultScopes());
+            setTracebleEntity(user, authorizationInfo);
+            User createdUser;
+            // The new user can only be on the domainId of the client making the request
             try {
-                addIdentity(identity);
-            } catch (Exception e) {
-                // Rollback user creation and handle error
-                userService.delete(user);
-                return handleIdentityError(e, identity);
+                createdUser = userService.create(ensureNoId(user));
+            } catch (CreateUserException duplicatedUser) {
+                return IamErrorResponseFactory.getInstance().entityExists(Message.USER_EXISTS, duplicatedUser.getMessage());
             }
-        }
-
-        return Response.created(uriInfo.getAbsolutePathBuilder().path(createdUser.getId()).build()).build();
+            Identity identity = user.getIdentity();
+            if (identity != null) {
+                try {
+                    addIdentity(identity);
+                } catch (Exception e) {
+                    // Rollback user creation and handle error
+                    userService.delete(user);
+                    return handleIdentityError(e, identity);
+                }
+            }
+            return Response.created(uriInfo.getAbsolutePathBuilder().path(createdUser.getId()).build()).build();
+        }).orElseGet(() -> IamErrorResponseFactory.getInstance().invalidEntity(Message.NOT_FOUND.getMessage()));
     }
 
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateUser(@PathParam("id") String userId, User userData, @Auth AuthorizationInfo authorizationInfo) {
-        if (ME.equals(userId)) {
-            userData.setScopes(null);
-            userData.setGroups(null);
-        }
-
-        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo);
-
+    public Response updateUser(@PathParam("domain") String domainId, @PathParam("id") String userId,
+            @Auth AuthorizationInfo authorizationInfo, User userData) {
         if (userData != null) {
+
+            if (ME.equals(userId)) {
+                userData.setScopes(null);
+                userData.setGroups(null);
+            }
+
+            User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo.getUserId(), domainId);
 
             user.updateUser(userData);
 
-            Optional<Domain> optDomain = domainService.getDomain(authorizationInfo.getDomainId());
+            Optional<Domain> optDomain = domainService.getDomain(domainId);
 
             if (!optDomain.isPresent()) {
                 return IamErrorResponseFactory.getInstance().invalidEntity(Message.NOT_FOUND.getMessage());
@@ -153,84 +144,73 @@ import io.dropwizard.auth.Auth;
 
     @GET
     @Path("/{id}")
-    public Response getUser(@PathParam("id") String userId, @Auth AuthorizationInfo authorizationInfo) {
-        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo);
+    public Response getUser(@PathParam("domain") String domainId, @PathParam("id") String userId, @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo.getUserId(), domainId);
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(user.getUserProfile()).build();
     }
 
     @GET
     @Path("/{id}/avatar")
-    public Response getAvatar(@PathParam("id") String id, @Auth AuthorizationInfo authorizationInfo) {
-        Optional<User> user = resolveMeIdAliases(id, authorizationInfo);
-
-        if (!user.isPresent() || !userDomainMatchAuthorizationDomain(user.get(), authorizationInfo)) {
-            return IamErrorResponseFactory.getInstance().notFound();
+    public Response getAvatar(@PathParam("domain") String domainId, @PathParam("id") String id, @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo.getUserId(), domainId);
+        try {
+            return Response.temporaryRedirect(new URI(user.getProperties().get("avatar").toString())).build();
+        } catch (NullPointerException | URISyntaxException ignored) {
+            return IamErrorResponseFactory.getInstance().notfound(new Error("not_found", "User " + id + " has no avatar."));
         }
-
-        return user.map(User::getProperties).map(p -> p.get("avatar")).map(a -> {
-            try {
-                return new URI(a.toString());
-            } catch (URISyntaxException e) {
-                return null;
-            }
-        }).map(avatarUri -> Response.temporaryRedirect(avatarUri).build())
-                .orElseGet(() -> IamErrorResponseFactory.getInstance().notfound(new Error("not_found", "User " + id + " has no avatar.")));
     }
 
     @GET
     @Path("/{userId}/devices")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getDevices(@Rest QueryParameters queryParameters, @PathParam("userId") String userId,
-            @Auth AuthorizationInfo authorizationInfo) {
-        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo);
-        return Optional.ofNullable(deviceService.getByUserId(user.getId(), queryParameters))
-                .map(devices -> {
-                    devices.stream().forEach(device -> device.setId(device.getUid()));
-                    return Response.ok().type(MediaType.APPLICATION_JSON).entity(devices).build();
-                })
-                .orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
+    public Response getDevices(@Rest QueryParameters queryParameters, @PathParam("domain") String domainId,
+                               @PathParam("userId") String userId, @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo.getUserId(), domainId);
+        return Optional.ofNullable(deviceService.getByUserId(user.getId(), queryParameters)).map(devices -> {
+            devices.stream().forEach(device -> device.setId(device.getUid()));
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(devices).build();
+        }).orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
     }
 
     @GET
     @Path("/{userId}/devices/{deviceId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getDevice(@PathParam("userId") String userId, @PathParam("deviceId") String deviceUid,
+    public Response getDevice(@PathParam("domain") String domainId, @PathParam("userId") String userId, @PathParam("deviceId") String deviceUid,
             @Auth AuthorizationInfo authorizationInfo) {
-        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo);
-        return Optional.ofNullable(deviceService.getByUidAndUserId(deviceUid, user.getId(), user.getDomain()))
-                .map(device -> {
-                    device.setId(deviceUid);
-                    return Response.ok().type(MediaType.APPLICATION_JSON).entity(device).build();
-                })
-                .orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
+        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo.getUserId(), domainId);
+        return Optional.ofNullable(deviceService.getByUidAndUserId(deviceUid, user.getId(), user.getDomain())).map(device -> {
+            device.setId(deviceUid);
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity(device).build();
+        }).orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
     }
 
     @PUT
     @Path("/{userId}/devices")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateDevice(@PathParam("userId") String userId, @Valid Device deviceData, @Auth AuthorizationInfo authorizationInfo,
-            @Context UriInfo uriInfo) {
-        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo);
+    public Response updateDevice(@PathParam("domain") String domainId, @PathParam("userId") String userId, @Valid Device deviceData,
+                                 @Auth AuthorizationInfo authorizationInfo, @Context UriInfo uriInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo.getUserId(), domainId);
         ensureNoId(deviceData);
         deviceData.setUserId(user.getId());
-        deviceData.setDomain(authorizationInfo.getDomainId());
+        deviceData.setDomain(domainId);
         Device storeDevice = deviceService.update(deviceData);
         return Response.created(uriInfo.getAbsolutePathBuilder().path(storeDevice.getUid()).build()).build();
     }
 
     @DELETE
     @Path("/{userId}/devices/{deviceId}")
-    public Response deleteDevice(@PathParam("userId") String userId, @PathParam("deviceId") final String deviceUid,
-            @Auth AuthorizationInfo authorizationInfo) {
-        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo);
-        deviceService.deleteByUidAndUserId(deviceUid, user.getId(), authorizationInfo.getDomainId());
+    public Response deleteDevice(@PathParam("domain") String domainId, @PathParam("userId") String userId,
+                                 @PathParam("deviceId") String deviceUid, @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo.getUserId(), domainId);
+        deviceService.deleteByUidAndUserId(deviceUid, user.getId(), domainId);
         return Response.status(Status.NO_CONTENT).build();
     }
 
     @Path("/resetPassword")
     @GET
-    public Response generateResetPasswordEmail(@QueryParam("email") String email, @Auth AuthorizationInfo authorizationInfo) {
-        userService.sendMailResetPassword(email, authorizationInfo.getClientId(), authorizationInfo.getDomainId());
+    public Response generateResetPasswordEmail(@PathParam("domain") String domainId, @QueryParam("email") String email,
+                                               @Auth AuthorizationInfo authorizationInfo) {
+        userService.sendMailResetPassword(email, authorizationInfo.getClientId(), domainId);
         return Response.noContent().build();
     }
 
@@ -238,7 +218,7 @@ import io.dropwizard.auth.Auth;
     @Path("/me/signout")
     public Response signOut(@Auth AuthorizationInfo authorizationInfo) {
         return Optional.ofNullable(userService.findById(authorizationInfo.getUserId()))
-                .filter(user -> userDomainMatchAuthorizationDomain(user, authorizationInfo)).map(user -> {
+                .filter(user -> userDomainMatchAuthorizationDomain(user, authorizationInfo.getDomainId())).map(user -> {
                     userService.signOut(user.getId(), Optional.of(authorizationInfo.getToken()));
                     return Response.noContent().build();
                 }).orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
@@ -246,30 +226,27 @@ import io.dropwizard.auth.Auth;
 
     @PUT
     @Path("/{id}/disconnect")
-    public Response disconnect(@PathParam("id") String userId, @Auth AuthorizationInfo authorizationInfo) {
-        return resolveMeIdAliases(userId, authorizationInfo).filter(user -> userDomainMatchAuthorizationDomain(user, authorizationInfo))
-                .map(user -> {
-                    userService.signOut(user.getId()); // invalidate all user tokens
-                    return Response.noContent().build();
-                }).orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
+    public Response disconnect(@PathParam("domain") String domainId, @PathParam("id") String userId, @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo.getUserId(), domainId);
+        userService.signOut(user.getId());
+        return Response.noContent().build();
     }
 
     @DELETE
     @Path("/{id}/sessions")
-    public Response deleteAllSessions(@PathParam("id") String userId, @Auth AuthorizationInfo authorizationInfo) {
-        return resolveMeIdAliases(userId, authorizationInfo).filter(user -> userDomainMatchAuthorizationDomain(user, authorizationInfo))
-                .map(user -> {
-                    userService.invalidateAllTokens(user.getId());
-                    return Response.noContent().build();
-                }).orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
+    public Response deleteAllSessions(@PathParam("domain") String domainId, @PathParam("id") String userId, @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo.getUserId(), domainId);
+        userService.invalidateAllTokens(user.getId());
+        return Response.noContent().build();
     }
 
     @DELETE
     @Path("/{id}")
-    public Response deleteUser(@PathParam("id") String userId, @Auth AuthorizationInfo authorizationInfo) {
-        Optional<User> optionalUser = resolveMeIdAliases(userId, authorizationInfo);
+    public Response deleteUser(@PathParam("domain") String domainId, @PathParam("id") String userId,
+                               @Auth AuthorizationInfo authorizationInfo) {
+        Optional<User> optionalUser = resolveMeIdAliases(userId, authorizationInfo.getUserId());
         optionalUser.ifPresent(user -> {
-            checkingUserDomain(user, authorizationInfo);
+            checkingUserDomain(user, domainId);
             identityService.deleteUserIdentities(user);
             userService.delete(user);
             deviceService.deleteByUserId(user);
@@ -280,13 +257,11 @@ import io.dropwizard.auth.Auth;
     @POST
     @Path("/{id}/identity")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response postUserIdentity(@Valid Identity identity, @PathParam("id") String id, @Auth AuthorizationInfo authorizationInfo,
-            @Context Request request) {
-        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo);
-
-        identity.setDomain(authorizationInfo.getDomainId());
+    public Response postUserIdentity(@PathParam("domain") String domainId, @Valid Identity identity, @PathParam("id") String id,
+                                     @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo.getUserId(), domainId);
+        identity.setDomain(domainId);
         identity.setUserId(user.getId());
-
         try {
             addIdentity(identity);
             return Response.status(Status.CREATED).build();
@@ -297,53 +272,50 @@ import io.dropwizard.auth.Auth;
 
     @GET
     @Path("/{id}/identity")
-    public Response getUserIdentity(@PathParam("id") String id, @Auth AuthorizationInfo authorizationInfo) {
-        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo);
+    public Response getUserIdentity(@PathParam("domain") String domainId, @PathParam("id") String id, @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo.getUserId(), domainId);
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(identityService.findUserIdentities(user)).build();
     }
 
     @GET
     @Path("/profile")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getUserProfiles(@Auth AuthorizationInfo authorizationInfo, @Rest QueryParameters queryParameters)
-            throws UserProfileConfigurationException {
+    public Response getUserProfiles(@PathParam("domain") String domainId, @Auth AuthorizationInfo authorizationInfo,
+                                    @Rest QueryParameters queryParameters) throws UserProfileConfigurationException {
 
-        Optional<Domain> optionalDomain = domainService.getDomain(authorizationInfo.getDomainId());
+        Optional<Domain> optionalDomain = domainService.getDomain(domainId);
 
         ResourceQuery query = queryParameters.getQuery().orElse(new ResourceQuery());
 
         query = filterQuery(optionalDomain, query);
 
         if (queryParameters.getAggregation().isPresent()) {
-            return getUsersAggregation(authorizationInfo.getDomainId(), query, queryParameters.getAggregation().get());
+            return getUsersAggregation(domainId, query, queryParameters.getAggregation().get());
         }
 
-        final ResourceQuery queryFinal = query;
+        ResourceQuery queryFinal = query;
 
-        List<User> profiles = optionalDomain.map(
-                domain -> {
-                    try {
-                        return userService.findUserProfilesByDomain(domain, queryFinal, queryParameters.getPagination(), queryParameters
-                                .getSort().orElse(null));
-                    } catch (UserProfileConfigurationException e) {
-                        return new LinkedList<User>();
-                    }
-                }).orElseGet(LinkedList::new);
-
+        List<User> profiles = optionalDomain.map(domain -> {
+            try {
+                return userService.findUserProfilesByDomain(domain, queryFinal, queryParameters.getPagination(),
+                        queryParameters.getSort().orElse(null));
+            } catch (UserProfileConfigurationException e) {
+                return new LinkedList<User>();
+            }
+        }).orElseGet(LinkedList::new);
         return Response.ok(profiles).type(MediaType.APPLICATION_JSON).build();
     }
 
     @GET
     @Path("/{id}/profile")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getUserProfile(@PathParam("id") String id, @Auth AuthorizationInfo authorizationInfo) {
-        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo);
-        Optional<Domain> domain = domainService.getDomain(authorizationInfo.getDomainId());
-
+    public Response getUserProfile(@PathParam("domain") String domainId, @PathParam("id") String id,
+                                   @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo.getUserId(), domainId);
+        Optional<Domain> domain = domainService.getDomain(domainId);
         if (!domain.isPresent()) {
             return IamErrorResponseFactory.getInstance().notFound();
         }
-
         try {
             return Optional.ofNullable(userService.getUserProfile(user, domain.get().getUserProfileFields()))
                     .map(userProfile -> Response.ok().type(MediaType.APPLICATION_JSON).entity(userProfile).build())
@@ -356,14 +328,13 @@ import io.dropwizard.auth.Auth;
     @PUT
     @Path("/{id}/groups")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response addGroupsToUser(@PathParam("id") String id, Set<String> groups, @Auth AuthorizationInfo authorizationInfo) {
-        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo);
-        Optional<Domain> domain = domainService.getDomain(authorizationInfo.getDomainId());
-
+    public Response addGroupsToUser(@PathParam("domain") String domainId, @PathParam("id") String id, Set<String> groups,
+                                    @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo.getUserId(), domainId);
+        Optional<Domain> domain = domainService.getDomain(domainId);
         if (!domain.isPresent()) {
             return IamErrorResponseFactory.getInstance().notFound();
         }
-
         user.addGroups(groups);
         userService.update(user);
         return Response.noContent().build();
@@ -372,15 +343,13 @@ import io.dropwizard.auth.Auth;
     @DELETE
     @Path("/{id}/groups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response deleteGroupsToUser(@PathParam("id") String id, @PathParam("groupId") String groupId,
-            @Auth AuthorizationInfo authorizationInfo) {
-        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo);
-        Optional<Domain> domain = domainService.getDomain(authorizationInfo.getDomainId());
-
+    public Response deleteGroupsToUser(@PathParam("domain") String domainId, @PathParam("id") String id,
+                                       @PathParam("groupId") String groupId, @Auth AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(id, authorizationInfo.getUserId(), domainId);
+        Optional<Domain> domain = domainService.getDomain(domainId);
         if (!domain.isPresent()) {
             return IamErrorResponseFactory.getInstance().notFound();
         }
-
         user.deleteGroup(groupId);
         userService.update(user);
         return Response.noContent().build();
@@ -393,18 +362,18 @@ import io.dropwizard.auth.Auth;
 
     private Response getUsersAggregation(String domainId, ResourceQuery query, Aggregation aggregation) {
         if (!AggregationOperator.$COUNT.equals(aggregation.getOperator())) {
-            return IamErrorResponseFactory.getInstance().badRequest(
-                    new Error("bad_request", "Aggregator" + aggregation.getOperator() + "not supported"));
+            return IamErrorResponseFactory.getInstance()
+                    .badRequest(new Error("bad_request", "Aggregator" + aggregation.getOperator() + "not supported"));
         }
         JsonElement result = aggregationResultsFactory.countResult(userService.countUsersByDomain(domainId, query));
         return Response.ok().type(MediaType.APPLICATION_JSON).entity(result).build();
     }
 
-    private Identity addIdentity(Identity identity) throws IllegalOauthServiceException, IdentityAlreadyExistsException,
-            DuplicatedOauthServiceIdentityException {
+    private Identity addIdentity(Identity identity)
+            throws IllegalOauthServiceException, IdentityAlreadyExistsException, DuplicatedOauthServiceIdentityException {
 
-        String domainId = Optional.ofNullable(identity.getDomain()).orElseThrow(
-                () -> new IllegalArgumentException("Identity \"" + identity.getId() + "\" has no domain."));
+        String domainId = Optional.ofNullable(identity.getDomain())
+                .orElseThrow(() -> new IllegalArgumentException("Identity \"" + identity.getId() + "\" has no domain."));
 
         Optional<Domain> optDomain = domainService.getDomain(domainId);
 
@@ -428,27 +397,24 @@ import io.dropwizard.auth.Auth;
         entity.setCreatedDate(Date.from(clock.instant()));
     }
 
-    private Optional<User> resolveMeIdAliases(String id, AuthorizationInfo authorizationInfo) {
-        if (ME.equals(id)) {
-            id = authorizationInfo.getUserId();
-        }
-        return Optional.ofNullable(userService.findById(id));
+    private Optional<User> resolveMeIdAliases(String id, String tokenUserId) {
+        return Optional.ofNullable(userService.findById(ME.equals(id) ? tokenUserId : id));
     }
 
-    private boolean userDomainMatchAuthorizationDomain(User user, AuthorizationInfo authorizationInfo) {
-        return Objects.equals(user.getDomain(), authorizationInfo.getDomainId());
+    private boolean userDomainMatchAuthorizationDomain(User user, String domainId) {
+        return Objects.equals(user.getDomain(), domainId);
     }
 
-    private void checkingUserDomain(User user, AuthorizationInfo authorizationInfo) {
-        if (!userDomainMatchAuthorizationDomain(user, authorizationInfo)) {
+    private void checkingUserDomain(User user, String domainId) {
+        if (!userDomainMatchAuthorizationDomain(user, domainId)) {
             throw new WebApplicationException(IamErrorResponseFactory.getInstance().unauthorized("User domain mismatch"));
         }
     }
 
-    private User getUserResolvingMeAndUserDomainVerifying(String userId, AuthorizationInfo authorizationInfo) {
-        User user = resolveMeIdAliases(userId, authorizationInfo).orElseThrow(
-                () -> new WebApplicationException(IamErrorResponseFactory.getInstance().notFound()));
-        checkingUserDomain(user, authorizationInfo);
+    private User getUserResolvingMeAndUserDomainVerifying(String userId, String tokenUserId, String domainId) {
+        User user = resolveMeIdAliases(userId, tokenUserId)
+                .orElseThrow(() -> new WebApplicationException(IamErrorResponseFactory.getInstance().notFound()));
+        checkingUserDomain(user, domainId);
         return user;
     }
 

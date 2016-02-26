@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class Device extends Entity {
 
-    public static String USERID_FIELD = "userId";
+    public static final String USER_ID_FIELD = "userId";
 
     private String domain;
     private String userId;

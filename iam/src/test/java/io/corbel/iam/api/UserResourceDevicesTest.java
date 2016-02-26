@@ -6,7 +6,7 @@ import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.time.Clock;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,7 +49,6 @@ public class UserResourceDevicesTest extends UserResourceTestBase {
     private static final int DEFAULT_LIMIT = 10;
     private static final int MAX_DEFAULT_LIMIT = 50;
 
-
     private static final SortParser sortParserMock = mock(SortParser.class);
     private static final SearchParser searchParserMock = mock(SearchParser.class);
     private static final AggregationParser aggregationParserMock = mock(AggregationParser.class);
@@ -66,6 +65,9 @@ public class UserResourceDevicesTest extends UserResourceTestBase {
     private static final String TEST_DEVICE_URI = "Test device URI";
     private static final String TEST_DEVICE_ID = "TestDeviceID";
     private static final String TEST_DEVICE_UID = "TestDeviceUID";
+    private static final String TEST_DOMAIN_ID = "domain";
+    private static final String TEST_OTHER_DOMAIN_ID = "otherDomain";
+
 
     private static final Authenticator<String, AuthorizationInfo> authenticator = mock(Authenticator.class);
     private static OAuthFactory oAuthFactory = new OAuthFactory<>(authenticator, "realm", AuthorizationInfo.class);
@@ -105,19 +107,15 @@ public class UserResourceDevicesTest extends UserResourceTestBase {
         return RULE;
     }
 
-
     @Test
     public void testPutDevice() {
-        // CONFIGURE
         Device device = new Device().setDomain(TEST_DOMAIN_ID).setName(TEST_DEVICE_NAME).setType(Device.Type.Android)
                 .setNotificationEnabled(true).setNotificationUri(TEST_DEVICE_URI).setUid(TEST_DEVICE_UID).setUid(TEST_DEVICE_UID);
         Device createdDevice = new Device();
         createdDevice.setUid(TEST_DEVICE_UID);
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(createTestUser());
         when(devicesServiceMock.update(device)).thenReturn(createdDevice);
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices").put(Entity.json(device), Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_DOMAIN_ID + "/user/me/devices").put(Entity.json(device), Response.class);
         assertThat(response.getStatus()).isEqualTo(201);
         assertThat(response.getHeaderString("Location")).contains(TEST_DEVICE_UID);
         verify(devicesServiceMock, only()).update(device);
@@ -125,27 +123,22 @@ public class UserResourceDevicesTest extends UserResourceTestBase {
 
     @Test
     public void testPutDeviceAdminInOtherDomain() {
-        // CONFIGURE
         Device device = new Device().setDomain(TEST_DOMAIN_ID).setName(TEST_DEVICE_NAME).setType(Device.Type.Android)
                 .setNotificationEnabled(true).setNotificationUri(TEST_DEVICE_URI).setUid(TEST_DEVICE_UID);
-        when(authorizationInfoMock.getDomainId()).thenReturn(TEST_DOMAIN_ID + "OTHER");
+        when(authorizationInfoMock.getDomainId()).thenReturn(TEST_OTHER_DOMAIN_ID);
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(createTestUser());
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices").put(Entity.json(device), Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_OTHER_DOMAIN_ID + "/user/me/devices")
+                .put(Entity.json(device), Response.class);
         assertThat(response.getStatus()).isEqualTo(401);
         verifyNoMoreInteractions(devicesServiceMock);
     }
 
     @Test
     public void testPutDeviceNotUserExist() {
-        // CONFIGURE
         Device device = new Device().setDomain(TEST_DOMAIN_ID).setName(TEST_DEVICE_NAME).setType(Device.Type.Android)
                 .setNotificationEnabled(true).setNotificationUri(TEST_DEVICE_URI).setUid(TEST_DEVICE_UID);
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(null);
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices").put(Entity.json(device), Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_DOMAIN_ID + "/user/me/devices").put(Entity.json(device), Response.class);
         assertThat(response.getStatus()).isEqualTo(404);
         verifyNoMoreInteractions(devicesServiceMock);
     }
@@ -153,14 +146,11 @@ public class UserResourceDevicesTest extends UserResourceTestBase {
 
     @Test
     public void testGetDevice() {
-        // CONFIGURE
         Device device = new Device().setDomain(TEST_DOMAIN_ID).setName(TEST_DEVICE_NAME).setType(Device.Type.Android)
                 .setNotificationEnabled(true).setNotificationUri(TEST_DEVICE_URI);
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(createTestUser());
         when(devicesServiceMock.getByUidAndUserId(TEST_DEVICE_ID, TEST_USER_ID, TEST_DOMAIN_ID)).thenReturn(device);
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices/" + TEST_DEVICE_ID).get(Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_DOMAIN_ID + "/user/me/devices/" + TEST_DEVICE_ID).get(Response.class);
         assertThat(response.getStatus()).isEqualTo(200);
         assertThat(response.readEntity(Device.class)).isEqualsToByComparingFields(device);
         verify(devicesServiceMock, only()).getByUidAndUserId(TEST_DEVICE_ID, TEST_USER_ID, TEST_DOMAIN_ID);
@@ -168,26 +158,20 @@ public class UserResourceDevicesTest extends UserResourceTestBase {
 
     @Test
     public void testGetDeviceInOtherDomain() {
-        // CONFIGURE
         Device device = new Device().setDomain(TEST_DOMAIN_ID).setName(TEST_DEVICE_NAME).setType(Device.Type.Android)
                 .setNotificationEnabled(true).setNotificationUri(TEST_DEVICE_URI);
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(createTestUser());
-        when(authorizationInfoMock.getDomainId()).thenReturn(TEST_DOMAIN_ID + "OTHER");
+        when(authorizationInfoMock.getDomainId()).thenReturn(TEST_OTHER_DOMAIN_ID);
         when(devicesServiceMock.getByUidAndUserId(TEST_DEVICE_ID, TEST_USER_ID, TEST_DOMAIN_ID)).thenReturn(device);
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices/" + TEST_DEVICE_ID).get(Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_OTHER_DOMAIN_ID + "/user/me/devices/" + TEST_DEVICE_ID).get(Response.class);
         assertThat(response.getStatus()).isEqualTo(401);
         verifyNoMoreInteractions(devicesServiceMock);
     }
 
     @Test
     public void testGetDeviceNotFound() {
-        // CONFIGURE
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(null);
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices/" + TEST_DEVICE_ID).get(Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_DOMAIN_ID + "/user/me/devices/" + TEST_DEVICE_ID).get(Response.class);
         assertThat(response.getStatus()).isEqualTo(404);
         verifyNoMoreInteractions(devicesServiceMock);
     }
@@ -195,15 +179,12 @@ public class UserResourceDevicesTest extends UserResourceTestBase {
 
     @Test
     public void testGetUserDevices() throws MalformedJsonQueryException {
-        // CONFIGURE
         Device device = new Device().setDomain(TEST_DOMAIN_ID).setName(TEST_DEVICE_NAME).setType(Device.Type.Android)
                 .setNotificationEnabled(true).setNotificationUri(TEST_DEVICE_URI);
-        List<Device> devicesList = Arrays.asList(device);
+        List<Device> devicesList = Collections.singletonList(device);
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(createTestUser());
         when(devicesServiceMock.getByUserId(eq(TEST_USER_ID), any())).thenReturn(devicesList);
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices").get(Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_DOMAIN_ID + "/user/me/devices").get(Response.class);
         assertThat(response.getStatus()).isEqualTo(200);
         assertThat(response.readEntity(new GenericType<List<Device>>() {})).isEqualTo(devicesList);
         verify(devicesServiceMock, only()).getByUserId(eq(TEST_USER_ID), any());
@@ -211,63 +192,45 @@ public class UserResourceDevicesTest extends UserResourceTestBase {
 
     @Test
     public void testGetUserDevicesInOtherDomain() {
-        // CONFIGURE
-        Device device = new Device().setDomain(TEST_DOMAIN_ID).setName(TEST_DEVICE_NAME).setType(Device.Type.Android)
-                .setNotificationEnabled(true).setNotificationUri(TEST_DEVICE_URI);
-        when(authorizationInfoMock.getDomainId()).thenReturn(TEST_DOMAIN_ID + "OTHER");
+        when(authorizationInfoMock.getDomainId()).thenReturn(TEST_OTHER_DOMAIN_ID);
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(createTestUser());
-
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices").get(Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_OTHER_DOMAIN_ID + "/user/me/devices").get(Response.class);
         assertThat(response.getStatus()).isEqualTo(401);
         verifyNoMoreInteractions(devicesServiceMock);
     }
 
     @Test
     public void testGetUserDevicesNotFound() {
-        // CONFIGURE
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(null);
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices").get(Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_DOMAIN_ID + "/user/me/devices").get(Response.class);
         assertThat(response.getStatus()).isEqualTo(404);
         verifyNoMoreInteractions(devicesServiceMock);
     }
 
-    // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // DELETE /v1.0/{userId}/me/devices/{deviceId}
-    // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     @Test
     public void testDeleteDevice() {
-        // CONFIGURE
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(createTestUser());
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices/" + TEST_DEVICE_ID).delete(Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_DOMAIN_ID + "/user/me/devices/" + TEST_DEVICE_ID)
+                .delete(Response.class);
         assertThat(response.getStatus()).isEqualTo(204);
         verify(devicesServiceMock, only()).deleteByUidAndUserId(TEST_DEVICE_ID, TEST_USER_ID, TEST_DOMAIN_ID);
     }
 
     @Test
     public void testDeleteDeviceInOtherDomain() {
-        // CONFIGURE
-        when(authorizationInfoMock.getDomainId()).thenReturn(TEST_DOMAIN_ID + "OTHER");
+        when(authorizationInfoMock.getDomainId()).thenReturn(TEST_OTHER_DOMAIN_ID);
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(createTestUser());
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices/" + TEST_DEVICE_ID).delete(Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_OTHER_DOMAIN_ID + "/user/me/devices/" + TEST_DEVICE_ID)
+                .delete(Response.class);
         assertThat(response.getStatus()).isEqualTo(401);
         verifyNoMoreInteractions(devicesServiceMock);
     }
 
     @Test
     public void testDeleteDeviceUserNotFound() {
-        // CONFIGURE
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(null);
-        // LAUNCH
-        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/user/me/devices/" + TEST_DEVICE_ID).delete(Response.class);
-        // VERIFY
+        Response response = apiCall("Bearer " + TEST_TOKEN, "/v1.0/" + TEST_DOMAIN_ID + "/user/me/devices/" + TEST_DEVICE_ID)
+                .delete(Response.class);
         assertThat(response.getStatus()).isEqualTo(404);
         verifyNoMoreInteractions(devicesServiceMock);
     }
