@@ -23,13 +23,7 @@ import io.corbel.resources.rem.resmi.exception.StartsWithUnderscoreException;
 import io.corbel.resources.rem.search.ResmiSearch;
 
 import java.time.Clock;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.StreamSupport;
 
 import com.google.gson.Gson;
@@ -268,7 +262,8 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
 
     @Override
     public void deleteRelation(ResourceUri uri, Optional<List<ResourceQuery>> queries) {
-        List<GenericDocument> deleteEntries = resmiDao.deleteRelation(uri, queries);
+        List<GenericDocument> deleteEntries = getDeleteEntries(uri, queries);
+        resmiDao.deleteRelation(uri, queries);
         deleteInSearchService(uri, deleteEntries);
     }
 
@@ -277,6 +272,23 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
             for (GenericDocument deleteEntry : deleteEntries) {
                 search.deleteDocument(uri.setRelationId(deleteEntry.getId()));
             }
+        }
+    }
+
+    private List<GenericDocument> getDeleteEntries(ResourceUri uri, Optional<List<ResourceQuery>> queries) {
+        try {
+            JsonElement relationDocuments = resmiDao.findRelation(uri,queries, Optional.empty(), Optional.empty());
+            List<GenericDocument> deleteEntries = new LinkedList<>();
+            if(relationDocuments instanceof JsonArray){
+                for(JsonElement jsonElement : ((JsonArray)relationDocuments)){
+                    deleteEntries.add(new GenericDocument().setId(jsonElement.getAsJsonObject().get("id").getAsString()));
+                }
+            } else if(relationDocuments instanceof JsonObject){
+                deleteEntries.add(new GenericDocument().setId(((JsonObject) relationDocuments).get("id").getAsString()));
+            }
+            return deleteEntries;
+        } catch (InvalidApiParamException e) {
+            return new LinkedList<>();
         }
     }
 
