@@ -133,6 +133,11 @@ public class DefaultUserService implements UserService {
         }
     }
 
+    @Override
+    public UserToken getSession(String userId) {
+        return  userTokenRepository.findByToken(userId);
+    }
+
     private void invalidateToken(String accessToken) {
         authorizationRulesRepository.deleteByToken(accessToken);
         userTokenRepository.delete(accessToken);
