@@ -7,6 +7,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.google.common.collect.Sets;
+import io.corbel.iam.model.UserToken;
+import io.corbel.iam.repository.UserTokenRepository;
 import net.oauth.jsontoken.JsonToken;
 import net.oauth.jsontoken.JsonTokenParser;
 
@@ -38,12 +41,13 @@ import com.google.gson.JsonPrimitive;
     @Mock private ScopeService scopeServiceMock;
     @Mock private TokenInfo accessToken;
     @Mock private TokenReader tokenReader;
+    @Mock private UserTokenRepository userTokenRepositoryMock;
 
     private UpgradeTokenService upgradeTokenService;
 
     @Before
     public void setUp() {
-        upgradeTokenService = new DefaultUpgradeTokenService(jsonTokenParser, scopeServiceMock);
+        upgradeTokenService = new DefaultUpgradeTokenService(jsonTokenParser, scopeServiceMock, userTokenRepositoryMock);
         when(accessToken.getClientId()).thenReturn(TEST_CLIENT);
         when(accessToken.getUserId()).thenReturn(TEST_USER);
         when(accessToken.getDomainId()).thenReturn(TEST_DOMAIN);
@@ -65,6 +69,7 @@ import com.google.gson.JsonPrimitive;
 
         when(scopeServiceMock.expandScopes(scopesIds)).thenReturn(scopes);
         when(scopeServiceMock.fillScopes(scopes, TEST_USER, TEST_CLIENT, TEST_DOMAIN)).thenReturn(scopes);
+        when(userTokenRepositoryMock.findByToken(TEST_TOKEN)).thenReturn(new UserToken());
 
         when(jsonTokenParser.verifyAndDeserialize(TEST_ASSERTION)).thenReturn(validJsonToken);
         upgradeTokenService.upgradeToken(TEST_ASSERTION, tokenReader);
@@ -94,6 +99,8 @@ import com.google.gson.JsonPrimitive;
         json.add("scope", new JsonPrimitive(""));
         when(validJsonToken.getPayloadAsJsonObject()).thenReturn(json);
         when(jsonTokenParser.verifyAndDeserialize(TEST_ASSERTION)).thenReturn(validJsonToken);
+        when(userTokenRepositoryMock.findByToken(TEST_TOKEN)).thenReturn(new UserToken());
+        when(scopeServiceMock.fillScopes(any(), any(), any(), any())).thenReturn(Sets.newHashSet());
         upgradeTokenService.upgradeToken(TEST_ASSERTION, tokenReader);
 
         verify(scopeServiceMock).fillScopes(scopes, TEST_USER, TEST_CLIENT, TEST_DOMAIN);
