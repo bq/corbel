@@ -16,6 +16,7 @@ import io.corbel.lib.ws.api.error.ErrorResponseFactory;
 import io.corbel.lib.ws.auth.AuthorizationInfo;
 import io.corbel.notifications.model.Notification;
 import io.corbel.notifications.model.NotificationTemplate;
+import io.corbel.notifications.model.NotificationTemplateResponse;
 import io.corbel.notifications.repository.NotificationRepository;
 import io.corbel.notifications.service.SenderNotificationsService;
 import io.dropwizard.auth.Auth;
@@ -49,11 +50,13 @@ public class NotificationsResource {
 		return Response.created(uriInfo.getAbsolutePathBuilder().path(notificationTemplate.getId()).build()).build();
 	}
 
+
 	@PUT
-	@Path("/{id}")
+	@Path("/{name}")
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response updateTemplate(NotificationTemplate notificationTemplateData, @PathParam("id") String id) {
-		NotificationTemplate notificationTemplate = notificationRepository.findOne(id);
+	public Response updateTemplate(NotificationTemplate notificationTemplateData, @PathParam("domain") String domain,
+								   @PathParam("name") String name) {
+		NotificationTemplate notificationTemplate = notificationRepository.findByDomainAndName(domain, name);
 
 		if(notificationTemplate != null) {
 			notificationTemplate.updateTemplate(notificationTemplateData);
@@ -66,28 +69,34 @@ public class NotificationsResource {
 	}
 
 	@GET
-	@Path("/{id}")
-	public Response getTemplate(@PathParam("id") String id) {
-		NotificationTemplate notificationTemplate = notificationRepository.findOne(id);
+	@Path("/{name}")
+	public Response getTemplate(@PathParam("domain") String domain, @PathParam("name") String name) {
+		NotificationTemplate notificationTemplate = notificationRepository.findByDomainAndName(domain, name);
 		// TODO: Maybe its necessary check the domain
 		if (notificationTemplate == null) {
 			return NotificationsErrorResponseFactory.getInstance().notFound();
 		}
-		return Response.ok().type(MediaType.APPLICATION_JSON).entity(notificationTemplate).build();
+		NotificationTemplateResponse notificationTemplateResponse = new NotificationTemplateResponse(notificationTemplate);
+		return Response.ok().type(MediaType.APPLICATION_JSON).entity(notificationTemplateResponse).build();
 	}
 
 	@DELETE
-	@Path("/{id}")
-	public Response deleteTemplate(@PathParam("id") String id) {
-		notificationRepository.delete(id);
+	@Path("/{name}")
+	public Response deleteTemplate(@PathParam("domain") String domain, @PathParam("name") String name) {
+		notificationRepository.deleteByDomainAndName(domain, name);
 		return Response.status(Status.NO_CONTENT).build();
 	}
 
 	@POST
 	@Path("/send")
 	public Response postNotification(@Valid Notification notification, @PathParam("domain") String domainId) {
-		senderNotificationsService.sendNotification(domainId, notification.getNotificationId(), notification.getProperties(),
+		String id = buildId(domainId, notification.getNotificationId());
+		senderNotificationsService.sendNotification(domainId, id, notification.getProperties(),
 				notification.getRecipient());
 		return Response.ok().build();
+	}
+
+	private String buildId(String domain, String name) {
+		return domain + ":" + name;
 	}
 }

@@ -12,6 +12,12 @@ public class NotificationTemplate {
 	private String id;
 
     @NotEmpty
+    private String name;
+
+    @NotEmpty
+    private String domain;
+
+    @NotEmpty
 	private String type;
 
     @NotEmpty
@@ -32,7 +38,23 @@ public class NotificationTemplate {
 		this.id = id;
 	}
 
-	public String getType() {
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    public String getType() {
 		return type;
 	}
 
@@ -67,6 +89,12 @@ public class NotificationTemplate {
     public void updateTemplate(NotificationTemplate updateNotificationTemplate) {
         if(updateNotificationTemplate.getSender() != null) {
             setSender(updateNotificationTemplate.getSender());
+        }
+        if(updateNotificationTemplate.getDomain() != null) {
+            setDomain(updateNotificationTemplate.getDomain());
+        }
+        if(updateNotificationTemplate.getName() != null) {
+            setName(updateNotificationTemplate.getName());
         }
         if(updateNotificationTemplate.getText() != null) {
             setText(updateNotificationTemplate.getText());
