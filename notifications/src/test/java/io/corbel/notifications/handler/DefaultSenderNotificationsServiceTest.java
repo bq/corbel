@@ -49,13 +49,15 @@ public class DefaultSenderNotificationsServiceTest {
 
 	@Test
 	public void testTreatEvent() {
+		String domain = "domain";
 		NotificationEvent notificationEvent = new NotificationEvent("id", "recipient");
+		notificationEvent.setDomain(domain);
 		notificationEvent.setProperties(properties);
 		NotificationTemplate notificationTemplate = new NotificationTemplate();
-		when(notificationRepository.findOne("id")).thenReturn(notificationTemplate);
+		when(notificationRepository.findOne(domain + ":id")).thenReturn(notificationTemplate);
 		when(notificationFiller.fill(notificationTemplate, properties)).thenReturn(notificationTemplate);
 
-		senderNotificationsService.sendNotification(null, notificationEvent.getNotificationId(),
+		senderNotificationsService.sendNotification(domain, notificationEvent.getNotificationId(),
 				notificationEvent.getProperties(), notificationEvent.getRecipient());
 
 		verify(notificationFiller, times(1)).fill(notificationTemplate, properties);
