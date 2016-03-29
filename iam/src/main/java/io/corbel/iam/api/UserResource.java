@@ -182,12 +182,10 @@ import java.util.stream.Collectors;
     }
 
     @DELETE
-    @Path("/{id}/sessions")
+    @Path("/{id}/session")
     public Response deleteAllSessions(@PathParam("domain") String domainId, @PathParam("id") String userId,
             @Auth AuthorizationInfo authorizationInfo) {
-        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo.getUserId(), domainId);
-        userService.invalidateAllTokens(user.getId());
-        return Response.noContent().build();
+        return deleteSessions(domainId, userId, authorizationInfo);
     }
 
     @POST
@@ -234,7 +232,7 @@ import java.util.stream.Collectors;
     }
 
     @PUT
-    @Path("/{id}/groups")
+    @Path("/{id}/group")
     @Produces(MediaType.APPLICATION_JSON)
     public Response addGroupsToUser(@PathParam("domain") String domainId, @PathParam("id") String id, Set<String> groups,
             @Auth AuthorizationInfo authorizationInfo) {
@@ -249,7 +247,7 @@ import java.util.stream.Collectors;
     }
 
     @DELETE
-    @Path("/{id}/groups/{groupId}")
+    @Path("/{id}/group/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteGroupsToUser(@PathParam("domain") String domainId, @PathParam("id") String id,
             @PathParam("groupId") String groupId, @Auth AuthorizationInfo authorizationInfo) {
@@ -331,6 +329,12 @@ import java.util.stream.Collectors;
                 .orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
     }
 
+    @DELETE
+    @Path("/me/session")
+    public Response deleteAllMeSessions(@PathParam("domain") String domainId, @Auth AuthorizationInfo authorizationInfo) {
+        return deleteSessions(domainId, ME, authorizationInfo);
+    }
+
     @GET
     @Path("/profile")
     @Produces(MediaType.APPLICATION_JSON)
@@ -372,6 +376,13 @@ import java.util.stream.Collectors;
     private <T extends Entity> T ensureNoId(T entity) {
         entity.setId(null);
         return entity;
+    }
+
+    private Response deleteSessions(String domainId, String userId,
+            AuthorizationInfo authorizationInfo) {
+        User user = getUserResolvingMeAndUserDomainVerifying(userId, authorizationInfo.getUserId(), domainId);
+        userService.invalidateAllTokens(user.getId());
+        return Response.noContent().build();
     }
 
     private Response getUsersAggregation(String domainId, ResourceQuery query, Aggregation aggregation) {
