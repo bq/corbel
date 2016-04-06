@@ -1,7 +1,10 @@
 package io.corbel.iam.service;
 
 import java.time.Clock;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.corbel.iam.model.Device;
@@ -71,12 +74,8 @@ public class DefaultDeviceService implements DeviceService {
 
     @Override
     public void deviceConnect(String domain, String userId, String uid) {
-        Device device = new Device();
-        device.setId(UserDomainIdGenerator.generateDeviceId(domain, userId, uid));
-        device.setUid(uid);
-        boolean notify = false;
-        device.setLastConnection(Date.from(clock.instant()));
-        upsertDevice(device, notify);
+        String deviceId = UserDomainIdGenerator.generateDeviceId(domain, userId, uid);
+        deviceRepository.updateLastConnectionIfExist(deviceId, Date.from(clock.instant()));
     }
 
     private Device upsertDevice(Device device, boolean notify) {
