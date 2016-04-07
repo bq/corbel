@@ -165,13 +165,14 @@ public class DefaultAuthorizationService implements AuthorizationService {
             processor.process(context);
         }
         String accessToken = getAccessToken(context);
+        Set<Scope> firstLevelScopes = scopeService.getFirstLevelScopes(context);
+        Set<String> scopesNames = scopeService.getScopesNames(firstLevelScopes);
         TokenGrant tokenGrant = new TokenGrant(accessToken, context.getAuthorizationExpiration(), refreshTokenService.createRefreshToken(
-                context, accessToken));
+                context, accessToken), scopesNames);
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            Set<Scope> expandedRequestedScopes = context.getExpandedRequestedScopes();
-            storeUserToken(tokenGrant, user, context.getDeviceId(), expandedRequestedScopes);
+            storeUserToken(tokenGrant, user, context.getDeviceId(), scopeService.getAnyLevelScopes(context));
             updateDeviceLastConnection(user.getDomain(), user.getId(), context.getDeviceId());
             eventsService.sendUserAuthenticationEvent(userOptional.get().getUserProfile());
         } else {
@@ -240,6 +241,4 @@ public class DefaultAuthorizationService implements AuthorizationService {
             deviceService.deviceConnect(domain, id, deviceId);
         }
     }
-
-
 }

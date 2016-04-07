@@ -3,6 +3,7 @@ package io.corbel.iam.service;
 import java.util.Collection;
 import java.util.Set;
 
+import io.corbel.iam.auth.AuthorizationRequestContext;
 import io.corbel.iam.exception.ScopeAbsentIdException;
 import io.corbel.iam.exception.ScopeNameException;
 import io.corbel.iam.model.Scope;
@@ -21,6 +22,8 @@ public interface ScopeService {
 
     Set<Scope> getScopes(String... scopes);
 
+    Set<String> getScopesNames(Set<Scope> scopes);
+
     Set<Scope> fillScopes(Set<Scope> filledScopes, String userId, String clientId, String domainId);
 
     Scope fillScope(Scope scope, String userId, String clientId, String domainId);
@@ -29,9 +32,13 @@ public interface ScopeService {
 
     void addAuthorizationRulesForPublicAccess(String token, Set<Scope> filledScopes);
 
-    Set<Scope> expandScopes(Collection<String> scopes);
+    Set<Scope> getFirstLevelScopes(AuthorizationRequestContext context);
+
+    Set<Scope> getAnyLevelScopes(AuthorizationRequestContext context);
 
     void publishAuthorizationRules(String token, long tokenExpirationTime, Set<Scope> filledScopes);
+
+    Set<Scope> expandScopes(Collection<String> scopes, boolean includeChildren);
 
     void create(Scope scope) throws ScopeNameException, ScopeAbsentIdException;
 
