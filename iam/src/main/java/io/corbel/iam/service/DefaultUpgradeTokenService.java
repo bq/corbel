@@ -1,21 +1,18 @@
 package io.corbel.iam.service;
 
-import java.security.SignatureException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
-
-import com.google.common.collect.Sets;
+import com.google.gson.JsonObject;
+import io.corbel.iam.exception.UnauthorizedException;
 import io.corbel.iam.model.Scope;
 import io.corbel.iam.model.UserToken;
 import io.corbel.iam.repository.UserTokenRepository;
+import io.corbel.lib.token.reader.TokenReader;
 import net.oauth.jsontoken.JsonToken;
 import net.oauth.jsontoken.JsonTokenParser;
 
-import io.corbel.iam.exception.UnauthorizedException;
-import io.corbel.lib.token.reader.TokenReader;
-import com.google.gson.JsonObject;
+import java.security.SignatureException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class DefaultUpgradeTokenService implements UpgradeTokenService {
 
@@ -31,7 +28,7 @@ public class DefaultUpgradeTokenService implements UpgradeTokenService {
     }
 
     @Override
-    public void upgradeToken(String assertion, TokenReader tokenReader) throws UnauthorizedException {
+    public String[] upgradeToken(String assertion, TokenReader tokenReader) throws UnauthorizedException {
         try {
             JsonToken jwt = jsonTokenParser.verifyAndDeserialize(assertion);
             JsonObject payload = jwt.getPayloadAsJsonObject();
@@ -46,6 +43,7 @@ public class DefaultUpgradeTokenService implements UpgradeTokenService {
             Set<Scope> scopes = getUpgradedScopes(new HashSet<>(Arrays.asList(scopesToAdd)), tokenReader);
             publishScopes(scopes, tokenReader);
             saveUserToken(tokenReader.getToken(), scopes);
+            return scopesToAdd;
         } catch (IllegalStateException | SignatureException e) {
             throw new UnauthorizedException(e.getMessage());
         }

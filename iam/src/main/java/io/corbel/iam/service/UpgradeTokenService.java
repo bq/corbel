@@ -5,5 +5,5 @@ import io.corbel.lib.token.reader.TokenReader;
 
 public interface UpgradeTokenService {
 
-    public void upgradeToken(String assertion, TokenReader tokenReader) throws UnauthorizedException;
+    public String[] upgradeToken(String assertion, TokenReader tokenReader) throws UnauthorizedException;
 }
