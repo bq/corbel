@@ -25,6 +25,7 @@ import javax.ws.rs.core.*;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.security.SignatureException;
+import java.util.List;
 
 import static org.fest.assertions.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -238,8 +239,14 @@ public class TokenResourceTest {
         Response response = RULE.client().target(UPGRADE_TOKEN_ENDPOINT).queryParam(ASSERTION, TEST_ASSERTION)
                 .queryParam(GRANT_TYPE, GrantType.JWT_BEARER).request().header(AUTHORIZATION, "Bearer " + TEST_TOKEN).get(Response.class);
 
-        assertThat(response.getStatus()).isEqualTo(204);
-        verify(upgradeTokenServiceMock).upgradeToken(TEST_ASSERTION, tokenReader);
+        assertThat(response.getStatus()).isEqualTo(200);
+
+        try {
+            List<String> scopesToAdd = upgradeTokenServiceMock.getScopesFromTokenToUpgrade(ASSERTION);
+            verify(upgradeTokenServiceMock).upgradeToken(TEST_ASSERTION, tokenReader, scopesToAdd);
+        } catch (SignatureException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -249,8 +256,14 @@ public class TokenResourceTest {
         formData.add(ASSERTION, TEST_ASSERTION);
         Response response = RULE.client().target(UPGRADE_TOKEN_ENDPOINT).request().header(AUTHORIZATION, "Bearer " + TEST_TOKEN).post(Entity.form(formData), Response.class);
 
-        assertThat(response.getStatus()).isEqualTo(204);
-        verify(upgradeTokenServiceMock).upgradeToken(TEST_ASSERTION, tokenReader);
+        assertThat(response.getStatus()).isEqualTo(200);
+
+        try {
+            List<String> scopesToAdd = upgradeTokenServiceMock.getScopesFromTokenToUpgrade(ASSERTION);
+            verify(upgradeTokenServiceMock).upgradeToken(TEST_ASSERTION, tokenReader, scopesToAdd);
+        } catch (SignatureException e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
