@@ -90,6 +90,11 @@ public class DefaultScopeService implements ScopeService {
         return Sets.newHashSet(fetchedScopes);
     }
 
+    @Override
+    public Set<String> getScopesNames(Set<Scope> scopes){
+        return scopes.stream().map(scope -> scope.getId()).collect(Collectors.toSet());
+    }
+
     private boolean scopeHasCustomParameters(Scope scope) {
         return scope.getParameters() != null;
     }

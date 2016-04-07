@@ -315,5 +315,24 @@ import io.corbel.lib.ws.auth.repository.AuthorizationRulesRepository;
         verify(scopeRepositoryMock).delete(TEST_SCOPE_1);
     }
 
+    @Test
+    public void testGetScopesNames(){
+        Scope scope1 = mock(Scope.class);
+        when(scope1.getId()).thenReturn("TOKEN_1");
+        when(scope1.getAudience()).thenReturn(MODULE_A);
+        when(scope1.getRules()).thenReturn(RULES_1);
+        when(scope1.isComposed()).thenReturn(false);
 
+        Scope scope2 = mock(Scope.class);
+        when(scope2.getId()).thenReturn("TOKEN_2");
+        when(scope2.getAudience()).thenReturn(MODULE_B);
+        when(scope2.getRules()).thenReturn(RULES_2);
+        when(scope2.isComposed()).thenReturn(false);
+
+        Set<Scope> scopes = new HashSet<>(Arrays.asList(scope1, scope2));
+
+        Set<String> scopesName = defaultScopeService.getScopesNames(scopes);
+        assertThat(scopesName).contains("TOKEN_1");
+        assertThat(scopesName).contains("TOKEN_2");
+    }
 }

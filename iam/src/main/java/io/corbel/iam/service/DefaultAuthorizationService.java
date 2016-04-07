@@ -2,6 +2,7 @@ package io.corbel.iam.service;
 
 import java.security.SignatureException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import net.oauth.jsontoken.JsonToken;
 import net.oauth.jsontoken.JsonTokenParser;
@@ -165,12 +166,13 @@ public class DefaultAuthorizationService implements AuthorizationService {
             processor.process(context);
         }
         String accessToken = getAccessToken(context);
+        Set<Scope> expandedRequestedScopes = context.getExpandedRequestedScopes();
+        Set<String> scopesNames = scopeService.getScopesNames(expandedRequestedScopes);
         TokenGrant tokenGrant = new TokenGrant(accessToken, context.getAuthorizationExpiration(), refreshTokenService.createRefreshToken(
-                context, accessToken));
+                context, accessToken), scopesNames);
 
         if (userOptional.isPresent()) {
             User user = userOptional.get();
-            Set<Scope> expandedRequestedScopes = context.getExpandedRequestedScopes();
             storeUserToken(tokenGrant, user, context.getDeviceId(), expandedRequestedScopes);
             updateDeviceLastConnection(user.getDomain(), user.getId(), context.getDeviceId());
             eventsService.sendUserAuthenticationEvent(userOptional.get().getUserProfile());
@@ -240,6 +242,4 @@ public class DefaultAuthorizationService implements AuthorizationService {
             deviceService.deviceConnect(domain, id, deviceId);
         }
     }
-
-
 }

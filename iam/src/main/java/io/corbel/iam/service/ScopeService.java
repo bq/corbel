@@ -21,6 +21,8 @@ public interface ScopeService {
 
     Set<Scope> getScopes(String... scopes);
 
+    Set<String> getScopesNames(Set<Scope> scopes);
+
     Set<Scope> fillScopes(Set<Scope> filledScopes, String userId, String clientId, String domainId);
 
     Scope fillScope(Scope scope, String userId, String clientId, String domainId);
