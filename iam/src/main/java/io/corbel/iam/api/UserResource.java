@@ -327,7 +327,7 @@ import java.util.stream.Collectors;
     @Path("/me/session")
     public Response getSession(@Auth AuthorizationInfo authorizationInfo) {
         return Optional.ofNullable(authorizationInfo.getToken())
-                .map(token -> Response.ok().type(MediaType.APPLICATION_JSON).entity(userService.getSession(token)).build())
+                .map(token -> Response.ok().type(MediaType.APPLICATION_JSON).entity(new UserTokenResponse(userService.getSession(token))).build())
                 .orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
     }
 
