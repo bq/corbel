@@ -2,6 +2,10 @@ package io.corbel.iam.service;
 
 import com.google.gson.JsonObject;
 import io.corbel.iam.exception.UnauthorizedException;
+import java.security.SignatureException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import io.corbel.iam.model.Scope;
 import io.corbel.iam.model.UserToken;
 import io.corbel.iam.repository.UserTokenRepository;
@@ -65,8 +69,8 @@ public class DefaultUpgradeTokenService implements UpgradeTokenService {
         scopeService.addAuthorizationRules(tokenReader.getToken(), scopes);
     }
 
-    private Set<Scope> getUpgradedScopes(Set<String> scopesIds, TokenReader tokenReader) {
-        Set<Scope> scopes = scopeService.expandScopes(scopesIds);
+    private Set<Scope> getUpgradedScopes(Set<String> scopesIds, TokenReader tokenReader){
+        Set<Scope> scopes = scopeService.expandScopes(scopesIds, true);
         return scopeService.fillScopes(scopes, tokenReader.getInfo().getUserId(), tokenReader.getInfo().getClientId(),
                 tokenReader.getInfo().getDomainId());
     }

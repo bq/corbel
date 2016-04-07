@@ -68,7 +68,7 @@ import static org.mockito.Mockito.*;
         UserToken userToken = new UserToken();
         userToken.setScopes(new HashSet<>());
 
-        when(scopeServiceMock.expandScopes(scopesIds)).thenReturn(scopes);
+        when(scopeServiceMock.expandScopes(scopesIds, true)).thenReturn(scopes);
         when(scopeServiceMock.fillScopes(scopes, TEST_USER, TEST_CLIENT, TEST_DOMAIN)).thenReturn(scopes);
         when(userTokenRepositoryMock.findByToken(TEST_TOKEN)).thenReturn(userToken);
 

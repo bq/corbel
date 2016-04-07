@@ -99,6 +99,26 @@ import io.corbel.lib.token.model.TokenType;
         TokenGrant grant = authorizationService.authorize(TEST_JWT);
         assertThat(grant).isNotNull();
         verify(eventsServiceMock).sendClientAuthenticationEvent(TEST_DOMAIN_ID, TEST_CLIENT_ID);
+        assertThat(grant.getScopes()).isNotNull().isEmpty();
+    }
+
+    @Test
+    public void testAuthorizedWithScopes() throws SignatureException, UnauthorizedException, MissingOAuthParamsException,
+            OauthServerConnectionException, MissingBasicParamsException {
+        final String TEST_SCOPE_NAME_1 = "TEST_SCOPE_1", TEST_SCOPE_NAME_2 = "TEST_SCOPE_2";
+
+        JsonToken validJsonToken = mock(JsonToken.class);
+        when(jsonTokenParserMock.verifyAndDeserialize(TEST_JWT)).thenReturn(validJsonToken);
+        initContext(false);
+        TokenInfo tokenInfoWithoutUserId = TokenInfo.newBuilder().setType(TokenType.TOKEN).setClientId(TEST_CLIENT_ID)
+                .setState(Long.toString(TEST_EXPIRATION)).setDomainId(TEST_DOMAIN_ID).build();
+        when(accessTokenFactoryMock.createToken(tokenInfoWithoutUserId, TEST_EXPIRATION)).thenReturn(tokenGrant);
+        when(scopeServiceMock.getScope(TEST_SCOPE_1)).thenReturn(mock(Scope.class));
+        when(scopeServiceMock.getScopesNames(any())).thenReturn(new HashSet<String>(){{add(TEST_SCOPE_NAME_1); add(TEST_SCOPE_NAME_2);}});
+        TokenGrant grant = authorizationService.authorize(TEST_JWT);
+        assertThat(grant).isNotNull();
+        verify(eventsServiceMock).sendClientAuthenticationEvent(TEST_DOMAIN_ID, TEST_CLIENT_ID);
+        assertThat(grant.getScopes()).isNotNull().hasSize(2).contains(TEST_SCOPE_NAME_1, TEST_SCOPE_NAME_2);
     }
 
     @Test

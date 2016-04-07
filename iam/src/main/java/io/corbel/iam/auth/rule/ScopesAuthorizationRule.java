@@ -33,25 +33,14 @@ public class ScopesAuthorizationRule implements AuthorizationRule {
         if (context.getRequestedScopes().isEmpty()) {
             requestedScopes = allowedScopes;
         } else {
-            requestedScopes = scopeService.expandScopes(context.getRequestedScopes());
+            requestedScopes = scopeService.expandScopes(context.getRequestedScopes(), true);
             checkRequestedScopes(requestedScopes, allowedScopes);
         }
         context.setExpandedRequestedScopes(requestedScopes);
     }
 
     private Set<Scope> getAllowedScopes(AuthorizationRequestContext context) {
-        Set<Scope> domainScopes = scopeService.expandScopes(context.getRequestedDomain().getScopes());
-        if (context.isCrossDomain()) {
-            return domainScopes;
-        } else {
-            Set<Scope> requestedScopes = scopeService.expandScopes(context.getIssuerClient().getScopes());
-            if (context.hasPrincipal()) {
-                Set<Scope> userScopes = scopeService.expandScopes(context.getPrincipal().getScopes());
-                Set<Scope> groupScopes = scopeService.expandScopes(groupService.getGroupScopes(context.getPrincipal().getGroups()));
-                requestedScopes = Sets.union(requestedScopes, Sets.union(userScopes, groupScopes));
-            }
-            return Sets.intersection(requestedScopes, domainScopes);
-        }
+        return scopeService.getEveryLevelAllowedScopes(context);
     }
 
     private void checkRequestedScopes(Set<Scope> requestedExpandScopes, Set<Scope> allowedScopes) throws UnauthorizedException {

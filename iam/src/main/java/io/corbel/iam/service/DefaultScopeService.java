@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.corbel.iam.auth.AuthorizationRequestContext;
 import io.corbel.iam.exception.ScopeAbsentIdException;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
@@ -43,10 +44,11 @@ public class DefaultScopeService implements ScopeService {
     private final Clock clock;
 
     private final EventsService eventsService;
+    private final GroupService groupService;
 
     public DefaultScopeService(ScopeRepository scopeRepository, AuthorizationRulesRepository authorizationRulesRepository,
                                long publicTokenExpireTimeInMillis, ScopeFillStrategy fillStrategy, String iamAudience, Clock clock,
-            EventsService eventsService) {
+            EventsService eventsService, GroupService groupService) {
         this.scopeRepository = scopeRepository;
         this.authorizationRulesRepository = authorizationRulesRepository;
         this.publicTokenExpireTimeInMillis = publicTokenExpireTimeInMillis;
@@ -54,6 +56,7 @@ public class DefaultScopeService implements ScopeService {
         this.iamAudience = iamAudience;
         this.clock = clock;
         this.eventsService = eventsService;
+        this.groupService = groupService;
     }
 
     @Override
@@ -88,6 +91,11 @@ public class DefaultScopeService implements ScopeService {
             }
         }
         return Sets.newHashSet(fetchedScopes);
+    }
+
+    @Override
+    public Set<String> getScopesNames(Set<Scope> scopes){
+        return scopes.stream().map(scope -> scope.getId()).collect(Collectors.toSet());
     }
 
     private boolean scopeHasCustomParameters(Scope scope) {
@@ -154,6 +162,31 @@ public class DefaultScopeService implements ScopeService {
     }
 
     @Override
+    public Set<Scope> getFirstLevelAllowedScopes(AuthorizationRequestContext context){
+        return getAllowedScopes(context, false);
+    }
+
+    @Override
+    public Set<Scope> getEveryLevelAllowedScopes(AuthorizationRequestContext context){
+        return getAllowedScopes(context, true);
+    }
+
+    private Set<Scope> getAllowedScopes(AuthorizationRequestContext context, boolean includeChildren) {
+        Set<Scope> domainScopes = expandScopes(context.getRequestedDomain().getScopes(), includeChildren);
+        if (context.isCrossDomain()) {
+            return domainScopes;
+        } else {
+            Set<Scope> requestedScopes = expandScopes(context.getIssuerClient().getScopes(), includeChildren);
+            if (context.hasPrincipal()) {
+                Set<Scope> userScopes = expandScopes(context.getPrincipal().getScopes(), includeChildren);
+                Set<Scope> groupScopes = expandScopes(groupService.getGroupScopes(context.getPrincipal().getGroups()), includeChildren);
+                requestedScopes = Sets.union(requestedScopes, Sets.union(userScopes, groupScopes));
+            }
+            return Sets.intersection(requestedScopes, domainScopes);
+        }
+    }
+
+    @Override
     public void publishAuthorizationRules(String token, long tokenExpirationTime, Set<Scope> filledScopes) {
         Validate.notNull(filledScopes);
         Validate.noNullElements(filledScopes);
@@ -199,9 +232,9 @@ public class DefaultScopeService implements ScopeService {
         String iamKey = authorizationRulesRepository.getKeyForAuthorizationRules(token, iamAudience);
         return TimeUnit.SECONDS.toMillis(authorizationRulesRepository.getTimeToExpire(iamKey));
     }
-    
+
     @Override
-    public Set<Scope> expandScopes(Collection<String> scopes) {
+    public Set<Scope> expandScopes(Collection<String> scopes, boolean includeChildren) {
         if (CollectionUtils.isEmpty(scopes)) {
             return Collections.emptySet();
         }
@@ -213,7 +246,7 @@ public class DefaultScopeService implements ScopeService {
         scopesToProcess.addAll(getScopes(scopes));
         while (!scopesToProcess.isEmpty()) {
             Scope scope = scopesToProcess.remove(0);
-            if (scope.isComposed()) {
+            if (scope.isComposed() && includeChildren) {
                 if (processedCompositeScopes.add(scope.getId())) {
                     scopesToProcess.addAll(getScopes(addParams(scope.getScopes(), Optional.ofNullable(scope.getParameters()))));
                 }

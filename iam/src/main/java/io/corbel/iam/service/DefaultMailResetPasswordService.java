@@ -69,7 +69,7 @@ public class DefaultMailResetPasswordService implements MailResetPasswordService
         long expireAt = clock.instant().plus(defaultTokenDurationInSeconds, ChronoUnit.SECONDS).toEpochMilli();
         Set<String> scopes = new HashSet<>();
         scopes.add(resetPasswordTokenScope);
-        Set<Scope> filledScopes = scopeService.fillScopes(scopeService.expandScopes(scopes), userId, clientId, domainId);
+        Set<Scope> filledScopes = scopeService.fillScopes(scopeService.expandScopes(scopes, true), userId, clientId, domainId);
         scopeService.publishAuthorizationRules(token, expireAt, filledScopes);
     }
 }

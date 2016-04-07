@@ -1,17 +1,17 @@
 package io.corbel.iam.service;
 
-import static org.fest.assertions.api.Assertions.assertThat;
-import static org.mockito.AdditionalAnswers.returnsFirstArg;
-import static org.mockito.Matchers.anyMap;
-import static org.mockito.Mockito.*;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import io.corbel.iam.auth.AuthorizationRequestContext;
 import io.corbel.iam.exception.ScopeAbsentIdException;
+import io.corbel.iam.exception.ScopeNameException;
+import io.corbel.iam.model.Client;
+import io.corbel.iam.model.Domain;
+import io.corbel.iam.model.Scope;
+import io.corbel.iam.model.User;
+import io.corbel.iam.repository.ScopeRepository;
+import io.corbel.iam.scope.ScopeFillStrategy;
+import io.corbel.lib.ws.auth.repository.AuthorizationRulesRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,14 +20,16 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
-import io.corbel.iam.exception.ScopeNameException;
-import io.corbel.iam.model.Scope;
-import io.corbel.iam.repository.ScopeRepository;
-import io.corbel.iam.scope.ScopeFillStrategy;
-import io.corbel.lib.ws.auth.repository.AuthorizationRulesRepository;
+import static org.fest.assertions.api.Assertions.assertThat;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.Matchers.anyMap;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Alexander De Leon
@@ -66,11 +68,12 @@ import io.corbel.lib.ws.auth.repository.AuthorizationRulesRepository;
     @Mock private AuthorizationRulesRepository authorizationRulesRepositoryMock;
     @Mock private ScopeFillStrategy fillStrategyMock;
     @Mock private EventsService eventsServiceMock;
+    @Mock private GroupService groupServiceMock;
 
     @Before
     public void setup() {
         defaultScopeService = new DefaultScopeService(scopeRepositoryMock, authorizationRulesRepositoryMock, 1000L, fillStrategyMock,
-                IAM_AUDIENCE, Clock.fixed(now, ZoneId.systemDefault()), eventsServiceMock);
+                IAM_AUDIENCE, Clock.fixed(now, ZoneId.systemDefault()), eventsServiceMock, groupServiceMock);
     }
 
     @Test(expected = NullPointerException.class)
@@ -214,7 +217,7 @@ import io.corbel.lib.ws.auth.repository.AuthorizationRulesRepository;
 
         doAnswer(returnsFirstArg()).when(fillStrategyMock).fillScope(Matchers.<Scope>any(), anyMap());
 
-        Set<Scope> expandedScopes = defaultScopeService.expandScopes(requestScopes);
+        Set<Scope> expandedScopes = defaultScopeService.expandScopes(requestScopes, true);
 
         assertThat(expandedScopes).contains(scope1);
         assertThat(expandedScopes).contains(scope2);
@@ -238,7 +241,7 @@ import io.corbel.lib.ws.auth.repository.AuthorizationRulesRepository;
 
         doAnswer(returnsFirstArg()).when(fillStrategyMock).fillScope(Matchers.<Scope>any(), anyMap());
 
-        Set<Scope> expandedScopes = defaultScopeService.expandScopes(requestScopes);
+        Set<Scope> expandedScopes = defaultScopeService.expandScopes(requestScopes, true);
 
         assertThat(expandedScopes).contains(scope2);
         Scope res = expandedScopes.iterator().next();
@@ -315,5 +318,81 @@ import io.corbel.lib.ws.auth.repository.AuthorizationRulesRepository;
         verify(scopeRepositoryMock).delete(TEST_SCOPE_1);
     }
 
+    @Test
+    public void testGetScopesNames(){
+        Scope scope1 = mock(Scope.class);
+        when(scope1.getId()).thenReturn("TOKEN_1");
+        when(scope1.getAudience()).thenReturn(MODULE_A);
+        when(scope1.getRules()).thenReturn(RULES_1);
+        when(scope1.isComposed()).thenReturn(false);
+
+        Scope scope2 = mock(Scope.class);
+        when(scope2.getId()).thenReturn("TOKEN_2");
+        when(scope2.getAudience()).thenReturn(MODULE_B);
+        when(scope2.getRules()).thenReturn(RULES_2);
+        when(scope2.isComposed()).thenReturn(false);
+
+        Set<Scope> scopes = new HashSet<>(Arrays.asList(scope1, scope2));
+
+        Set<String> scopesName = defaultScopeService.getScopesNames(scopes);
+        assertThat(scopesName).contains("TOKEN_1");
+        assertThat(scopesName).contains("TOKEN_2");
+    }
+
+    @Test
+    public void testGetFirstLevelAllowedScopes(){
+        Scope scopeSingle = mock(Scope.class);
+        when(scopeSingle.getId()).thenReturn("TOKEN_SINGLE");
+        when(scopeSingle.getAudience()).thenReturn(MODULE_A);
+        when(scopeSingle.getRules()).thenReturn(RULES_1);
+        when(scopeSingle.isComposed()).thenReturn(false);
+
+        Scope scope2 = mock(Scope.class);
+        when(scope2.getId()).thenReturn("TOKEN_2");
+        when(scope2.getAudience()).thenReturn(MODULE_B);
+        when(scope2.getRules()).thenReturn(RULES_2);
+        when(scope2.isComposed()).thenReturn(false);
+        when(scope2.getParameters()).thenReturn(new JsonObject());
+
+        Scope scope3 = mock(Scope.class);
+        when(scope3.getId()).thenReturn("TOKEN_3");
+        when(scope3.getAudience()).thenReturn(MODULE_B);
+        when(scope3.getRules()).thenReturn(RULES_2);
+        when(scope3.isComposed()).thenReturn(false);
+        when(scope3.getParameters()).thenReturn(new JsonObject());
+
+        Scope scopeComp = mock(Scope.class);
+        when(scopeComp.getId()).thenReturn("TOKEN_COMP");
+        when(scopeComp.getAudience()).thenReturn(MODULE_B);
+        when(scopeComp.getRules()).thenReturn(RULES_2);
+        when(scopeComp.isComposed()).thenReturn(true);
+        when(scopeComp.getScopes()).thenReturn(new HashSet<String>() {{
+            add("TOKEN_3"); add("TOKEN_2");
+        }});
+
+        Set<Scope> scopes = new HashSet<>(Arrays.asList(scopeSingle, scopeComp));
+        Set<String> scopeNames = new HashSet<>(Arrays.asList("TOKEN_SINGLE", "TOKEN_COMP"));
+
+        AuthorizationRequestContext authorizationRequestContext = mock(AuthorizationRequestContext.class);
+        Domain domain = mock(Domain.class);
+        when(domain.getScopes()).thenReturn(scopeNames);
+        Client client = mock(Client.class);
+        when(client.getScopes()).thenReturn(scopeNames);
+        User user = mock(User.class);
+        when(user.getScopes()).thenReturn(scopeNames);
+
+        when(authorizationRequestContext.getRequestedDomain()).thenReturn(domain);
+        when(authorizationRequestContext.getIssuerClient()).thenReturn(client);
+        when(authorizationRequestContext.hasPrincipal()).thenReturn(true);
+        when(authorizationRequestContext.getPrincipal()).thenReturn(user);
+
+        when(scopeRepositoryMock.findOne("TOKEN_SINGLE")).thenReturn(scopeSingle);
+        when(scopeRepositoryMock.findOne("TOKEN_2")).thenReturn(scope2);
+        when(scopeRepositoryMock.findOne("TOKEN_3")).thenReturn(scope3);
+        when(scopeRepositoryMock.findOne("TOKEN_COMP")).thenReturn(scopeComp);
+
+        assertThat(defaultScopeService.getFirstLevelAllowedScopes(authorizationRequestContext)).hasSize(2);
+        assertThat(defaultScopeService.getEveryLevelAllowedScopes(authorizationRequestContext)).hasSize(3);
+    }
 
 }

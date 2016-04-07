@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import io.corbel.lib.queries.request.AggregationResultsFactory;
 import io.corbel.lib.queries.request.JsonAggregationResultsFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,9 +67,9 @@ import com.google.common.collect.Sets;
         when(domain.getScopes()).thenReturn(Sets.newHashSet(SCOPE_A, "scopeB"));
         when(domainRepositoryMock.findOne(TEST_DOMAIN_ID)).thenReturn(domain);
 
-        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, "scopeB"))).thenReturn(
+        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, "scopeB"), true)).thenReturn(
                 new HashSet<>(Arrays.asList(scopeA, scopeB)));
-        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_C))).thenReturn(new HashSet<>(Arrays.asList(scopeC)));
+        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_C), true)).thenReturn(new HashSet<>(Arrays.asList(scopeC)));
 
         assertThat(domainService.scopesAllowedInDomain(Sets.newHashSet(SCOPE_C), TEST_DOMAIN)).isFalse();
     }
@@ -82,7 +81,7 @@ import com.google.common.collect.Sets;
         when(domain.getScopes()).thenReturn(Sets.newHashSet(SCOPE_A, "scopeB"));
         when(domainRepositoryMock.findOne(TEST_DOMAIN_ID)).thenReturn(domain);
 
-        when(defaultScopeServiceMock.expandScopes(anySet())).thenThrow(IllegalStateException.class);
+        when(defaultScopeServiceMock.expandScopes(anySet(), eq(true))).thenThrow(IllegalStateException.class);
 
         assertThat(domainService.scopesAllowedInDomain(Sets.newHashSet(SCOPE_C), TEST_DOMAIN)).isFalse();
     }
@@ -93,9 +92,9 @@ import com.google.common.collect.Sets;
         when(domain.getScopes()).thenReturn(Sets.newHashSet(SCOPE_A, "scopeB"));
         when(domainRepositoryMock.findOne(TEST_DOMAIN_ID)).thenReturn(domain);
 
-        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, "scopeB"))).thenReturn(
+        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, "scopeB"), true)).thenReturn(
                 new HashSet<>(Arrays.asList(scopeA, scopeB)));
-        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, SCOPE_C))).thenReturn(
+        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, SCOPE_C), true)).thenReturn(
                 new HashSet<>(Arrays.asList(scopeA, scopeC)));
 
         assertThat(domainService.scopesAllowedInDomain(Sets.newHashSet(SCOPE_A, SCOPE_C), TEST_DOMAIN)).isFalse();
@@ -106,8 +105,8 @@ import com.google.common.collect.Sets;
         Domain domain = mock(Domain.class);
         when(domain.getScopes()).thenReturn(Sets.newHashSet(SCOPE_A, "scopeB"));
 
-        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A))).thenReturn(new HashSet<>(Arrays.asList(scopeA)));
-        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, "scopeB"))).thenReturn(
+        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A), true)).thenReturn(new HashSet<>(Arrays.asList(scopeA)));
+        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, "scopeB"), true)).thenReturn(
                 new HashSet<>(Arrays.asList(scopeA, scopeB)));
 
         assertThat(domainService.scopesAllowedInDomain(Sets.newHashSet(SCOPE_A), domain)).isTrue();
@@ -119,7 +118,7 @@ import com.google.common.collect.Sets;
         when(domain.getScopes()).thenReturn(Sets.<String>newHashSet());
         when(domainRepositoryMock.findOne(TEST_DOMAIN_ID)).thenReturn(domain);
 
-        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A))).thenReturn(new HashSet<>(Arrays.asList(scopeA)));
+        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A), true)).thenReturn(new HashSet<>(Arrays.asList(scopeA)));
 
         assertThat(domainService.scopesAllowedInDomain(Sets.newHashSet(SCOPE_A), TEST_DOMAIN)).isFalse();
     }
@@ -130,7 +129,7 @@ import com.google.common.collect.Sets;
         when(domain.getScopes()).thenReturn(null);
         when(domainRepositoryMock.findOne(TEST_DOMAIN_ID)).thenReturn(domain);
 
-        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A))).thenReturn(new HashSet<>(Arrays.asList(scopeA)));
+        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A), true)).thenReturn(new HashSet<>(Arrays.asList(scopeA)));
 
         assertThat(domainService.scopesAllowedInDomain(Sets.newHashSet(SCOPE_A), TEST_DOMAIN)).isFalse();
     }
@@ -141,7 +140,7 @@ import com.google.common.collect.Sets;
         when(domain.getScopes()).thenReturn(Sets.newHashSet(SCOPE_A, "scopeB"));
         when(domainRepositoryMock.findOne(TEST_DOMAIN_ID)).thenReturn(domain);
 
-        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, "scopeB"))).thenReturn(
+        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, "scopeB"), true)).thenReturn(
                 new HashSet<>(Arrays.asList(scopeA, scopeB)));
 
         assertThat(domainService.scopesAllowedInDomain(null, TEST_DOMAIN)).isTrue();
@@ -153,7 +152,7 @@ import com.google.common.collect.Sets;
         when(domain.getScopes()).thenReturn(Sets.newHashSet(SCOPE_A, "scopeB"));
         when(domainRepositoryMock.findOne(TEST_DOMAIN_ID)).thenReturn(domain);
 
-        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, "scopeB"))).thenReturn(
+        when(defaultScopeServiceMock.expandScopes(Sets.newHashSet(SCOPE_A, "scopeB"), true)).thenReturn(
                 new HashSet<>(Arrays.asList(scopeA, scopeB)));
 
         assertThat(domainService.scopesAllowedInDomain(Sets.<String>newHashSet(), TEST_DOMAIN)).isTrue();
