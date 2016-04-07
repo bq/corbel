@@ -57,9 +57,9 @@ import io.corbel.iam.utils.Message;
         when(context.getIssuerClient()).thenReturn(client);
         when(context.getPrincipal()).thenReturn(user);
 
-        when(scopeServiceMock.expandScopes(domainScopesIds)).thenReturn(domainScopes);
-        when(scopeServiceMock.expandScopes(clientScopesIds)).thenReturn(clientScopes);
-        when(scopeServiceMock.expandScopes(userScopesIds)).thenReturn(userScopes);
+        when(scopeServiceMock.expandScopes(domainScopesIds, true)).thenReturn(domainScopes);
+        when(scopeServiceMock.expandScopes(clientScopesIds, true)).thenReturn(clientScopes);
+        when(scopeServiceMock.expandScopes(userScopesIds, true)).thenReturn(userScopes);
 
         when(context.getRequestedScopes()).thenReturn(new HashSet<>(Collections.emptyList()));
 
@@ -83,7 +83,7 @@ import io.corbel.iam.utils.Message;
             when(scope.getIdWithParameters()).thenReturn("SCOPE_A");
 
             Set requestedScope = new HashSet<>(Collections.singletonList(scope));
-            when(scopeServiceMock.expandScopes(eq(context.getRequestedScopes()))).thenReturn(requestedScope);
+            when(scopeServiceMock.expandScopes(eq(context.getRequestedScopes()), eq(true))).thenReturn(requestedScope);
             rule.process(context);
             throw new Exception();
         } catch (UnauthorizedException e) {

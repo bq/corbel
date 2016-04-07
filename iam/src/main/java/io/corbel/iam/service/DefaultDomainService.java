@@ -48,9 +48,9 @@ public class DefaultDomainService implements DomainService {
             return false;
         }
         try {
-            Set<String> expandedRequestedScopes = scopeService.expandScopes(scopes).stream().map(Scope::getIdWithParameters)
+            Set<String> expandedRequestedScopes = scopeService.expandScopes(scopes, true).stream().map(Scope::getIdWithParameters)
                     .collect(Collectors.toSet());
-            Set<String> expandedDomainScopes = scopeService.expandScopes(domain.getScopes()).stream().map(Scope::getIdWithParameters)
+            Set<String> expandedDomainScopes = scopeService.expandScopes(domain.getScopes(), true).stream().map(Scope::getIdWithParameters)
                     .collect(Collectors.toSet());
             return expandedDomainScopes.containsAll(expandedRequestedScopes);
         } catch (IllegalStateException e) {
