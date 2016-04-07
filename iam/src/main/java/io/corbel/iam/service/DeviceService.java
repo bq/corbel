@@ -1,10 +1,11 @@
 package io.corbel.iam.service;
 
-import java.util.List;
-
 import io.corbel.iam.model.Device;
 import io.corbel.iam.model.User;
 import io.corbel.lib.queries.jaxrs.QueryParameters;
+
+import java.util.Date;
+import java.util.List;
 
 /**
  * @author Francisco Sanchez
@@ -24,4 +25,6 @@ public interface DeviceService {
     void deleteByUidAndUserId(String deviceId, String userId, String domainId);
 
     List<Device> deleteByUserId(User user);
+
+    Device update(Device device, Date connection);
 }
