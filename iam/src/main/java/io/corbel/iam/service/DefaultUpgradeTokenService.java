@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Sets;
 import io.corbel.iam.model.Scope;
@@ -53,7 +54,9 @@ public class DefaultUpgradeTokenService implements UpgradeTokenService {
 
     private void saveUserToken(String token, Set<Scope> scopes){
         UserToken userToken = userTokenRepository.findByToken(token);
-        userToken.getScopes().addAll(scopes);
+
+        Set<String> scopeIds = scopes.stream().map(scope -> scope.getId()).collect(Collectors.toSet());
+        userToken.getScopes().addAll(scopeIds);
         userTokenRepository.save(userToken);
     }
 
