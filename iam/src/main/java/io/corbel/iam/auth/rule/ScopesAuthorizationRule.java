@@ -28,26 +28,27 @@ public class ScopesAuthorizationRule implements AuthorizationRule {
 
     @Override
     public void process(AuthorizationRequestContext context) throws UnauthorizedException {
-        Set<Scope> allowedScopes = getAllowedScopes(context);
-        Set<Scope> requestedScopes;
+        Set<String> allowedScopes = getAllowedScopes(context);
         if (context.getRequestedScopes().isEmpty()) {
-            requestedScopes = allowedScopes;
+            context.setExpandedRequestedScopes(scopeService.expandScopes(allowedScopes));
+            context.setTokenScopes(allowedScopes);
         } else {
-            requestedScopes = scopeService.expandScopes(context.getRequestedScopes());
-            checkRequestedScopes(requestedScopes, allowedScopes);
+            Set<Scope> requestedScopes = scopeService.expandScopes(context.getRequestedScopes());
+            checkRequestedScopes(requestedScopes, scopeService.expandScopes(allowedScopes));
+            context.setExpandedRequestedScopes(requestedScopes);
+            context.setTokenScopes(context.getRequestedScopes());
         }
-        context.setExpandedRequestedScopes(requestedScopes);
     }
 
-    private Set<Scope> getAllowedScopes(AuthorizationRequestContext context) {
-        Set<Scope> domainScopes = scopeService.expandScopes(context.getRequestedDomain().getScopes());
-        if (context.isCrossDomain()) {
+    private Set<String> getAllowedScopes(AuthorizationRequestContext context) {
+        Set<String> domainScopes = context.getRequestedDomain().getScopes();
+        if(context.isCrossDomain()) {
             return domainScopes;
         } else {
-            Set<Scope> requestedScopes = scopeService.expandScopes(context.getIssuerClient().getScopes());
+            Set<String> requestedScopes = context.getIssuerClient().getScopes();
             if (context.hasPrincipal()) {
-                Set<Scope> userScopes = scopeService.expandScopes(context.getPrincipal().getScopes());
-                Set<Scope> groupScopes = scopeService.expandScopes(groupService.getGroupScopes(context.getPrincipal().getGroups()));
+                Set<String> userScopes = context.getPrincipal().getScopes();
+                Set<String> groupScopes = groupService.getGroupScopes(context.getPrincipal().getGroups());
                 requestedScopes = Sets.union(requestedScopes, Sets.union(userScopes, groupScopes));
             }
             return Sets.intersection(requestedScopes, domainScopes);
