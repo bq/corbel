@@ -1,16 +1,16 @@
 package api;
 
-import io.corbel.lib.queries.parser.*;
-import io.corbel.lib.ws.api.error.GenericExceptionMapper;
-import io.corbel.lib.ws.api.error.JsonValidationExceptionMapper;
-import io.corbel.lib.ws.gson.GsonMessageReaderWriterProvider;
-import io.corbel.lib.ws.queries.QueryParametersProvider;
-import io.corbel.notifications.api.NotificationsResource;
-import io.corbel.notifications.model.Notification;
-import io.corbel.notifications.model.NotificationTemplate;
-import io.corbel.notifications.model.NotificationTemplateApi;
-import io.corbel.notifications.repository.NotificationRepository;
-import io.corbel.notifications.service.SenderNotificationsService;
+import com.bq.corbel.lib.queries.parser.*;
+import com.bq.corbel.lib.ws.api.error.GenericExceptionMapper;
+import com.bq.corbel.lib.ws.api.error.JsonValidationExceptionMapper;
+import com.bq.corbel.lib.ws.gson.GsonMessageReaderWriterProvider;
+import com.bq.corbel.lib.ws.queries.QueryParametersProvider;
+import com.bq.corbel.notifications.api.NotificationsResource;
+import com.bq.corbel.notifications.model.Notification;
+import com.bq.corbel.notifications.model.NotificationTemplate;
+import com.bq.corbel.notifications.model.NotificationTemplateApi;
+import com.bq.corbel.notifications.repository.NotificationRepository;
+import com.bq.corbel.notifications.service.SenderNotificationsService;
 import io.dropwizard.testing.junit.ResourceTestRule;
 import org.junit.Before;
 import org.junit.ClassRule;

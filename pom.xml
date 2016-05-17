@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>io.corbel</groupId>
+  <groupId>com.bq.corbel</groupId>
   <artifactId>corbel</artifactId>
   <version>1.32.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>corbel</name>
   <description>Corbel Platform</description>
-  <url>https://github.com/corbel-platform/corbel</url>
+  <url>https://github.com/bq/corbel</url>
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
@@ -26,10 +26,10 @@
   </scm>
   <ciManagement>
     <system>Travis CI</system>
-    <url>https://travis-ci.org/corbel-platform/corbel</url>
+    <url>https://travis-ci.org/bq/corbel</url>
   </ciManagement>
   <issueManagement>
-    <url>https://github.com/corbel-platform/corbel/issues</url>
+    <url>https://github.com/bq/corbel/issues</url>
     <system>GitHub Issues</system>
   </issueManagement>
   <properties>
@@ -40,10 +40,10 @@
     <lib-cli.version>0.4.0</lib-cli.version>
     <lib-mongodb.version>0.7.0</lib-mongodb.version>
     <lib-token.version>0.9.0</lib-token.version>
-    <lib-queries.version>0.14.0</lib-queries.version>
+    <lib-queries.version>0.15.0</lib-queries.version>
     <lib-ws.version>0.20.0</lib-ws.version>
     <lib-rabbitmq.version>0.9.0</lib-rabbitmq.version>
-    <events.version>1.27.0</events.version>
+    <events.version>1.31.0</events.version>
     <spring.version>4.1.7.RELEASE</spring.version>
     <dropwizard.version>0.8.1</dropwizard.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -106,62 +106,62 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>io.corbel</groupId>
+        <groupId>com.bq.corbel</groupId>
         <artifactId>events</artifactId>
         <version>${events.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel</groupId>
+        <groupId>com.bq.corbel</groupId>
         <artifactId>rem-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel</groupId>
+        <groupId>com.bq.corbel</groupId>
         <artifactId>eworker-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel</groupId>
+        <groupId>com.bq.corbel</groupId>
         <artifactId>oauth-filter-api</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel.lib</groupId>
+        <groupId>com.bq.corbel.lib</groupId>
         <artifactId>config</artifactId>
         <version>${lib-config.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel.lib</groupId>
+        <groupId>com.bq.corbel.lib</groupId>
         <artifactId>cli</artifactId>
         <version>${lib-cli.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel.lib</groupId>
+        <groupId>com.bq.corbel.lib</groupId>
         <artifactId>token</artifactId>
         <version>${lib-token.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel.lib</groupId>
+        <groupId>com.bq.corbel.lib</groupId>
         <artifactId>ws</artifactId>
         <version>${lib-ws.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel.lib</groupId>
+        <groupId>com.bq.corbel.lib</groupId>
         <artifactId>mongodb</artifactId>
         <version>${lib-mongodb.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel.lib</groupId>
+        <groupId>com.bq.corbel.lib</groupId>
         <artifactId>queries-api</artifactId>
         <version>${lib-queries.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel.lib</groupId>
+        <groupId>com.bq.corbel.lib</groupId>
         <artifactId>queries-mongo</artifactId>
         <version>${lib-queries.version}</version>
       </dependency>
       <dependency>
-        <groupId>io.corbel.lib</groupId>
+        <groupId>com.bq.corbel.lib</groupId>
         <artifactId>rabbitmq</artifactId>
         <version>${lib-rabbitmq.version}</version>
       </dependency>

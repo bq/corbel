@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>io.corbel</groupId>
+		<groupId>com.bq.corbel</groupId>
 		<artifactId>corbel</artifactId>
 		<version>1.32.0-SNAPSHOT</version>
 	</parent>
@@ -17,15 +17,15 @@
 	
     <dependencies>
         <dependency>
-            <groupId>io.corbel.lib</groupId>
+            <groupId>com.bq.corbel.lib</groupId>
             <artifactId>ws</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.corbel.lib</groupId>
+            <groupId>com.bq.corbel.lib</groupId>
             <artifactId>queries-mongo</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.corbel.lib</groupId>
+            <groupId>com.bq.corbel.lib</groupId>
             <artifactId>mongodb</artifactId>
         </dependency>
         <dependency>
@@ -81,7 +81,7 @@
             <artifactId>java-semver</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.corbel.lib</groupId>
+            <groupId>com.bq.corbel.lib</groupId>
             <artifactId>cli</artifactId>
         </dependency>
         <dependency>
@@ -155,7 +155,7 @@
             <artifactId>spring-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.corbel</groupId>
+            <groupId>com.bq.corbel</groupId>
             <artifactId>events</artifactId>
         </dependency>
         <dependency>
@@ -172,7 +172,7 @@
 				<configuration>
 					<programs>
 						<program>
-							<mainClass>io.corbel.iam.IamRunner</mainClass>
+							<mainClass>com.bq.corbel.iam.IamRunner</mainClass>
 							<id>${project.name}</id>
 						</program>
 					</programs>

@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.corbel</groupId>
+        <groupId>com.bq.corbel</groupId>
         <artifactId>corbel</artifactId>
         <version>1.32.0-SNAPSHOT</version>
     </parent>
@@ -19,19 +19,19 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.corbel.lib</groupId>
+            <groupId>com.bq.corbel.lib</groupId>
             <artifactId>token</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.corbel.lib</groupId>
+            <groupId>com.bq.corbel.lib</groupId>
             <artifactId>ws</artifactId>
         </dependency>
 		<dependency>
-			<groupId>io.corbel</groupId>
+			<groupId>com.bq.corbel</groupId>
 			<artifactId>eworker-api</artifactId>
 		</dependency>
         <dependency>
-            <groupId>io.corbel.lib</groupId>
+            <groupId>com.bq.corbel.lib</groupId>
             <artifactId>cli</artifactId>
         </dependency>
 		<dependency>
@@ -43,11 +43,11 @@
 			<artifactId>dropwizard-testing</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>io.corbel.lib</groupId>
+			<groupId>com.bq.corbel.lib</groupId>
 			<artifactId>rabbitmq</artifactId>
 		</dependency>
 		<dependency>
-            <groupId>io.corbel</groupId>
+            <groupId>com.bq.corbel</groupId>
 			<artifactId>events</artifactId>
 		</dependency>
 	</dependencies>
@@ -61,7 +61,7 @@
                 <configuration>
                     <programs>
                         <program>
-                            <mainClass>io.corbel.evci.EvciRunner</mainClass>
+                            <mainClass>com.bq.corbel.evci.EvciRunner</mainClass>
                             <id>${project.name}</id>
                             <jvmSettings>
                                 <extraArguments>
