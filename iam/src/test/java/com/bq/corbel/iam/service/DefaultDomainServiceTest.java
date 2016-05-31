@@ -9,7 +9,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.bq.corbel.lib.queries.request.AggregationResultsFactory;
 import com.bq.corbel.lib.queries.request.JsonAggregationResultsFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -196,14 +195,14 @@ import com.google.common.collect.Sets;
 
         domainService.insert(domain);
 
-        verify(domainRepositoryMock).insert(domainCaptor.capture());
+        verify(domainRepositoryMock).insertDomain(domainCaptor.capture());
         assertEquals(TEST_DOMAIN_ID, domainCaptor.getValue().getId());
     }
 
     @SuppressWarnings("unchecked")
     @Test(expected = DomainAlreadyExists.class)
     public void testCreateAlreadyExisting() throws DomainAlreadyExists {
-        Mockito.doThrow(DataIntegrityViolationException.class).when(domainRepositoryMock).insert(any());
+        Mockito.doThrow(DataIntegrityViolationException.class).when(domainRepositoryMock).insertDomain(any(Domain.class));
         domainService.insert(TEST_DOMAIN);
     }
 

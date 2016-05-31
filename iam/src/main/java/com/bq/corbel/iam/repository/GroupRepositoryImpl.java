@@ -35,7 +35,7 @@ public class GroupRepositoryImpl extends HasScopesRepositoryBase<Group, String> 
     }
 
     @Override
-    public void insert(Group group) {
+    public void insertGroup(Group group) {
         mongo.insert(group);
     }
 }
