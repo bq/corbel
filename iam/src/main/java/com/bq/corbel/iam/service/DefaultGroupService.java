@@ -54,7 +54,7 @@ public class DefaultGroupService implements GroupService {
         group.setId(null);
         try {
             checkScopes(group.getScopes());
-            groupRepository.insert(group);
+            groupRepository.insertGroup(group);
             return group;
         } catch (DataIntegrityViolationException e) {
             throw new GroupAlreadyExistsException(group.getName() + " in domain " + group.getDomain());

@@ -125,7 +125,7 @@ import com.bq.corbel.lib.queries.request.ResourceQuery;
 
         ArgumentCaptor<Group> capturedGroup = ArgumentCaptor.forClass(Group.class);
 
-        verify(groupRepositoryMock).insert(capturedGroup.capture());
+        verify(groupRepositoryMock).insertGroup(capturedGroup.capture());
         verify(scopeRepositoryMock).findOne(SCOPE_1);
         verify(scopeRepositoryMock).findOne(SCOPE_2);
 
@@ -146,7 +146,7 @@ import com.bq.corbel.lib.queries.request.ResourceQuery;
         groupService.create(group);
 
         ArgumentCaptor<Group> capturedGroup = ArgumentCaptor.forClass(Group.class);
-        verify(groupRepositoryMock).insert(capturedGroup.capture());
+        verify(groupRepositoryMock).insertGroup(capturedGroup.capture());
 
         Group savedGroup = capturedGroup.getValue();
 
@@ -163,7 +163,7 @@ import com.bq.corbel.lib.queries.request.ResourceQuery;
         Group group = getGroup();
 
         when(scopeRepositoryMock.findOne(any())).thenReturn(mock(Scope.class));
-        doThrow(new DataIntegrityViolationException(NEW_ID)).when(groupRepositoryMock).insert(Mockito.<Group>any());
+        doThrow(new DataIntegrityViolationException(NEW_ID)).when(groupRepositoryMock).insertGroup(Mockito.<Group>any());
 
         try {
             groupService.create(group);
@@ -171,7 +171,7 @@ import com.bq.corbel.lib.queries.request.ResourceQuery;
 
             ArgumentCaptor<Group> capturedGroup = ArgumentCaptor.forClass(Group.class);
 
-            verify(groupRepositoryMock).insert(capturedGroup.capture());
+            verify(groupRepositoryMock).insertGroup(capturedGroup.capture());
 
             Group savedGroup = capturedGroup.getValue();
 

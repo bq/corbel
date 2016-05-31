@@ -32,7 +32,7 @@ public class DefaultClientService implements ClientService {
         }
 
         try {
-            clientRepository.insert(client);
+            clientRepository.insertClient(client);
         } catch (DataIntegrityViolationException e) {
             throw new ClientAlreadyExistsException();
         }

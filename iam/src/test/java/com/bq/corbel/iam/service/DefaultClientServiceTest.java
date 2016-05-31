@@ -44,7 +44,7 @@ import com.bq.corbel.iam.repository.ClientRepository;
     public void testCreate() throws ClientAlreadyExistsException {
         ArgumentCaptor<Client> clientCaptor = ArgumentCaptor.forClass(Client.class);
         clientService.createClient(getClient());
-        verify(clientRepository).insert(clientCaptor.capture());
+        verify(clientRepository).insertClient(clientCaptor.capture());
         assertEquals(TEST_NAME, clientCaptor.getValue().getName());
     }
 

@@ -41,7 +41,7 @@ public class ClientRepositoryImpl extends HasScopesRepositoryBase<Client, String
     }
 
     @Override
-    public void insert(Client client) {
+    public void insertClient(Client client) {
         mongo.insert(client);
     }
 

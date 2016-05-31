@@ -70,7 +70,7 @@ public class DefaultDomainService implements DomainService {
     @Override
     public void insert(Domain domain) throws DomainAlreadyExists {
         try {
-            domainRepository.insert(domain);
+            domainRepository.insertDomain(domain);
             sendUpdateDomainPublicScopesEvent(domain.getId());
         } catch (DataIntegrityViolationException e) {
             throw new DomainAlreadyExists(domain.getId());

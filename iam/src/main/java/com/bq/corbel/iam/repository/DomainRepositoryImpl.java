@@ -70,7 +70,7 @@ import com.mongodb.BasicDBObject;
     }
 
     @Override
-    public void insert(Domain domain) {
+    public void insertDomain(Domain domain) {
         mongo.insert(domain);
     }
 
