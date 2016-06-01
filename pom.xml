@@ -44,7 +44,7 @@
     <lib-ws.version>0.22.0</lib-ws.version>
     <lib-rabbitmq.version>0.10.0</lib-rabbitmq.version>
     <events.version>1.31.1</events.version>
-    <spring.version>4.1.7.RELEASE</spring.version>
+    <spring.version>4.2.6.RELEASE</spring.version>
     <dropwizard.version>0.8.1</dropwizard.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <docker.files>${project.basedir}/../src/docker/service</docker.files>
