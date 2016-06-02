@@ -47,8 +47,8 @@
     <spring.version>4.2.6.RELEASE</spring.version>
     <dropwizard.version>0.8.1</dropwizard.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <docker.files>${project.basedir}/../src/docker/service</docker.files>
-    <docker.organization>corbel</docker.organization>
+    <docker.files>${project.basedir}/src/docker/service</docker.files>
+    <docker.organization>registry.bqws.io/corbel</docker.organization>
     <docker.name.prefix />
   </properties>
   <modules>
@@ -411,7 +411,7 @@
         <plugin>
           <groupId>com.spotify</groupId>
           <artifactId>docker-maven-plugin</artifactId>
-          <version>0.2.9</version>
+          <version>0.4.10</version>
           <configuration>
             <imageName>${docker.organization}/${docker.name.prefix}${project.name}</imageName>
             <imageTags>
@@ -426,8 +426,8 @@
                 <include>${project.name}-${project.version}-bin.tar.gz</include>
               </resource>
             </resources>
-            <serverId>docker-hub</serverId>
-            <registryUrl>https://index.docker.io/v1/</registryUrl>
+            <serverId>bq-registry</serverId>
+            <registryUrl>https://registry.bqws.io</registryUrl>
           </configuration>
         </plugin>
         <plugin>
