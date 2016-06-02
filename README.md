@@ -13,6 +13,10 @@
 mvn install -DdockerBuild=true
 ```
 
+```
+mvn install -DdockerBuild=true -DpushImage
+```
+
 ### Run with Docker Compose
 
 ```
