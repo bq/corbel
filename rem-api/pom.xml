@@ -9,6 +9,9 @@
 
     <artifactId>rem-api</artifactId>
     <name>rem-api</name>
+    <properties>
+        <docker.files>${project.basedir}/../src/docker/service</docker.files>
+    </properties>
 
     <dependencies>
         <dependency>

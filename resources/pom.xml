@@ -13,6 +13,7 @@
     <properties>
         <port>8080</port>
         <port.admin>8081</port.admin>
+        <docker.files>${project.basedir}/../src/docker/service</docker.files>
     </properties>
 
     <dependencies>
