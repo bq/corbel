@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.bq.corbel</groupId>
   <artifactId>corbel</artifactId>
-  <version>1.33.0-SNAPSHOT</version>
+  <version>1.32.1-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>corbel</name>
   <description>Corbel Platform</description>
@@ -36,14 +36,14 @@
     <appassembler.plugin.version>1.10</appassembler.plugin.version>
     <maven-surefire.plugin.version>2.17</maven-surefire.plugin.version>
     <buildmetadata-maven-plugin.version>1.5.2</buildmetadata-maven-plugin.version>
-    <lib-config.version>0.4.0</lib-config.version>
-    <lib-cli.version>0.4.0</lib-cli.version>
+    <lib-config.version>0.4.1-SNAPSHOT</lib-config.version>
+    <lib-cli.version>0.5.1-SNAPSHOT</lib-cli.version>
     <lib-mongodb.version>0.9.0</lib-mongodb.version>
-    <lib-token.version>0.11.0</lib-token.version>
-    <lib-queries.version>0.17.0</lib-queries.version>
-    <lib-ws.version>0.22.0</lib-ws.version>
+    <lib-token.version>0.11.1-SNAPSHOT</lib-token.version>
+    <lib-queries.version>0.18.0-SNAPSHOT</lib-queries.version>
+    <lib-ws.version>0.22.1-SNAPSHOT</lib-ws.version>
     <lib-rabbitmq.version>0.10.0</lib-rabbitmq.version>
-    <events.version>1.31.1</events.version>
+    <events.version>1.32.0-SNAPSHOT</events.version>
     <spring.version>4.2.6.RELEASE</spring.version>
     <dropwizard.version>0.8.1</dropwizard.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
