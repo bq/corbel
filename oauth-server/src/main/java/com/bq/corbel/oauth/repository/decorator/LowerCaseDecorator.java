@@ -4,10 +4,6 @@ import java.util.List;
 
 import com.bq.corbel.oauth.model.User;
 import com.bq.corbel.oauth.repository.UserRepository;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 /**
  * @author Francisco Sanchez
@@ -25,26 +21,6 @@ public class LowerCaseDecorator extends UserRepositoryDecorator {
 
     @Override
     public <S extends User> List<S> save(Iterable<S> ses) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public <S extends User> S insert(S s) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public <S extends User> List<S> findAll(Example<S> example, Sort sort) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public <S extends User> List<S> findAll(Example<S> example) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public <S extends User> List<S> insert(Iterable<S> iterable) {
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
@@ -128,23 +104,4 @@ public class LowerCaseDecorator extends UserRepositoryDecorator {
         return data;
     }
 
-    @Override
-    public <S extends User> S findOne(Example<S> example) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public <S extends User> Page<S> findAll(Example<S> example, Pageable pageable) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public <S extends User> long count(Example<S> example) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    @Override
-    public <S extends User> boolean exists(Example<S> example) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
 }
