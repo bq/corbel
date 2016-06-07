@@ -36,7 +36,7 @@
     <appassembler.plugin.version>1.10</appassembler.plugin.version>
     <maven-surefire.plugin.version>2.17</maven-surefire.plugin.version>
     <buildmetadata-maven-plugin.version>1.5.2</buildmetadata-maven-plugin.version>
-    <lib-config.version>0.4.1-SNAPSHOT</lib-config.version>
+    <lib-config.version>0.4.1</lib-config.version>
     <lib-cli.version>0.5.1-SNAPSHOT</lib-cli.version>
     <lib-mongodb.version>0.9.1-SNAPSHOT</lib-mongodb.version>
     <lib-token.version>0.12.0-SNAPSHOT</lib-token.version>
