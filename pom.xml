@@ -43,13 +43,13 @@
     <lib-queries.version>0.18.0-SNAPSHOT</lib-queries.version>
     <lib-ws.version>0.22.1-SNAPSHOT</lib-ws.version>
     <lib-rabbitmq.version>0.10.0</lib-rabbitmq.version>
-    <events.version>1.32.0-SNAPSHOT</events.version>
+    <events.version>1.32.0</events.version>
     <spring.version>4.2.6.RELEASE</spring.version>
     <dropwizard.version>0.8.1</dropwizard.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <docker.files>${project.basedir}/../src/docker/service</docker.files>
     <docker.organization>corbel</docker.organization>
-    <docker.name.prefix />
+    <docker.name.prefix/>
   </properties>
   <modules>
     <module>eworker-api</module>
@@ -466,9 +466,9 @@
               <configuration>
                 <target>
                   <exec executable="chmod" dir="${project.build.directory}/generated-resources/appassembler/jsw/${project.name}">
-                    <arg value="-R" />
-                    <arg value="a+x" />
-                    <arg value="bin" />
+                    <arg value="-R"/>
+                    <arg value="a+x"/>
+                    <arg value="bin"/>
                   </exec>
                 </target>
               </configuration>
@@ -482,7 +482,7 @@
               <configuration>
                 <target>
                   <exec executable="mkdir" dir="${project.build.directory}/generated-resources/appassembler/jsw/${project.name}">
-                    <arg value="plugins" />
+                    <arg value="plugins"/>
                   </exec>
                 </target>
               </configuration>
