@@ -149,9 +149,9 @@ public class DefaultAuthorizationService implements AuthorizationService {
         Domain domain = context.getRequestedDomain();
 
         User user;
-        user = userService.findByDomainAndUsername(domain.getId(), basicParams.getUsername());
+        user = userService.findByDomainAndEmail(domain.getId(), basicParams.getUsername());
         if (user == null) {
-            user = userService.findByDomainAndEmail(domain.getId(), basicParams.getUsername());
+            user = userService.findByDomainAndUsername(domain.getId(), basicParams.getUsername());
         }
         if (user != null && user.checkPassword(basicParams.getPassword())) {
             context.setPrincipalId(user.getUsername());
