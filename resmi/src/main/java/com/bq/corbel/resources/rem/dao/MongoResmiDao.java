@@ -29,7 +29,10 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.expression.spel.SpelParseException;
+import org.springframework.util.StringUtils;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -39,7 +42,6 @@ import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 
 /**
  * @author Alberto J. Rubio
- *
  */
 public class MongoResmiDao implements ResmiDao {
 
@@ -69,7 +71,7 @@ public class MongoResmiDao implements ResmiDao {
     private final AggregationResultsFactory<JsonElement> aggregationResultsFactory;
 
     public MongoResmiDao(MongoOperations mongoOperations, JsonObjectMongoWriteConverter jsonObjectMongoWriteConverter,
-            NamespaceNormalizer namespaceNormalizer, ResmiOrder resmiOrder, AggregationResultsFactory<JsonElement> aggregationResultsFactory) {
+                         NamespaceNormalizer namespaceNormalizer, ResmiOrder resmiOrder, AggregationResultsFactory<JsonElement> aggregationResultsFactory) {
         this.mongoOperations = mongoOperations;
         this.jsonObjectMongoWriteConverter = jsonObjectMongoWriteConverter;
         this.namespaceNormalizer = namespaceNormalizer;
@@ -89,14 +91,13 @@ public class MongoResmiDao implements ResmiDao {
 
     @Override
     public JsonArray findCollection(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sort) throws InvalidApiParamException {
+                                    Optional<Sort> sort) throws InvalidApiParamException {
 
         Query query;
         try {
             query = new MongoResmiQueryBuilder().query(resourceQueries.orElse(null)).pagination(pagination.orElse(null))
                     .sort(sort.orElse(null)).build();
-        }
-        catch (PatternSyntaxException pse) {
+        } catch (PatternSyntaxException pse) {
             throw new InvalidApiParamException(pse.getMessage());
         }
         LOG.debug("findCollection Query executed : " + query.getQueryObject().toString());
@@ -105,7 +106,7 @@ public class MongoResmiDao implements ResmiDao {
 
     @Override
     public JsonElement findRelation(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sort) throws InvalidApiParamException {
+                                    Optional<Sort> sort) throws InvalidApiParamException {
         MongoResmiQueryBuilder mongoResmiQueryBuilder = new MongoResmiQueryBuilder();
 
         if (uri.getRelationId() != null) {
@@ -116,8 +117,7 @@ public class MongoResmiDao implements ResmiDao {
         try {
             query = mongoResmiQueryBuilder.relationSubjectId(uri).query(resourceQueries.orElse(null)).pagination(pagination.orElse(null))
                     .sort(sort.orElse(null)).build();
-        }
-        catch (PatternSyntaxException pse) {
+        } catch (PatternSyntaxException pse) {
             throw new InvalidApiParamException(pse.getMessage());
         }
         query.fields().exclude(_ID);
@@ -138,7 +138,7 @@ public class MongoResmiDao implements ResmiDao {
 
     @Override
     public JsonArray findCollectionWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries,
-            Optional<Pagination> pagination, Optional<Sort> sort, List<String> groups, boolean first) throws InvalidApiParamException {
+                                             Optional<Pagination> pagination, Optional<Sort> sort, List<String> groups, boolean first) throws InvalidApiParamException {
         Aggregation aggregation = buildGroupAggregation(uri, resourceQueries, pagination, sort, groups, first);
         List<JsonObject> result = mongoOperations.aggregate(aggregation, getMongoCollectionName(uri), JsonObject.class).getMappedResults();
         return JsonUtils.convertToArray(first ? extractDocuments(result) : result);
@@ -146,14 +146,14 @@ public class MongoResmiDao implements ResmiDao {
 
     @Override
     public JsonArray findRelationWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sort, List<String> groups, boolean first) throws InvalidApiParamException {
+                                           Optional<Sort> sort, List<String> groups, boolean first) throws InvalidApiParamException {
         Aggregation aggregation = buildGroupAggregation(uri, resourceQueries, pagination, sort, groups, first);
         List<JsonObject> result = mongoOperations.aggregate(aggregation, getMongoCollectionName(uri), JsonObject.class).getMappedResults();
         return renameIds(JsonUtils.convertToArray(first ? extractDocuments(result) : result), uri.isTypeWildcard());
     }
 
     private Aggregation buildGroupAggregation(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries,
-            Optional<Pagination> pagination, Optional<Sort> sort, List<String> fields, boolean first) throws InvalidApiParamException {
+                                              Optional<Pagination> pagination, Optional<Sort> sort, List<String> fields, boolean first) throws InvalidApiParamException {
 
         MongoAggregationBuilder builder = new MongoAggregationBuilder();
         builder.match(uri, resourceQueries);
@@ -216,7 +216,7 @@ public class MongoResmiDao implements ResmiDao {
     }
 
     private JsonObject findAndModify(String collection, Optional<String> id, JsonObject entity, boolean upsert,
-            Optional<List<ResourceQuery>> resourceQueries) {
+                                     Optional<List<ResourceQuery>> resourceQueries) {
 
         Update update = updateFromJsonObject(entity, id);
         Query query = (id.isPresent()) ? getQueryFromResourceQuery(resourceQueries, id) : Query.query(Criteria.where(_ID).exists(false));
@@ -247,8 +247,23 @@ public class MongoResmiDao implements ResmiDao {
             update.setOnInsert(CREATED_AT, GsonUtil.getPrimitive(createdAt));
         }
 
-        jsonObjectMongoWriteConverter.convert(entity).toMap().forEach((key, value) -> update.set((String) key, value));
-        entity.entrySet().stream().filter(entry -> entry.getValue().isJsonNull()).forEach(entry -> update.unset(entry.getKey()));
+        // Modifiers
+        entity.entrySet().stream()
+                .filter(entry -> isKeyword(entry.getKey()))
+                .forEach(entry -> addUpdateModifier(update, entry.getKey(), entry.getValue()));
+
+        // Set fields
+        jsonObjectMongoWriteConverter.convert(entity).toMap()
+                .forEach((key, value) -> {
+                    if (!isKeyword((String) key)) {
+                        update.set((String) key, value);
+                    }
+                });
+
+        // Unset fields
+        entity.entrySet().stream()
+                .filter(entry -> !isKeyword(entry.getKey()) && entry.getValue().isJsonNull())
+                .forEach(entry -> update.unset(entry.getKey()));
 
         return update;
     }
@@ -310,7 +325,7 @@ public class MongoResmiDao implements ResmiDao {
     private JsonElement renameIds(JsonObject object, boolean wildcard) {
         object.add("id", object.get(JsonRelation._DST_ID));
         object.remove(JsonRelation._DST_ID);
-        if(!wildcard) {
+        if (!wildcard) {
             object.remove(JsonRelation._SRC_ID);
         }
         return object;
@@ -378,7 +393,7 @@ public class MongoResmiDao implements ResmiDao {
     }
 
     @Override
-        public JsonElement sum(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
+    public JsonElement sum(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, String field) {
         List<DBObject> results = aggregate(resourceUri, resourceQueries, group().sum(field).as(SUM).count().as(COUNT));
 
         return aggregationResultsFactory.sumResult(getAggregationResultValue(SUM, results, resourceUri, field));
@@ -386,9 +401,9 @@ public class MongoResmiDao implements ResmiDao {
 
 
     private Optional<Double> getAggregationResultValue(String operator, List<DBObject> results, ResourceUri resourceUri, String field) {
-        if(!results.isEmpty()) {
+        if (!results.isEmpty()) {
             DBObject result = results.get(0);
-            if(isValidAggregationResult(result, resourceUri, field, operator)) {
+            if (isValidAggregationResult(result, resourceUri, field, operator)) {
                 return Optional.ofNullable((Number) result.get(operator)).map(Number::doubleValue);
             }
         }
@@ -423,7 +438,7 @@ public class MongoResmiDao implements ResmiDao {
 
     @Override
     public JsonArray combine(ResourceUri resourceUri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sort, String field, String expression) throws InvalidApiParamException {
+                             Optional<Sort> sort, String field, String expression) throws InvalidApiParamException {
 
         MongoAggregationBuilder builder = new MongoAggregationBuilder();
         builder.match(resourceUri, resourceQueries);
@@ -444,8 +459,7 @@ public class MongoResmiDao implements ResmiDao {
         try {
             results = mongoOperations.aggregate(aggregation, getMongoCollectionName(resourceUri), JsonObject.class)
                     .getMappedResults();
-        }
-        catch (SpelParseException spe) {
+        } catch (SpelParseException spe) {
             throw new InvalidApiParamException(spe.getMessage());
         }
 
@@ -458,7 +472,7 @@ public class MongoResmiDao implements ResmiDao {
 
     @Override
     public JsonElement histogram(ResourceUri resourceUri, List<ResourceQuery> resourceQueries, Optional<Pagination> pagination,
-            Optional<Sort> sortParam, String field) {
+                                 Optional<Sort> sortParam, String field) {
         AggregationOperation[] aggregations = {
                 group(Fields.from(Fields.field(field, field))).push("$_id").as("ids"),
                 new ExposingFieldsCustomAggregationOperation(new BasicDBObject("$project", new BasicDBObject(COUNT, new BasicDBObject(
@@ -513,11 +527,11 @@ public class MongoResmiDao implements ResmiDao {
     }
 
     private String getMongoCollectionName(ResourceUri resourceUri) {
-        return  namespaceNormalizer.normalize(resourceUri.getDomain()) + DOMAIN_CONCATENATION +
+        return namespaceNormalizer.normalize(resourceUri.getDomain()) + DOMAIN_CONCATENATION +
                 Optional.ofNullable(namespaceNormalizer.normalize(resourceUri.getType()))
-                .map(type -> type + Optional.ofNullable(resourceUri.getRelation())
-                        .map(relation -> RELATION_CONCATENATION + namespaceNormalizer.normalize(relation)).orElse(EMPTY_STRING))
-                .orElse(EMPTY_STRING);
+                        .map(type -> type + Optional.ofNullable(resourceUri.getRelation())
+                                .map(relation -> RELATION_CONCATENATION + namespaceNormalizer.normalize(relation)).orElse(EMPTY_STRING))
+                        .orElse(EMPTY_STRING);
     }
 
     private class CustomAggregationOperation implements AggregationOperation {
@@ -542,6 +556,43 @@ public class MongoResmiDao implements ResmiDao {
         @Override
         public ExposedFields getFields() {
             return null;
+        }
+    }
+
+    private boolean isKeyword(String key) {
+        return StringUtils.startsWithIgnoreCase(key, "$");
+    }
+
+    private void addUpdateModifier(Update update, String modifier, JsonElement modifierValue) {
+        switch (modifier) {
+            case "$addToSet":
+                modifierValue.getAsJsonObject().entrySet().forEach(entry ->
+                        update.addToSet(entry.getKey(), entry.getValue()));
+                break;
+            case "$inc":
+                modifierValue.getAsJsonObject().entrySet().forEach(entry ->
+                        update.inc(entry.getKey(), Integer.valueOf(entry.getValue().toString())));
+                break;
+            case "$push":
+                modifierValue.getAsJsonObject().entrySet().forEach(entry ->
+                        update.push(entry.getKey(), entry.getValue()));
+                break;
+            case "$pop":
+                modifierValue.getAsJsonObject().entrySet().forEach(entry ->
+                        update.pop(entry.getKey(), Update.Position.valueOf(entry.getValue().toString())));
+                break;
+            case "$pull":
+                modifierValue.getAsJsonObject().entrySet().forEach(entry ->
+                        update.pull(entry.getKey(), entry.getValue()));
+                break;
+            case "$rename":
+                modifierValue.getAsJsonObject().entrySet().forEach(entry ->
+                        update.rename(entry.getKey(), entry.getValue().toString()));
+                break;
+            case "$currentDate":
+                modifierValue.getAsJsonObject().entrySet().forEach(entry ->
+                        update.currentDate(entry.getKey()));
+                break;
         }
     }
 }
