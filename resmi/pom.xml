@@ -202,4 +202,59 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>resmi-standalone</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.bq.corbel</groupId>
+                    <artifactId>resources</artifactId>
+                    <version>1.33.0-SNAPSHOT</version>
+                </dependency>
+                <dependency>
+                    <groupId>com.bq.corbel</groupId>
+                    <artifactId>rem-api</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>com.bq.corbel.lib</groupId>
+                    <artifactId>ws</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>com.bq.corbel.lib</groupId>
+                    <artifactId>queries-mongo</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>com.bq.corbel.lib</groupId>
+                    <artifactId>cli</artifactId>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.4.0</version>
+                        <executions>
+                            <execution>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <mainClass>com.bq.corbel.resources.ResourcesRunner</mainClass>
+                            <arguments>
+                                <argument>server</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
 </project>
