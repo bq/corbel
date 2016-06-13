@@ -208,6 +208,12 @@ import static org.mockito.Mockito.*;
         json.addProperty("b", 1);
         json.add("c", null);
 
+        JsonObject operator = new JsonObject();
+        operator.addProperty("b", 2);
+        JsonObject operators = new JsonObject();
+        operators.add("$inc", operator);
+        json.add("$operators", operators);
+
         when(mongoOperations.findAndModify(any(), any(), any(), eq(JsonObject.class), eq(TEST_COLLECTION))).thenAnswer(answerWithId(json));
 
         mongoResmiDao.updateResource(resourceUri, json);
@@ -226,6 +232,10 @@ import static org.mockito.Mockito.*;
         assertThat(updateCaptor.getValue().getUpdateObject().containsField("$unset")).isEqualTo(true);
         DBObject dbObjectUnSet = (DBObject) updateCaptor.getValue().getUpdateObject().get("$unset");
         assertThat(dbObjectUnSet.containsField("c"));
+
+        assertThat(updateCaptor.getValue().getUpdateObject().containsField("$inc")).isEqualTo(true);
+        DBObject dbObjectModifier = (DBObject) updateCaptor.getValue().getUpdateObject().get("$inc");
+        assertThat(dbObjectModifier.get("b")).isEqualTo(2);
     }
 
     private Answer<JsonObject> answerWithId(JsonObject json) {
