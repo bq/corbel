@@ -158,8 +158,8 @@ import com.bq.corbel.iam.model.User;
 
     @Test
     public void testSendDeviceDeleteEvent() {
-        service.sendDeviceDeleteEvent(UID, USERID, DOMAIN);
-        verify(eventBus).dispatch(new DeviceEvent(DeviceEvent.Type.DELETED, DOMAIN, ID, USERID));
+        service.sendDeviceDeleteEvent(device);
+        verify(eventBus).dispatch(new DeviceEvent(DeviceEvent.Type.DELETED, DOMAIN, ID, USERID, TYPE, NAME));
     }
 
 }
