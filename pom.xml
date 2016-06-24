@@ -427,7 +427,7 @@
               </resource>
             </resources>
             <serverId>bq-registry</serverId>
-            <registryUrl>https://registry.bqws.io</registryUrl>
+            <registryUrl>https://registry.public.bqws.io</registryUrl>
           </configuration>
         </plugin>
         <plugin>
