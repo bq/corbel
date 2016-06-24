@@ -48,7 +48,7 @@
     <dropwizard.version>0.8.1</dropwizard.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <docker.files>${project.basedir}/../src/docker/service</docker.files>
-    <docker.organization>registry.bqws.io/corbel</docker.organization>
+    <docker.organization>registry.public.bqws.io/corbel</docker.organization>
     <docker.name.prefix />
   </properties>
   <modules>
