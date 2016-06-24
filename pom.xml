@@ -48,7 +48,7 @@
     <dropwizard.version>0.8.1</dropwizard.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <docker.files>${project.basedir}/../src/docker/service</docker.files>
-    <docker.organization>registry.public.bqws.io/corbel</docker.organization>
+    <docker.organization>registry-public.bqws.io/corbel</docker.organization>
     <docker.name.prefix />
   </properties>
   <modules>
@@ -427,7 +427,7 @@
               </resource>
             </resources>
             <serverId>bq-registry</serverId>
-            <registryUrl>https://registry.public.bqws.io</registryUrl>
+            <registryUrl>https://registry-public.bqws.io</registryUrl>
           </configuration>
         </plugin>
         <plugin>
