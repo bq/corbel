@@ -83,21 +83,20 @@ public class DefaultEventsService implements EventsService {
     @Override
     public void sendDeviceCreateEvent(Device device) {
         eventBus.dispatch(new DeviceEvent(DeviceEvent.Type.CREATED, device.getDomain(), device.getUid(), device.getUserId(),
-                device
-.getType(), device.getName()));
+                device.getType(), device.getName()));
     }
 
     @Override
     public void sendDeviceUpdateEvent(Device device) {
         eventBus.dispatch(new DeviceEvent(DeviceEvent.Type.UPDATED, device.getDomain(), device.getUid(), device.getUserId(),
-                device
-.getType(), device.getName()));
+                device.getType(), device.getName()));
 
     }
 
     @Override
-    public void sendDeviceDeleteEvent(String deviceUid, String userId, String domainId) {
-        eventBus.dispatch(new DeviceEvent(DeviceEvent.Type.DELETED, domainId, deviceUid, userId));
+    public void sendDeviceDeleteEvent(Device device) {
+        eventBus.dispatch(new DeviceEvent(DeviceEvent.Type.DELETED, device.getDomain(), device.getUid(), device.getUserId(),
+                device.getType(), device.getName()));
     }
 
     @Override

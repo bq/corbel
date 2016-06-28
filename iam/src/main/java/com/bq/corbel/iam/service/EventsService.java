@@ -32,7 +32,7 @@ public interface EventsService {
 
     void sendDeviceUpdateEvent(Device device);
 
-    void sendDeviceDeleteEvent(String deviceUid, String userId, String domainId);
+    void sendDeviceDeleteEvent(Device device);
 
     void sendUpdateDomainPublicScopesEvent(String domainId);
 }

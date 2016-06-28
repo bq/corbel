@@ -101,9 +101,10 @@ public class DefaultDeviceService implements DeviceService {
     @Override
     public void deleteByUidAndUserId(String deviceUid, String userId, String domainId) {
         String deviceId = UserDomainIdGenerator.generateDeviceId(domainId, userId, deviceUid);
+        Device device = deviceRepository.findById(deviceId);
         long result = deviceRepository.deleteById(deviceId);
         if (result > 0) {
-            eventsService.sendDeviceDeleteEvent(deviceUid, userId, domainId);
+            eventsService.sendDeviceDeleteEvent(device);
         }
     }
 
