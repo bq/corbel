@@ -25,7 +25,7 @@ public class EmailNotificationsService implements NotificationsService {
 	public void send(NotificationTemplate notificationTemplate, String... recipients) {
 		try {
 			LOG.info("Sending email to: {}" + Arrays.toString(recipients));
-			MimeMessage message = new MimeMessage(Session.getDefaultInstance(new Properties(), null));
+			MimeMessage message = new MimeMessage(Session.getDefaultInstance(System.getProperties(), null));
 			message.setFrom(new InternetAddress(notificationTemplate.getSender()));
 			for (String recipient : recipients) {
 				message.addRecipient(Message.RecipientType.BCC, new InternetAddress(recipient));
