@@ -1,9 +1,6 @@
 package com.bq.corbel.resources.rem.search;
 
-import com.bq.corbel.lib.queries.request.QueryLiteral;
-import com.bq.corbel.lib.queries.request.QueryNode;
-import com.bq.corbel.lib.queries.request.QueryOperator;
-import com.bq.corbel.lib.queries.request.ResourceQuery;
+import com.bq.corbel.lib.queries.request.*;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -17,14 +14,23 @@ import java.util.stream.Collectors;
 /**
  * @author Rubén Carrasco
  */
-public class ElasticSearchResourceQueryBuilder {
+    public class ElasticSearchResourceQueryBuilder {
 
-    public static QueryBuilder build(String search, ResourceQuery query) {
+    public static QueryBuilder build(Search search, ResourceQuery query) {
         return build(search, query != null ? Collections.singletonList(query) : Collections.emptyList());
     }
 
-    public static QueryBuilder build(String search, List<ResourceQuery> queries) {
-        QueryStringQueryBuilder queryStringQueryBuilder = QueryBuilders.queryStringQuery(search);
+    public static QueryBuilder build(Search search, List<ResourceQuery> queries) {
+        QueryStringQueryBuilder queryStringQueryBuilder = QueryBuilders.queryStringQuery(search.getText().get());
+
+        List<String> fields = search.getFields().orElse(null);
+
+        if(fields != null) {
+            for (String field: fields) {
+                queryStringQueryBuilder.field(field);
+            }
+        }
+
         if (queries == null || queries.isEmpty()) {
             return queryStringQueryBuilder;
         } else {

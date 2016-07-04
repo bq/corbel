@@ -1,5 +1,6 @@
 package com.bq.corbel.resources.rem.search;
 
+import com.bq.corbel.lib.queries.request.Search;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.bq.corbel.lib.queries.exception.MalformedJsonQueryException;
@@ -24,17 +25,19 @@ public class ElasticSearchResourceQueryBuilderTest {
     private static final String SEARCH = "search string";
     private static JacksonQueryParser queryParser;
     private static CustomJsonParser jsonParser;
+    private static Search searchObject;
 
     @BeforeClass
     public static void setUp() throws MalformedJsonQueryException {
         jsonParser = new CustomJsonParser(new ObjectMapper().getFactory());
         queryParser = new JacksonQueryParser(jsonParser);
+        searchObject = new Search(false, SEARCH);
     }
 
     @Test
     public void eqResourceQueryTest() throws MalformedJsonQueryException {
-        QueryBuilder query = ElasticSearchResourceQueryBuilder.build(SEARCH, queryParser.parse("[{\"$eq\":{\"name\":\"Metallica\"}}]"));
-        QueryBuilder query2 = ElasticSearchResourceQueryBuilder.build(SEARCH, queryParser.parse("[{\"name\":\"Metallica\"}]"));
+        QueryBuilder query = ElasticSearchResourceQueryBuilder.build(searchObject, queryParser.parse("[{\"$eq\":{\"name\":\"Metallica\"}}]"));
+        QueryBuilder query2 = ElasticSearchResourceQueryBuilder.build(searchObject, queryParser.parse("[{\"name\":\"Metallica\"}]"));
         assertEquals(query.toString(), query2.toString());
         JsonNode result = jsonParser.readValueAsTree(query.toString());
         JsonNode jsonNode = result.get("bool").get("should");
@@ -46,7 +49,7 @@ public class ElasticSearchResourceQueryBuilderTest {
     public void neqResourceQueryTest() throws MalformedJsonQueryException {
         List<ResourceQuery> resourceQueries = new ArrayList<ResourceQuery>();
         resourceQueries.add(queryParser.parse("[{\"$ne\":{\"name\":\"Metallica\"}}]"));
-        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQueries);
+        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(searchObject, resourceQueries);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         JsonNode jsonNode = result.get("bool").get("should");
         assertEquals("{\"query_string\":{\"query\":\"search string\"}}", jsonNode.get("bool").get("must").toString());
@@ -58,7 +61,7 @@ public class ElasticSearchResourceQueryBuilderTest {
         List<ResourceQuery> resourceQueries = new ArrayList<ResourceQuery>();
         resourceQueries.add(queryParser.parse("[{\"$lt\":{\"duration\":238.0}},{\"$gte\":{\"duration\":238.0}}]"));
         resourceQueries.add(queryParser.parse("[{\"$lte\":{\"duration\":245.0}},{\"$gt\":{\"duration\":245.0}}]"));
-        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQueries);
+        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(searchObject, resourceQueries);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         JsonNode jsonNode = result.get("bool").get("should");
 
@@ -83,7 +86,7 @@ public class ElasticSearchResourceQueryBuilderTest {
     @Test
     public void inResourceQueryTest() throws MalformedJsonQueryException {
         ResourceQuery resourceQuery = queryParser.parse("[{\"$in\":{\"categories\":[\"Metallica\"]}}]");
-        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQuery);
+        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(searchObject, resourceQuery);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         JsonNode jsonNode = result.get("bool").get("should");
         assertEquals("{\"query_string\":{\"query\":\"search string\"}}", jsonNode.get("bool").get("must").toString());
@@ -93,7 +96,7 @@ public class ElasticSearchResourceQueryBuilderTest {
     @Test
     public void ninResourceQueryTest() throws MalformedJsonQueryException {
         ResourceQuery resourceQuery = queryParser.parse("[{\"$nin\":{\"categories\":[\"Metallica\"]}}]");
-        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQuery);
+        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(searchObject, resourceQuery);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         JsonNode jsonNode = result.get("bool").get("should");
         assertEquals("{\"query_string\":{\"query\":\"search string\"}}", jsonNode.get("bool").get("must").toString());
@@ -103,7 +106,7 @@ public class ElasticSearchResourceQueryBuilderTest {
     @Test
     public void existsResourceQueryTest() throws MalformedJsonQueryException {
         ResourceQuery resourceQuery = queryParser.parse("[{\"$exists\":{\"categories\":true}}]");
-        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQuery);
+        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(searchObject, resourceQuery);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         JsonNode jsonNode = result.get("bool").get("should");
         assertEquals("{\"query_string\":{\"query\":\"search string\"}}", jsonNode.get("bool").get("must").toString());
@@ -113,7 +116,7 @@ public class ElasticSearchResourceQueryBuilderTest {
     @Test
     public void notexistsResourceQueryTest() throws MalformedJsonQueryException {
         ResourceQuery resourceQuery = queryParser.parse("[{\"$exists\":{\"categories\":false}}]");
-        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQuery);
+        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(searchObject, resourceQuery);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         JsonNode jsonNode = result.get("bool").get("should");
         assertEquals("{\"query_string\":{\"query\":\"search string\"}}", jsonNode.get("bool").get("must").toString());
@@ -124,7 +127,7 @@ public class ElasticSearchResourceQueryBuilderTest {
     public void testEmptyResourceQuery() throws MalformedJsonQueryException {
         String queryString = "[]";
         ResourceQuery resourceQuery = queryParser.parse(queryString);
-        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQuery);
+        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(searchObject, resourceQuery);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         JsonNode jsonNode = result.get("bool").get("should");
         assertEquals("{\"query_string\":{\"query\":\"search string\"}}", jsonNode.get("bool").get("must").toString());
@@ -133,7 +136,7 @@ public class ElasticSearchResourceQueryBuilderTest {
     @Test
     public void testNullResourceQuery() throws MalformedJsonQueryException {
         ResourceQuery resourceQuery = null;
-        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(SEARCH, resourceQuery);
+        QueryBuilder builder = ElasticSearchResourceQueryBuilder.build(searchObject, resourceQuery);
         JsonNode result = jsonParser.readValueAsTree(builder.toString());
         assertEquals("{\"query_string\":{\"query\":\"search string\"}}", result.toString());
     }
