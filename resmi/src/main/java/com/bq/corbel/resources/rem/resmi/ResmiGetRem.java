@@ -33,6 +33,7 @@ import com.google.gson.JsonObject;
 public class ResmiGetRem extends AbstractResmiRem {
 
     private static final String API_DISTINCT = "api:distinct";
+    private static final String API_DISTINCTFIELD = "api:distinctfield";
     private static final Logger LOG = LoggerFactory.getLogger(ResmiGetRem.class);
 
     public ResmiGetRem(ResmiService resmiService) {
@@ -48,6 +49,9 @@ public class ResmiGetRem extends AbstractResmiRem {
             } else if (parameters.getCustomParameterValue(API_DISTINCT) != null) {
                 List<String> fields = getDistinctFields(parameters.getCustomParameterValue(API_DISTINCT));
                 return buildResponseWithCustomEtag(resmiService.findCollectionDistinct(resourceUri, parameters.getOptionalApiParameters(), fields, true));
+            } else if (parameters.getCustomParameterValue(API_DISTINCTFIELD) != null) {
+                List<String> fields = getDistinctFields(parameters.getCustomParameterValue(API_DISTINCTFIELD));
+                return buildResponse(resmiService.findCollectionDistinctFields(resourceUri, parameters.getOptionalApiParameters(), fields.isEmpty()?"":fields.get(0)));
             } else {
                 return buildResponseWithCustomEtag(resmiService.findCollection(resourceUri, parameters.getOptionalApiParameters()));
             }
@@ -77,6 +81,10 @@ public class ResmiGetRem extends AbstractResmiRem {
             } else if (parameters.getCustomParameterValue(API_DISTINCT) != null) {
                 List<String> fields = getDistinctFields(parameters.getCustomParameterValue(API_DISTINCT));
                 return buildResponseWithCustomEtag(resmiService.findRelationDistinct(resourceUri, parameters.getOptionalApiParameters(), fields, true));
+            } else if (parameters.getCustomParameterValue(API_DISTINCTFIELD) != null) {
+                List<String> fields = getDistinctFields(parameters.getCustomParameterValue(API_DISTINCTFIELD));
+                return buildResponse(resmiService.findRelationDistinctFields(resourceUri, parameters.getOptionalApiParameters(),
+                        fields.isEmpty()?"":fields.get(0)));
             } else {
                 return buildResponseWithCustomEtag(resmiService.findRelation(resourceUri, parameters.getOptionalApiParameters()));
             }
