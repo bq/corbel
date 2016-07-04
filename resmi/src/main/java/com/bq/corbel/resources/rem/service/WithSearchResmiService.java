@@ -80,7 +80,7 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
         if (searchObject.getText().isPresent()) {
             List<ResourceQuery> queries = apiParameters.getQueries().orElseGet(ArrayList::new);
             addRelationQuery(resourceUri, queries);
-            return search.count(resourceUri, searchObject.getText().get(), queries);
+            return search.count(resourceUri, searchObject, queries);
         } else {
             return search.count(resourceUri, searchObject.getTemplate().get(), searchObject.getParams().get());
         }
@@ -113,7 +113,7 @@ public class WithSearchResmiService extends DefaultResmiService implements Searc
         if (searchObject.getText().isPresent()) {
             List<ResourceQuery> queries = apiParameters.getQueries().orElseGet(ArrayList::new);
             addRelationQuery(resourceUri, queries);
-            searchResult = search.search(resourceUri, searchObject.getText().get(), queries, apiParameters.getPagination(),
+            searchResult = search.search(resourceUri, searchObject, queries, apiParameters.getPagination(),
                     apiParameters.getSort());
         } else {
             searchResult = search.search(resourceUri, searchObject.getTemplate().get(), searchObject.getParams().get(), apiParameters

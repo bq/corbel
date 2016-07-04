@@ -1,5 +1,6 @@
 package com.bq.corbel.resources.rem.search;
 
+import com.bq.corbel.lib.queries.request.Search;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.bq.corbel.lib.queries.request.Pagination;
@@ -86,10 +87,13 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     }
 
     @Override
-    public JsonArray search(String index, String type, String search, List<ResourceQuery> queries, Pagination pagination,
+    public JsonArray search(String index, String type, Search search, List<ResourceQuery> queries, Pagination pagination,
             Optional<Sort> sort) throws InvalidApiParamException {
-        SearchRequestBuilder request = client.prepareSearch(index).setTypes(type).setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
-                .setQuery(ElasticSearchResourceQueryBuilder.build(search, queries)).setFrom(pagination.getPage() * pagination.getPageSize())
+        SearchRequestBuilder request = client.prepareSearch(index)
+                .setTypes(type)
+                .setSearchType(SearchType.DFS_QUERY_THEN_FETCH)
+                .setQuery(ElasticSearchResourceQueryBuilder.build(search, queries))
+                .setFrom(pagination.getPage() * pagination.getPageSize())
                 .setSize(pagination.getPageSize());
 
         if (sort.isPresent()) {
@@ -105,7 +109,7 @@ public class DefaultElasticSearchService implements ElasticSearchService {
     }
 
     @Override
-    public long count(String index, String type, String search, List<ResourceQuery> queries) {
+    public long count(String index, String type, Search search, List<ResourceQuery> queries) {
         return client.prepareCount(index).setTypes(type).setQuery(ElasticSearchResourceQueryBuilder.build(search, queries)).execute()
                 .actionGet().getCount();
     }
