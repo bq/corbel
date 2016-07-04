@@ -6,15 +6,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 
+import com.bq.corbel.lib.queries.request.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
-import com.bq.corbel.lib.queries.request.AggregationResultsFactory;
-import com.bq.corbel.lib.queries.request.Pagination;
-import com.bq.corbel.lib.queries.request.ResourceQuery;
-import com.bq.corbel.lib.queries.request.Sort;
 import com.bq.corbel.resources.rem.dao.NamespaceNormalizer;
 import com.bq.corbel.resources.rem.model.ResourceUri;
 import com.bq.corbel.resources.rem.resmi.exception.InvalidApiParamException;
@@ -85,7 +82,7 @@ public class DefaultResmiSearch implements ResmiSearch {
     }
 
     @Override
-    public JsonArray search(ResourceUri uri, String search, List<ResourceQuery> queries, Pagination pagination, Optional<Sort> sort) throws InvalidApiParamException {
+    public JsonArray search(ResourceUri uri, Search search, List<ResourceQuery> queries, Pagination pagination, Optional<Sort> sort) throws InvalidApiParamException {
         if (upsertResmiIndex(uri)) {
             return elasticSearchService
                     .search(getIndexName(uri), getElasticSearchType(uri), search, queries, pagination, sort);
@@ -104,7 +101,7 @@ public class DefaultResmiSearch implements ResmiSearch {
     }
 
     @Override
-    public JsonElement count(ResourceUri uri, String search, List<ResourceQuery> queries) {
+    public JsonElement count(ResourceUri uri, Search search, List<ResourceQuery> queries) {
         if (upsertResmiIndex(uri)) {
             return aggregationResultsFactory.countResult(elasticSearchService.count(getIndexName(uri), getElasticSearchType(uri), search, queries));
         } else {
