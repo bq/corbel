@@ -91,6 +91,18 @@ public class DefaultResmiService implements ResmiService {
     }
 
     @Override
+    public JsonArray findCollectionDistinctFields(ResourceUri uri, Optional<CollectionParameters> apiParameters, String field) throws BadConfigurationException, InvalidApiParamException {
+        return resmiDao.findDistinctFields(uri, apiParameters.flatMap(CollectionParameters::getQueries),
+                apiParameters.map(CollectionParameters::getPagination), apiParameters.flatMap(CollectionParameters::getSort), field);
+    }
+
+    @Override
+    public JsonArray findRelationDistinctFields(ResourceUri uri, Optional<RelationParameters> apiParameters, String field) throws BadConfigurationException, InvalidApiParamException {
+        return resmiDao.findDistinctFields(uri, apiParameters.flatMap(RelationParameters::getQueries),
+                apiParameters.map(RelationParameters::getPagination), apiParameters.flatMap(RelationParameters::getSort), field);
+    }
+
+    @Override
     public JsonObject findResource(ResourceUri uri) {
         return resmiDao.findResource(uri);
     }

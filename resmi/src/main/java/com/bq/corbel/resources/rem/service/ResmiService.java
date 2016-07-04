@@ -31,6 +31,12 @@ public interface ResmiService {
     JsonArray findCollectionDistinct(ResourceUri uri, Optional<CollectionParameters> apiParameters, List<String> fields, boolean first)
             throws BadConfigurationException, InvalidApiParamException;
 
+    JsonArray findCollectionDistinctFields(ResourceUri uri, Optional<CollectionParameters> optionalApiParameters, String field)
+            throws BadConfigurationException, InvalidApiParamException;
+
+    JsonArray findRelationDistinctFields(ResourceUri uri, Optional<RelationParameters> optionalApiParameters, String field)
+            throws BadConfigurationException, InvalidApiParamException;
+
     JsonObject findResource(ResourceUri uri);
 
     JsonElement findRelation(ResourceUri uri, Optional<RelationParameters> apiParameters) throws BadConfigurationException, InvalidApiParamException;

@@ -1,9 +1,7 @@
 package com.bq.corbel.resources.rem.dao;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.gson.*;
+import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.bq.corbel.lib.mongo.JsonObjectMongoWriteConverter;
@@ -142,6 +140,15 @@ public class MongoResmiDao implements ResmiDao {
         Aggregation aggregation = buildGroupAggregation(uri, resourceQueries, pagination, sort, groups, first);
         List<JsonObject> result = mongoOperations.aggregate(aggregation, getMongoCollectionName(uri), JsonObject.class).getMappedResults();
         return JsonUtils.convertToArray(first ? extractDocuments(result) : result);
+    }
+
+    @Override
+    public JsonArray findDistinctFields(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries,
+            Optional<Pagination> pagination, Optional<Sort> sort, String field) throws InvalidApiParamException {
+        Query query = getQueryFromResourceQuery(resourceQueries, Optional.empty());
+        List result = mongoOperations.getCollection(getMongoCollectionName(uri)).distinct(field,query.getQueryObject());
+        JsonParser parser = new JsonParser();
+        return (JsonArray) parser.parse(result.toString());
     }
 
     @Override

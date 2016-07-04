@@ -32,6 +32,9 @@ public interface ResmiDao {
     JsonArray findCollectionWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
                                       Optional<Sort> sort, List<String> groups, boolean first) throws InvalidApiParamException;
 
+    JsonArray findDistinctFields(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
+            Optional<Sort> sort,  String field) throws InvalidApiParamException;
+
     JsonArray findRelationWithGroup(ResourceUri uri, Optional<List<ResourceQuery>> resourceQueries, Optional<Pagination> pagination,
                                     Optional<Sort> sort, List<String> groups, boolean first) throws InvalidApiParamException;
 
