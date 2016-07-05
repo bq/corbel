@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.bq.corbel.lib.queries.request.Search;
 import com.google.gson.JsonArray;
 
 import com.bq.corbel.lib.queries.request.Pagination;
@@ -27,11 +28,11 @@ public interface ElasticSearchService {
 
     void addTemplate(String index, String source);
 
-    JsonArray search(String index, String type, String search, List<ResourceQuery> queries, Pagination pagination, Optional<Sort> sort) throws InvalidApiParamException;
+    JsonArray search(String index, String type, Search search, List<ResourceQuery> queries, Pagination pagination, Optional<Sort> sort) throws InvalidApiParamException;
 
     JsonArray search(String index, String type, String templateName, Map<String, Object> templateParams, int page, int size) throws InvalidApiParamException;
 
-    long count(String index, String type, String search, List<ResourceQuery> queries);
+    long count(String index, String type, Search search, List<ResourceQuery> queries);
 
     long count(String index, String type, String templateName, Map<String, Object> templateParams) throws InvalidApiParamException;
 

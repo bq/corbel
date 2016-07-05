@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.bq.corbel.lib.queries.request.Search;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -19,9 +20,9 @@ import com.bq.corbel.resources.rem.resmi.exception.InvalidApiParamException;
  */
 public interface ResmiSearch {
 
-    JsonArray search(ResourceUri uri, String search, List<ResourceQuery> resourceQueries, Pagination pagination, Optional<Sort> sort) throws InvalidApiParamException;
+    JsonArray search(ResourceUri uri, Search search, List<ResourceQuery> resourceQueries, Pagination pagination, Optional<Sort> sort) throws InvalidApiParamException;
 
-    JsonElement count(ResourceUri uri, String search, List<ResourceQuery> resourceQueries);
+    JsonElement count(ResourceUri uri, Search search, List<ResourceQuery> resourceQueries);
 
     JsonArray search(ResourceUri resourceUri, String templateName, Map<String, Object> templateParams, int page, int size) throws InvalidApiParamException;
 

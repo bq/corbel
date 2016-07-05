@@ -88,7 +88,7 @@ import com.google.gson.JsonObject;
         when(resourceSearchMock.getParams()).thenReturn(Optional.empty());
         when(resourceSearchMock.indexFieldsOnly()).thenReturn(true);
         when(searchableFieldRegistry.getFieldsFromResourceUri(eq(RESOURCE_URI))).thenReturn(new HashSet(Arrays.asList("t1", "t2")));
-        when(resmiSearch.search(eq(RESOURCE_URI), eq(search.get()), eq(resourceQueriesMock), eq(paginationMock), eq(Optional.of(sortMock))))
+        when(resmiSearch.search(eq(RESOURCE_URI), eq(resourceSearchMock), eq(resourceQueriesMock), eq(paginationMock), eq(Optional.of(sortMock))))
                 .thenReturn(fakeResult);
 
         JsonArray result = defaultResmiService.findCollection(resourceUri, Optional.of(collectionParametersMock));
@@ -141,13 +141,13 @@ import com.google.gson.JsonObject;
         when(resourceSearchMock.indexFieldsOnly()).thenReturn(true);
         when(relationParametersMock.getQueries()).thenReturn(Optional.empty());
         when(searchableFieldRegistry.getFieldsFromResourceUri(eq(resourceUri))).thenReturn(new HashSet(Arrays.asList("t1", "t2")));
-        when(resmiSearch.search(eq(resourceUri), eq(search.get()), any(), eq(paginationMock), eq(Optional.of(sortMock)))).thenReturn(
+        when(resmiSearch.search(eq(resourceUri), eq(resourceSearchMock), any(), eq(paginationMock), eq(Optional.of(sortMock)))).thenReturn(
                 fakeResult);
 
         JsonArray result = (JsonArray) defaultResmiService.findRelation(resourceUri, Optional.of(relationParametersMock));
         assertThat(result).isEqualTo(fakeResult);
         ArgumentCaptor<List> query = ArgumentCaptor.forClass(List.class);
-        verify(resmiSearch).search(eq(resourceUri), eq(search.get()), query.capture(), eq(paginationMock), eq(Optional.of(sortMock)));
+        verify(resmiSearch).search(eq(resourceUri), eq(resourceSearchMock), query.capture(), eq(paginationMock), eq(Optional.of(sortMock)));
         assertThat(query.getValue().toString()).isEqualTo("[[{\"$eq\":{\"_src_id\":\"" + ID + "\"}}]]");
     }
 
