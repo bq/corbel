@@ -210,9 +210,7 @@ import static org.mockito.Mockito.*;
 
         JsonObject operator = new JsonObject();
         operator.addProperty("b", 2);
-        JsonObject operators = new JsonObject();
-        operators.add("$inc", operator);
-        json.add("$operators", operators);
+        json.add("$inc", operator);
 
         when(mongoOperations.findAndModify(any(), any(), any(), eq(JsonObject.class), eq(TEST_COLLECTION))).thenAnswer(answerWithId(json));
 

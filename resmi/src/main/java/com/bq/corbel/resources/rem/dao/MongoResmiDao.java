@@ -46,7 +46,6 @@ public class MongoResmiDao implements ResmiDao {
     private static final String ID = "id";
     private static final String _ID = "_id";
 
-    private static final String UPDATE_OPERATORS = "$operators";
     private static final String RETURN_NEW = "$new";
     private static final String RELATION_CONCATENATION = ".";
     private static final String DOMAIN_CONCATENATION = "__";
@@ -256,11 +255,9 @@ public class MongoResmiDao implements ResmiDao {
 
 
         // TODO: This should come as a parameter
-        if (entity.has(UPDATE_OPERATORS)) {
-            JsonObject operators = entity.get(UPDATE_OPERATORS).getAsJsonObject();
-            operators.entrySet().stream()
-                    .forEach(entry -> addUpdateOperator(update, entry.getKey(), entry.getValue()));
-        }
+        entity.entrySet().stream()
+                .filter(entry -> isKeyword(entry.getKey()))
+                .forEach(entry -> addUpdateModifier(update, entry.getKey(), entry.getValue()));
 
         // Set fields
         jsonObjectMongoWriteConverter.convert(entity).toMap()
@@ -582,8 +579,7 @@ public class MongoResmiDao implements ResmiDao {
         return StringUtils.startsWithIgnoreCase(key, "$");
     }
 
-    // TODO: This belongs to lib-queries
-    private void addUpdateOperator(Update update, String modifier, JsonElement modifierValue) {
+    private void addUpdateModifier(Update update, String modifier, JsonElement modifierValue) {
         jsonObjectMongoWriteConverter.convert(modifierValue).toMap()
                 .forEach((key, value) -> {
                     switch (modifier) {
