@@ -6,6 +6,8 @@ import com.bq.corbel.notifications.repository.DomainRepository;
 import com.bq.corbel.notifications.repository.NotificationRepository;
 import com.bq.corbel.notifications.template.NotificationFiller;
 import com.bq.corbel.notifications.utils.DomainNameIdGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,6 +23,7 @@ public class DefaultSenderNotificationsService implements SenderNotificationsSer
     NotificationsDispatcher notificationsDispatcher;
     NotificationRepository notificationRepository;
     DomainRepository domainRepository;
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultSenderNotificationsService.class);
 
     public DefaultSenderNotificationsService(NotificationFiller notificationFiller,
                                              NotificationsDispatcher notificationsDispatcher,
@@ -34,6 +37,8 @@ public class DefaultSenderNotificationsService implements SenderNotificationsSer
 
     @Override
     public void sendNotification(String domainId, String notificationId, Map<String, String> customProperties, String recipient) {
+        LOG.debug("DefaultSenderNotificationsService send notification : domainId = "+ domainId + " recipient = " + recipient);
+
         String currentNotificationId = DomainNameIdGenerator.generateNotificationTemplateId(domainId, notificationId);
 
         Domain domain = domainRepository.findOne(domainId);
