@@ -37,8 +37,6 @@ public class DefaultSenderNotificationsService implements SenderNotificationsSer
 
     @Override
     public void sendNotification(String domainId, String notificationId, Map<String, String> customProperties, String recipient) {
-        LOG.debug("DefaultSenderNotificationsService send notification : domainId = "+ domainId + " recipient = " + recipient);
-
         String currentNotificationId = DomainNameIdGenerator.generateNotificationTemplateId(domainId, notificationId);
 
         Domain domain = domainRepository.findOne(domainId);
@@ -57,6 +55,10 @@ public class DefaultSenderNotificationsService implements SenderNotificationsSer
         if (notificationTemplate != null) {
             NotificationTemplate notificationTemplateFilled = notificationFiller.fill(notificationTemplate, properties);
             notificationsDispatcher.send(notificationTemplateFilled, recipient);
+            LOG.debug("Template with id: "+ notificationTemplateId + " was sent");
+        }
+        else{
+            LOG.error("Template with id: "+ notificationTemplateId +" not found");
         }
 
     }
