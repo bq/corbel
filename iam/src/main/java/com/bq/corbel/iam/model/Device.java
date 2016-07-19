@@ -17,9 +17,27 @@ public class Device extends Entity {
     private String notificationUri;
     private String name;
     private String type;
+    private String oss;
+    private String version;
     private Boolean notificationEnabled;
     private Date firstConnection;
     private Date lastConnection;
+
+    public String getOss() {
+        return oss;
+    }
+
+    public void setOss(String oss) {
+        this.oss = oss;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
 
     public String getDomain() {
         return domain;
