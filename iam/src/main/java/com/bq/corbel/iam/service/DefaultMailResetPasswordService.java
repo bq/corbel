@@ -38,14 +38,14 @@ public class DefaultMailResetPasswordService implements MailResetPasswordService
     }
 
     @Override
-    public void sendMailResetPassword(String clientId, String userId, String email, String domainId) {
+    public void sendMailResetPassword(String clientId, String userId, String username,  String email, String domainId) {
         Optional.ofNullable(clientRepository.findOne(clientId)).ifPresent(client -> {
             String notificationId = Optional.ofNullable(client.getResetNotificationId()).orElse(defaultNotificationId);
-            sendMailResetPasswordEvent(notificationId, client, userId, email, domainId);
+            sendMailResetPasswordEvent(notificationId, client, userId, username, email, domainId);
         });
     }
 
-    private void sendMailResetPasswordEvent(String notificationId, Client client, String userId, String email, String domainId) {
+    private void sendMailResetPasswordEvent(String notificationId, Client client, String userId, String username, String email, String domainId) {
 
         String token = createEmailResetPasswordToken(client.getId(), userId, domainId);
         setTokenScope(token, client.getId(), userId, domainId);
@@ -54,6 +54,7 @@ public class DefaultMailResetPasswordService implements MailResetPasswordService
         String clientUrl = resetUrl.replace("{token}", token);
 
         Map<String, String> properties = new HashMap<>();
+        properties.put("username", username);
         properties.put("clientUrl", clientUrl);
 
         eventsService.sendNotificationEvent(domainId, notificationId, email, properties);

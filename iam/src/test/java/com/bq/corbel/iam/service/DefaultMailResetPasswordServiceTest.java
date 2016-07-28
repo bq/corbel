@@ -28,6 +28,7 @@ import com.bq.corbel.lib.token.factory.TokenFactory;
     private static final String RESET_PASSWORD_TOKEN_SCOPE = "iam:user:me";
     private static final String DOMAIN_ID = "domain_id";
     private static final String RESET_URL = "resetUrlTest";
+    private static final String USERNAME = "Asdfg Dsafg";
 
     @Mock private EventsService eventsService;
     @Mock private ScopeService scopeService;
@@ -55,7 +56,7 @@ import com.bq.corbel.lib.token.factory.TokenFactory;
         when(testClient.getId()).thenReturn(CLIENT_ID);
 
 
-        defaultMailResetPasswordService.sendMailResetPassword(CLIENT_ID, USER_ID, EMAIL, DOMAIN_ID);
+        defaultMailResetPasswordService.sendMailResetPassword(CLIENT_ID, USER_ID, USERNAME, EMAIL, DOMAIN_ID);
 
         verify(clientRepository).findOne(CLIENT_ID);
         verify(testClient).getResetNotificationId();
@@ -78,7 +79,7 @@ import com.bq.corbel.lib.token.factory.TokenFactory;
         when(testClient.getId()).thenReturn(CLIENT_ID);
 
 
-        defaultMailResetPasswordService.sendMailResetPassword(CLIENT_ID, USER_ID, EMAIL, DOMAIN_ID);
+        defaultMailResetPasswordService.sendMailResetPassword(CLIENT_ID, USER_ID, USERNAME, EMAIL, DOMAIN_ID);
 
         verify(clientRepository).findOne(CLIENT_ID);
         verify(testClient).getResetNotificationId();
@@ -88,7 +89,7 @@ import com.bq.corbel.lib.token.factory.TokenFactory;
     public void testSendMailResetPasswordWithoutClientId() {
         when(clientRepository.findOne(CLIENT_ID)).thenReturn(null);
 
-        defaultMailResetPasswordService.sendMailResetPassword(CLIENT_ID, USER_ID, EMAIL, DOMAIN_ID);
+        defaultMailResetPasswordService.sendMailResetPassword(CLIENT_ID, USER_ID, USERNAME, EMAIL, DOMAIN_ID);
 
         verify(clientRepository).findOne(CLIENT_ID);
         verifyNoMoreInteractions(clientRepository, tokenFactory);
