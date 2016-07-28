@@ -147,12 +147,14 @@ import com.google.gson.Gson;
     public void testSendMailResetPassword() {
         User testUser = new User();
         testUser.setId(TEST_USER);
+        testUser.setFirstName(TEST_USER_FIRST_NAME);
+        testUser.setLastName(TEST_USER_LAST_NAME);
 
         when(userRepositoryMock.findByDomainAndEmail(TEST_DOMAIN, TEST_USER_EMAIL)).thenReturn(testUser);
 
         service.sendMailResetPassword(TEST_USER_EMAIL, CLIENT_ID, TEST_DOMAIN);
 
-        verify(mailResetPasswordServiceMock).sendMailResetPassword(CLIENT_ID, TEST_USER, TEST_USER_EMAIL, TEST_DOMAIN);
+        verify(mailResetPasswordServiceMock).sendMailResetPassword(CLIENT_ID, TEST_USER, TEST_USER_FIRST_NAME+ " " +TEST_USER_LAST_NAME, TEST_USER_EMAIL, TEST_DOMAIN);
         verifyNoMoreInteractions(mailResetPasswordServiceMock);
     }
 
@@ -162,7 +164,7 @@ import com.google.gson.Gson;
 
         service.sendMailResetPassword(TEST_USER_EMAIL, CLIENT_ID, TEST_DOMAIN);
 
-        verify(mailResetPasswordServiceMock, never()).sendMailResetPassword(any(), any(), any(), eq(DOMAIN_ID));
+        verify(mailResetPasswordServiceMock, never()).sendMailResetPassword(any(), any(), any() , any(), eq(DOMAIN_ID));
     }
 
     @Test
