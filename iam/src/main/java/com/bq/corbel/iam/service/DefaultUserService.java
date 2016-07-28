@@ -162,9 +162,11 @@ public class DefaultUserService implements UserService {
     }
 
     @Override
-    public void sendMailResetPassword(String email, String clientId, String domain) {
+    public void sendMailResetPassword(String email, String clientId,  String domain) {
         Optional.ofNullable(userRepository.findByDomainAndEmail(domain, email)).ifPresent(
-                user -> mailResetPasswordService.sendMailResetPassword(clientId, user.getId(), email, domain));
+                user -> {
+                    String username = (user.getLastName().isEmpty())? user.getFirstName():user.getFirstName() + " "+ user.getLastName();
+                    mailResetPasswordService.sendMailResetPassword(clientId, user.getId(), username, email, domain);});
     }
 
     @Override
