@@ -147,7 +147,7 @@ public class UserResourceTest extends UserResourceTestBase {
 
         User user = getTestUser();
         user.setScopes(null);
-        when(userServiceMock.create(Mockito.any(User.class))).thenReturn(user);
+        when(userServiceMock.create(Mockito.any(User.class),any())).thenReturn(user);
 
         Response response = addUserClient().post(Entity.json(user), Response.class);
         assertThat(response.getStatus()).isEqualTo(201);

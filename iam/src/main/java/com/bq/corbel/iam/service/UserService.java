@@ -23,6 +23,8 @@ public interface UserService {
 
     User update(User user);
 
+    User create(User user, boolean avoidNotification) throws CreateUserException;
+
     User create(User user) throws CreateUserException;
 
     User findById(String id);
