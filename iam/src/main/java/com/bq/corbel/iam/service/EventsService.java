@@ -10,7 +10,7 @@ import com.bq.corbel.iam.model.User;
  */
 public interface EventsService {
 
-    void sendUserCreatedEvent(User user);
+    void sendUserCreatedEvent(User user, boolean avoidNotification);
 
     void sendUserModifiedEvent(User user);
 

@@ -130,12 +130,12 @@ public class UserResourceTest extends UserResourceTestBase {
 
         User userWithCreationDate = getTestUser();
         userWithCreationDate.setCreatedDate(new Date());
-        when(userServiceMock.create(Mockito.any(User.class))).thenReturn(userWithCreationDate);
+        when(userServiceMock.create(Mockito.any(User.class), anyBoolean())).thenReturn(userWithCreationDate);
 
         Response response = addUserClient().post(Entity.json(user), Response.class);
         assertThat(response.getStatus()).isEqualTo(201);
         assertThat(response.getHeaderString("Location")).contains(TEST_USER_ID);
-        verify(userServiceMock).create(userCaptor.capture());
+        verify(userServiceMock).create(userCaptor.capture(),eq(false));
         User storeUser = userCaptor.getValue();
         assertThat(storeUser.getScopes()).isEqualTo(TEST_DOMAIN.getDefaultScopes());
         assertThat(storeUser.getScopes()).doesNotContain(NOT_ALLOWED_SCOPE);
@@ -147,12 +147,12 @@ public class UserResourceTest extends UserResourceTestBase {
 
         User user = getTestUser();
         user.setScopes(null);
-        when(userServiceMock.create(Mockito.any(User.class))).thenReturn(user);
+        when(userServiceMock.create(any(User.class),anyBoolean())).thenReturn(user);
 
         Response response = addUserClient().post(Entity.json(user), Response.class);
         assertThat(response.getStatus()).isEqualTo(201);
         assertThat(response.getHeaderString("Location")).contains(TEST_USER_ID);
-        verify(userServiceMock).create(userCaptor.capture());
+        verify(userServiceMock).create(userCaptor.capture(), eq(false));
         User storeUser = userCaptor.getValue();
         assertThat(storeUser.getScopes()).isEqualTo(TEST_DOMAIN.getDefaultScopes());
     }
@@ -183,7 +183,7 @@ public class UserResourceTest extends UserResourceTestBase {
         when(domainServiceMock.scopesAllowedInDomain(TEST_SCOPES, TEST_DOMAIN)).thenReturn(true);
         User user = getTestUser();
         user.setId(null);
-        when(userServiceMock.create(any())).thenThrow((Class) CreateUserException.class);
+        when(userServiceMock.create(any(User.class), anyBoolean())).thenThrow((Class) CreateUserException.class);
 
         Response response = addUserClient().post(Entity.json(user), Response.class);
         assertThat(response.getStatus()).isEqualTo(409);

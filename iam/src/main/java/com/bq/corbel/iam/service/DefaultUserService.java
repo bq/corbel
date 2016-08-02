@@ -80,9 +80,14 @@ public class DefaultUserService implements UserService {
 
     @Override
     public User create(User user) throws CreateUserException {
+        return create(user, false);
+    }
+
+    @Override
+    public User create(User user, boolean avoidNotification) throws CreateUserException {
         try {
             User createdUser = userRepository.save(user);
-            eventsService.sendUserCreatedEvent(createdUser);
+                eventsService.sendUserCreatedEvent(createdUser, avoidNotification);
             return createdUser;
         } catch (DataIntegrityViolationException exception) {
             JsonElement error = gson.fromJson(exception.getCause().getMessage(), JsonElement.class).getAsJsonObject().get("err");

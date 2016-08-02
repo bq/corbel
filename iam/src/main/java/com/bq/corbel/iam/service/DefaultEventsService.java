@@ -23,10 +23,10 @@ public class DefaultEventsService implements EventsService {
     }
 
     @Override
-    public void sendUserCreatedEvent(User user) {
+    public void sendUserCreatedEvent(User user, boolean avoidNotification) {
         UserCreatedEvent userCreatedEvent = new UserCreatedEvent(user.getDomain(), user.getId(), user.getEmail(), user.getUsername(),
                 user.getFirstName(), user.getLastName(), user.getProfileUrl(), user.getPhoneNumber(), user.getCountry(),
-                user.getProperties(), user.getScopes(), user.getGroups());
+                user.getProperties(), user.getScopes(), user.getGroups(), avoidNotification);
         eventBus.dispatch(userCreatedEvent);
     }
 

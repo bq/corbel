@@ -43,7 +43,7 @@
     <lib-queries.version>0.20.0</lib-queries.version>
     <lib-ws.version>0.23.0</lib-ws.version>
     <lib-rabbitmq.version>0.10.0</lib-rabbitmq.version>
-    <events.version>1.33.0</events.version>
+    <events.version>1.34.0-SNAPSHOT</events.version>
     <spring.version>4.2.6.RELEASE</spring.version>
     <dropwizard.version>0.8.1</dropwizard.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -110,7 +110,7 @@ import com.google.gson.JsonElement;
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response postUser(@PathParam("domain") String domainId, @Valid UserWithIdentity user, @Context UriInfo uriInfo,
-            @Auth AuthorizationInfo authorizationInfo) {
+            @QueryParam("avoidnotification") boolean avoidNotification, @Auth AuthorizationInfo authorizationInfo) {
 
         return domainService.getDomain(domainId).map(domain -> {
             user.setDomain(domain.getId());
@@ -119,7 +119,7 @@ import com.google.gson.JsonElement;
             User createdUser;
             // The new user can only be on the domainId of the client making the request
                 try {
-                    createdUser = userService.create(ensureNoId(user));
+                    createdUser = userService.create(ensureNoId(user), avoidNotification);
                 } catch (CreateUserException duplicatedUser) {
                     return IamErrorResponseFactory.getInstance().entityExists(Message.USER_EXISTS, duplicatedUser.getMessage());
                 }
