@@ -81,10 +81,10 @@ import com.bq.corbel.iam.model.User;
 
     @Test
     public void testSendUserCreatedEvent() {
-        service.sendUserCreatedEvent(user);
+        service.sendUserCreatedEvent(user, false);
         verify(eventBus).dispatch(
                 new UserCreatedEvent(DOMAIN, ID, EMAIL, USERNAME, FIRSTNAME, LASTNAME, PROFILEURL, PHONENUMBER, COUNTRY, PROPERTIES,
-                        SCOPES, GROUPS));
+                        SCOPES, GROUPS, false));
     }
 
     @Test

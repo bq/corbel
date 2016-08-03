@@ -206,7 +206,7 @@ import com.google.gson.Gson;
         when(userRepositoryMock.save(user)).thenReturn(user);
         service.create(user);
         verify(userRepositoryMock).save(user);
-        verify(eventServiceMock).sendUserCreatedEvent(user);
+        verify(eventServiceMock).sendUserCreatedEvent(user, false);
     }
 
     @Test
