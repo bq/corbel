@@ -10,7 +10,7 @@ import com.bq.corbel.iam.model.Entity;
 import com.bq.corbel.iam.model.Identity;
 import com.bq.corbel.iam.model.TraceableEntity;
 import com.bq.corbel.iam.model.User;
-import com.bq.corbel.iam.model.UserWithIdentity;
+import com.bq.corbel.iam.model.UserWithIdentityAndOptionalNotification;
 import com.bq.corbel.iam.repository.CreateUserException;
 import com.bq.corbel.iam.service.DeviceService;
 import com.bq.corbel.iam.service.DomainService;
@@ -109,8 +109,8 @@ import com.google.gson.JsonElement;
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response postUser(@PathParam("domain") String domainId, @Valid UserWithIdentity user, @Context UriInfo uriInfo,
-            @QueryParam("avoidnotification") boolean avoidNotification, @Auth AuthorizationInfo authorizationInfo) {
+        public Response postUser(@PathParam("domain") String domainId, @Valid UserWithIdentityAndOptionalNotification user,
+            @Context UriInfo uriInfo, @Auth AuthorizationInfo authorizationInfo) {
 
         return domainService.getDomain(domainId).map(domain -> {
             user.setDomain(domain.getId());
@@ -119,7 +119,7 @@ import com.google.gson.JsonElement;
             User createdUser;
             // The new user can only be on the domainId of the client making the request
                 try {
-                    createdUser = userService.create(ensureNoId(user), avoidNotification);
+                    createdUser = userService.create(ensureNoId(user), user.isAvoidNotification());
                 } catch (CreateUserException duplicatedUser) {
                     return IamErrorResponseFactory.getInstance().entityExists(Message.USER_EXISTS, duplicatedUser.getMessage());
                 }
