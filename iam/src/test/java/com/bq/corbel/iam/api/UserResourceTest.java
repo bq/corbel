@@ -142,6 +142,37 @@ public class UserResourceTest extends UserResourceTestBase {
     }
 
     @Test
+    public void testAddUserWithoutSendingEmail() throws CreateUserException {
+        ArgumentCaptor<User> userCaptor = forClass(User.class);
+
+        UserWithIdentityAndOptionalNotification user = new UserWithIdentityAndOptionalNotification();
+        user.setId(TEST_USER_ID);
+        user.setDomain(TEST_DOMAIN_ID);
+        user.setEmail(TEST_USER_EMAIL);
+        user.setFirstName(TEST_USER_FIRST_NAME);
+        user.setLastName(TEST_USER_LAST_NAME);
+        user.setPhoneNumber(TEST_USER_PHONE);
+        user.setProfileUrl(TEST_USER_URL);
+        user.setScopes(null);
+        user.setUsername(TEST_USERNAME);
+        user.addProperty(TEST_PROPERTY, TEST_PROPERTY_VAL);
+        user.setScopes(ImmutableSet.of(NOT_ALLOWED_SCOPE));
+        user.setAvoidNotification(true);
+
+        User userWithCreationDate = user;
+        userWithCreationDate.setCreatedDate(new Date());
+        when(userServiceMock.create(Mockito.any(User.class), anyBoolean())).thenReturn(userWithCreationDate);
+
+        Response response = addUserClient().post(Entity.json(user), Response.class);
+        assertThat(response.getStatus()).isEqualTo(201);
+        assertThat(response.getHeaderString("Location")).contains(TEST_USER_ID);
+        verify(userServiceMock).create(userCaptor.capture(),eq(true));
+        User storeUser = userCaptor.getValue();
+        assertThat(storeUser.getScopes()).isEqualTo(TEST_DOMAIN.getDefaultScopes());
+        assertThat(storeUser.getScopes()).doesNotContain(NOT_ALLOWED_SCOPE);
+    }
+
+    @Test
     public void testAddUserWithNullScopes() throws CreateUserException {
         ArgumentCaptor<User> userCaptor = forClass(User.class);
 
