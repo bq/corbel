@@ -337,7 +337,7 @@ public class UserResourceTest extends UserResourceTestBase {
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(user);
         Response response = getUserClient(TEST_USER_ID).delete(Response.class);
         assertThat(response.getStatus()).isEqualTo(204);
-        verify(userServiceMock).delete(user);
+        verify(userServiceMock).delete(user,false);
         verify(identityServiceMock).deleteUserIdentities(user);
         verify(devicesServiceMock).deleteByUserId(user);
     }
@@ -348,7 +348,7 @@ public class UserResourceTest extends UserResourceTestBase {
         Response response = getUserClient("fakeId").delete(Response.class);
         assertThat(response.getStatus()).isEqualTo(204);
         verifyNoMoreInteractions(identityServiceMock, devicesServiceMock);
-        verify(userServiceMock, never()).delete(any());
+        verify(userServiceMock, never()).delete(any(), any());
     }
 
     @Test
@@ -363,7 +363,7 @@ public class UserResourceTest extends UserResourceTestBase {
         when(userServiceMock.findById(TEST_USER_ID)).thenReturn(new User());
         Response response = getUserClient(TEST_USER_ID).delete(Response.class);
         assertThat(response.getStatus()).isEqualTo(401);
-        verify(userServiceMock, never()).delete(any());
+        verify(userServiceMock, never()).delete(any(), any());
     }
 
     @Test

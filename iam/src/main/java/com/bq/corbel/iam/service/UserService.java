@@ -37,7 +37,7 @@ public interface UserService {
         signOut(userId, Optional.empty());
     }
 
-    void delete(User user);
+    void delete(User user, boolean avoidNotification);
 
     boolean existsByUsernameAndDomain(String username, String domainId);
 
