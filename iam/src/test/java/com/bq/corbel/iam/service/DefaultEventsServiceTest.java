@@ -90,8 +90,8 @@ import com.bq.corbel.iam.model.User;
     @Test
     public void testSendUserDeletedEvent() {
         User user = new User();
-        service.sendUserDeletedEvent(user, DOMAIN);
-        verify(eventBus).dispatch(new UserDeletedEvent(null,null,null,null, DOMAIN));
+        service.sendUserDeletedEvent(user, DOMAIN, false);
+        verify(eventBus).dispatch(new UserDeletedEvent(null,null,null,null, DOMAIN, false));
     }
 
     @Test

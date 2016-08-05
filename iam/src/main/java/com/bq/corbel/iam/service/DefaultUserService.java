@@ -108,10 +108,10 @@ public class DefaultUserService implements UserService {
     }
 
     @Override
-    public void delete(User user) {
+    public void delete(User user, boolean avoidNotification) {
         userRepository.delete(user);
         signOut(user.getId());
-        eventsService.sendUserDeletedEvent(user, user.getDomain());
+        eventsService.sendUserDeletedEvent(user, user.getDomain(), avoidNotification);
     }
 
     @Override

@@ -129,7 +129,7 @@ import com.google.gson.JsonElement;
                         addIdentity(identity);
                     } catch (Exception e) {
                         // Rollback user creation and handle error
-                        userService.delete(user);
+                        userService.delete(user, false);
                         return handleIdentityError(e, identity);
                     }
                 }
@@ -183,12 +183,12 @@ import com.google.gson.JsonElement;
     @DELETE
     @Path("/{id}")
     public Response deleteUser(@PathParam("domain") String domainId, @PathParam("id") String userId,
-            @Auth AuthorizationInfo authorizationInfo) {
+            @Auth AuthorizationInfo authorizationInfo, @QueryParam("avoidnotification") boolean avoidNotification) {
         Optional<User> optionalUser = resolveMeIdAliases(userId, authorizationInfo.getUserId());
         optionalUser.ifPresent(user -> {
             checkingUserDomain(user, domainId);
             identityService.deleteUserIdentities(user);
-            userService.delete(user);
+            userService.delete(user, avoidNotification);
             deviceService.deleteByUserId(user);
         });
         return Response.noContent().build();

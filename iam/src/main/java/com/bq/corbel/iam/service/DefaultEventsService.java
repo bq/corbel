@@ -31,8 +31,9 @@ public class DefaultEventsService implements EventsService {
     }
 
     @Override
-    public void sendUserDeletedEvent(User user, String domain) {
-        UserDeletedEvent userDeletedEvent = new UserDeletedEvent(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(), domain);
+    public void sendUserDeletedEvent(User user, String domain, boolean avoidNotification) {
+        UserDeletedEvent userDeletedEvent = new UserDeletedEvent(user.getId(), user.getFirstName(), user.getLastName(), user.getEmail(),
+                domain, avoidNotification);
         eventBus.dispatch(userDeletedEvent);
     }
 
