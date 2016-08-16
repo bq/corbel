@@ -168,6 +168,48 @@ import com.google.gson.Gson;
     }
 
     @Test
+    public void testSendMailResetPasswordWithUserWithoutFirstName() {
+        User testUser = new User();
+        testUser.setId(TEST_USER);
+        testUser.setLastName(TEST_USER_LAST_NAME);
+
+        when(userRepositoryMock.findByDomainAndEmail(TEST_DOMAIN, TEST_USER_EMAIL)).thenReturn(testUser);
+
+        service.sendMailResetPassword(TEST_USER_EMAIL, CLIENT_ID, TEST_DOMAIN);
+
+        verify(mailResetPasswordServiceMock).sendMailResetPassword(CLIENT_ID, TEST_USER, "", TEST_USER_EMAIL, TEST_DOMAIN);
+        verifyNoMoreInteractions(mailResetPasswordServiceMock);
+    }
+
+    @Test
+    public void testSendMailResetPasswordWithUserWithoutLastName() {
+        User testUser = new User();
+        testUser.setId(TEST_USER);
+        testUser.setFirstName(TEST_USER_FIRST_NAME);
+
+        when(userRepositoryMock.findByDomainAndEmail(TEST_DOMAIN, TEST_USER_EMAIL)).thenReturn(testUser);
+
+        service.sendMailResetPassword(TEST_USER_EMAIL, CLIENT_ID, TEST_DOMAIN);
+
+        verify(mailResetPasswordServiceMock).sendMailResetPassword(CLIENT_ID, TEST_USER, TEST_USER_FIRST_NAME, TEST_USER_EMAIL, TEST_DOMAIN);
+        verifyNoMoreInteractions(mailResetPasswordServiceMock);
+    }
+
+    @Test
+    public void testSendMailResetPasswordWithUserWithoutFirstNameAndLastName() {
+        User testUser = new User();
+        testUser.setId(TEST_USER);
+
+        when(userRepositoryMock.findByDomainAndEmail(TEST_DOMAIN, TEST_USER_EMAIL)).thenReturn(testUser);
+
+        service.sendMailResetPassword(TEST_USER_EMAIL, CLIENT_ID, TEST_DOMAIN);
+
+        verify(mailResetPasswordServiceMock).sendMailResetPassword(CLIENT_ID, TEST_USER, "", TEST_USER_EMAIL, TEST_DOMAIN);
+        verifyNoMoreInteractions(mailResetPasswordServiceMock);
+    }
+
+
+    @Test
     public void testFindByDomainAndUsername() {
         service.findByDomainAndUsername(TEST_DOMAIN, TEST_USER);
         verify(userRepositoryMock).findByUsernameAndDomain(TEST_USER, TEST_DOMAIN);

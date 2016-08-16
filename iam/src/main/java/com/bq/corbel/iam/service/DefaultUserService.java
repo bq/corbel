@@ -171,10 +171,10 @@ public class DefaultUserService implements UserService {
         Optional.ofNullable(userRepository.findByDomainAndEmail(domain, email)).ifPresent(
                 user -> {
                     String username;
-                    if (user.getFirstName().isEmpty()){
+                    if (user.getFirstName() == null){
                         username = "";
                     }
-                    else if (user.getLastName().isEmpty()){
+                    else if (user.getLastName() == null){
                         username = user.getFirstName();
                     }
                     else{
