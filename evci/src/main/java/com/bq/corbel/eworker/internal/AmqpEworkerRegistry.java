@@ -7,6 +7,9 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.function.UnaryOperator;
 
+import com.bq.corbel.evci.EvciRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 
@@ -28,6 +31,7 @@ public class AmqpEworkerRegistry implements EworkerRegistry {
     private final BackoffOptions backoffOptions;
     private final int maxAttempts;
     private final UnaryOperator<String> routingPatternFunction;
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpEworkerRegistry.class);
 
     public AmqpEworkerRegistry(DomainObjectJsonMessageConverterFactory converterFactory, AmqpConfigurer configurer,
             BackoffOptions backoffOptions, int maxAttempts, UnaryOperator<String> routingPatternFunction) {
@@ -41,6 +45,7 @@ public class AmqpEworkerRegistry implements EworkerRegistry {
 
     @Override
     public <E> void registerEworker(Eworker<E> eworker, String routingPattern, String queue, boolean handleFailures, int threadsNumber) {
+        LOG.error("threads number in evci: "+ threadsNumber);
         Type eworkerType = ((ParameterizedType) eworker.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
         String queueName = "evci.eworker." + queue + ".queue";
         String deadLetterQueueName = "evci.eworker." + queue + ".dlq";
