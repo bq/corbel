@@ -7,6 +7,7 @@ EXPOSE ${port.admin}
 ADD run.sh /
 ADD ${project.name}-${project.version}-bin.tar.gz /
 ADD logback.groovy /${project.name}/etc/logback.groovy
+ADD default.properties /${project.name}/etc/default.properties
 
 # Install ImageMagick
 

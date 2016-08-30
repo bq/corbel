@@ -11,11 +11,11 @@
 	<name>iam</name>
 
 	<properties>
-		<port>8082</port>
-		<port.admin>8083</port.admin>
+		<port>8080</port>
+		<port.admin>8081</port.admin>
 		<docker.files>${project.basedir}/../src/docker/service</docker.files>
 	</properties>
-	
+
     <dependencies>
         <dependency>
             <groupId>com.bq.corbel.lib</groupId>
