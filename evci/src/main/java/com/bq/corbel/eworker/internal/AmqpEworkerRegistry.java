@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.function.UnaryOperator;
 
-import com.bq.corbel.evci.EvciRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
@@ -25,13 +24,14 @@ import com.bq.corbel.lib.rabbitmq.config.BackoffOptions;
  */
 public class AmqpEworkerRegistry implements EworkerRegistry {
 
+    private static final Logger LOG = LoggerFactory.getLogger(AmqpEworkerRegistry.class);
+
     private final DomainObjectJsonMessageConverterFactory converterFactory;
     private final AmqpConfigurer configurer;
 
     private final BackoffOptions backoffOptions;
     private final int maxAttempts;
     private final UnaryOperator<String> routingPatternFunction;
-    private static final Logger LOG = LoggerFactory.getLogger(AmqpEworkerRegistry.class);
 
     public AmqpEworkerRegistry(DomainObjectJsonMessageConverterFactory converterFactory, AmqpConfigurer configurer,
             BackoffOptions backoffOptions, int maxAttempts, UnaryOperator<String> routingPatternFunction) {
@@ -58,6 +58,7 @@ public class AmqpEworkerRegistry implements EworkerRegistry {
                 Optional.of(routingPatternFunction.apply(routingPattern)), Optional.<Map<String, Object>>empty());
 
         MessageListenerAdapter messageListener = new MessageListenerAdapter(eworker, converterFactory.createConverter(eworkerType));
+        LOG.info("Registering eworker " + queueName + " with " + threadsNumber + " threads");
 
         SimpleMessageListenerContainer container = configurer.listenerContainer(Executors.newFixedThreadPool(threadsNumber),
                 configurer.setRetryOpertations(Optional.of(maxAttempts), Optional.ofNullable(backoffOptions)), queueName);
