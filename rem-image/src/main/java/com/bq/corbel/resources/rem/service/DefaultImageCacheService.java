@@ -47,12 +47,12 @@ public class DefaultImageCacheService implements ImageCacheService {
             resourceId = generateId(resourceId, collection, operationsChain, imageFormat);
             parameters = new RequestParametersImplCustomContentLength(parameters, newSize);
             restorPutRem.resource(cacheCollection, resourceId, parameters, Optional.of(inputStream));
-
+        } catch (IOException e) {
+            LOG.error("Error while saving image in cache", e);
+        } finally {
             if (!file.delete()) {
                 LOG.warn("Error deleting {}", file.getAbsolutePath());
             }
-        } catch (IOException e) {
-            LOG.error("Error while saving image in cache", e);
         }
     }
 
