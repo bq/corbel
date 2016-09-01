@@ -15,7 +15,7 @@
 		<port.admin>8083</port.admin>
 		<docker.files>${project.basedir}/../src/docker/service</docker.files>
 	</properties>
-	
+
     <dependencies>
         <dependency>
             <groupId>com.bq.corbel.lib</groupId>
@@ -175,6 +175,11 @@
 						<program>
 							<mainClass>com.bq.corbel.iam.IamRunner</mainClass>
 							<id>${project.name}</id>
+							<jvmSettings>
+									<extraArguments>
+											<extraArgument>$JAVA_EXTRA_OPTS</extraArgument>
+									</extraArguments>
+							</jvmSettings>
 						</program>
 					</programs>
 				</configuration>

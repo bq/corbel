@@ -52,7 +52,7 @@
 			<artifactId>events</artifactId>
 		</dependency>
 	</dependencies>
-	
+
 	<build>
         <plugins>
             <!-- Assembler plugin -->
@@ -67,6 +67,7 @@
                             <jvmSettings>
                                 <extraArguments>
                                     <extraArgument>-Dfile.encoding=UTF-8</extraArgument>
+                                    <extraArgument>$JAVA_EXTRA_OPTS</extraArgument>
                                 </extraArguments>
                             </jvmSettings>
                         </program>
