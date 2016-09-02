@@ -77,9 +77,11 @@
                         <program>
                             <mainClass>com.bq.corbel.notifications.NotificationsRunner</mainClass>
                             <id>${project.name}</id>
-                            <extraArguments>
-          											<extraArgument>$JAVA_EXTRA_OPTS</extraArgument>
-          									</extraArguments>
+                            <jvmSettings>
+                              <extraArguments>
+                                <extraArgument>$JAVA_EXTRA_OPTS</extraArgument>
+                              </extraArguments>
+                            </jvmSettings>                            
                         </program>
                     </programs>
                 </configuration>
