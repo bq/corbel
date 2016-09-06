@@ -44,10 +44,6 @@
 			<artifactId>dropwizard-testing</artifactId>
 		</dependency>
     <dependency>
-        <groupId>io.dropwizard</groupId>
-        <artifactId>dropwizard-core</artifactId>
-    </dependency>
-    <dependency>
 			<groupId>com.bq.corbel.lib</groupId>
 			<artifactId>rabbitmq</artifactId>
 		</dependency>
