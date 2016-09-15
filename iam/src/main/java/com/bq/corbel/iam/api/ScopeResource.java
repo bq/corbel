@@ -1,5 +1,6 @@
 package com.bq.corbel.iam.api;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 import javax.validation.Valid;
@@ -66,5 +67,14 @@ import com.bq.corbel.iam.service.ScopeService;
         }*/
         scopeService.delete(scopeId);
         return Response.noContent().build();
+    }
+
+    @GET
+    @Path("/{scopeId}/expand")
+    @Produces(MediaType.APPLICATION_JSON)
+    public final Response expandScope(@PathParam("domain") String domain, @PathParam("scopeId") String scopeId) {
+        return Optional.ofNullable(scopeService.expandScopes(Arrays.asList(scopeId)))
+                .map(scopes -> Response.ok(scopes).build())
+                .orElseGet(() -> IamErrorResponseFactory.getInstance().notFound());
     }
 }
