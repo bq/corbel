@@ -36,6 +36,7 @@ public abstract class EworkerPlugin implements InitializingBean {
     @Value("${evci.plugins.resilient}") private boolean resilient;
 
     protected Integer threadsNumber;
+    protected Integer concurrency;
 
     protected ApplicationContext context;
 
@@ -45,6 +46,7 @@ public abstract class EworkerPlugin implements InitializingBean {
             init();
             checkVersion();
             setThreadsNumber();
+            setConcurrency();
             register(registry);
             eworkerArtifactIdRegistry.addEworkerArtifactId(getArtifactName());
         } catch (Exception e) {
@@ -57,8 +59,13 @@ public abstract class EworkerPlugin implements InitializingBean {
     }
 
     private void setThreadsNumber() {
-        threadsNumber = context.getEnvironment().getProperty("evci.plugins.concurrency", Integer.class,
+        threadsNumber = context.getEnvironment().getProperty("evci.plugins.threads", Integer.class,
                 EworkerRegistry.DEFAULT_THREADS_NUMBER);
+    }
+
+    private void setConcurrency() {
+        concurrency = context.getEnvironment().getProperty("evci.plugins.concurrency", Integer.class,
+                EworkerRegistry.DEFAULT_CONCURRENCY);
     }
 
     protected void checkVersion() {

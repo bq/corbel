@@ -18,6 +18,7 @@ import com.bq.corbel.evci.eworker.EworkerRegistry;
 import com.bq.corbel.evci.service.EvciMQ;
 import com.bq.corbel.lib.rabbitmq.config.AmqpConfigurer;
 import com.bq.corbel.lib.rabbitmq.config.BackoffOptions;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * Created by Alberto J. Rubio
@@ -34,7 +35,7 @@ public class AmqpEworkerRegistry implements EworkerRegistry {
     private final UnaryOperator<String> routingPatternFunction;
 
     public AmqpEworkerRegistry(DomainObjectJsonMessageConverterFactory converterFactory, AmqpConfigurer configurer,
-            BackoffOptions backoffOptions, int maxAttempts, UnaryOperator<String> routingPatternFunction) {
+                               BackoffOptions backoffOptions, int maxAttempts, UnaryOperator<String> routingPatternFunction) {
         super();
         this.converterFactory = converterFactory;
         this.configurer = configurer;
@@ -44,8 +45,9 @@ public class AmqpEworkerRegistry implements EworkerRegistry {
     }
 
     @Override
-    public <E> void registerEworker(Eworker<E> eworker, String routingPattern, String queue, boolean handleFailures, int threadsNumber) {
-        LOG.error("threads number in evci: "+ threadsNumber);
+    public <E> void registerEworker(Eworker<E> eworker, String routingPattern, String queue, boolean handleFailures,
+                                    int threadsNumber, @Value("${eworker.concurrency}") int concurrency) {
+
         Type eworkerType = ((ParameterizedType) eworker.getClass().getGenericInterfaces()[0]).getActualTypeArguments()[0];
         String queueName = "evci.eworker." + queue + ".queue";
         String deadLetterQueueName = "evci.eworker." + queue + ".dlq";
@@ -58,12 +60,16 @@ public class AmqpEworkerRegistry implements EworkerRegistry {
                 Optional.of(routingPatternFunction.apply(routingPattern)), Optional.<Map<String, Object>>empty());
 
         MessageListenerAdapter messageListener = new MessageListenerAdapter(eworker, converterFactory.createConverter(eworkerType));
-        LOG.info("Registering eworker " + queueName + " with " + threadsNumber + " threads");
-
         SimpleMessageListenerContainer container = configurer.listenerContainer(Executors.newFixedThreadPool(threadsNumber),
                 configurer.setRetryOpertations(Optional.of(maxAttempts), Optional.ofNullable(backoffOptions)), queueName);
-
         container.setMessageListener(messageListener);
+        container.setMaxConcurrentConsumers(concurrency);
+        container.setConcurrentConsumers(concurrency);
+        LOG.info("Eworker " + queueName + " registered with " + threadsNumber + " threads and concurrency " + concurrency);
+        if (concurrency > threadsNumber) {
+            LOG.warn("The number of threads for this eworker (" + threadsNumber + ") is not enough to serve the desired " +
+                    "concurrency (" + concurrency + "). Are you sure this is the proper configuration?");
+        }
 
         if (handleFailures) {
             MessageListenerAdapter failedMessageListener = new MessageListenerAdapter(eworker,
